@@ -23,78 +23,101 @@ import random
 
 
 def innfl():
-    region = str(random.randint(1, 92)).zfill(2)
-    inspection = str(random.randint(1, 99)).zfill(2)
-    numba = str(random.randint(1, 999999)).zfill(6)
+    # Генерация случайных частей ИНН
+    region = f"{random.randint(1, 92):02d}"
+    inspection = f"{random.randint(1, 99):02d}"
+    numba = f"{random.randint(1, 999999):06d}"
     rezult = region + inspection + numba
-    kontr = str(((7 * int(rezult[0]) + 2 * int(rezult[1]) + 4 * int(rezult[2]) + 10 * int(rezult[3]) +
-                  3 * int(rezult[4]) + 5 * int(rezult[5]) + 9 * int(rezult[6]) + 4 * int(rezult[7]) +
-                  6 * int(rezult[8]) + 8 * int(rezult[9])) % 11) % 10)
-    kontr = '0' if kontr == '10' else kontr
-    rezult += kontr
-    kontr = str(((3 * int(rezult[0]) + 7 * int(rezult[1]) + 2 * int(rezult[2]) +
-                  4 * int(rezult[3]) + 10 * int(rezult[4]) + 3 * int(rezult[5]) +
-                  5 * int(rezult[6]) + 9 * int(rezult[7]) + 4 * int(rezult[8]) +
-                  6 * int(rezult[9]) + 8 * int(rezult[10])) % 11) % 10)
-    kontr = '0' if kontr == '10' else kontr
-    rezult += kontr
+
+    # Функция для вычисления контрольной цифры
+    def calculate_control_digit(s, weights):
+        total = sum(int(s[i]) * weights[i] for i in range(len(weights)))
+        return str((total % 11) % 10)
+
+    # Веса для первой и второй контрольных цифр
+    weights1 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
+    weights2 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
+
+    # Вычисление контрольных цифр
+    kontr1 = calculate_control_digit(rezult, weights1)
+    kontr1 = '0' if kontr1 == '10' else kontr1
+    rezult += kontr1
+
+    kontr2 = calculate_control_digit(rezult, weights2)
+    kontr2 = '0' if kontr2 == '10' else kontr2
+    rezult += kontr2
+
     return rezult
 
 
 def innul():
-    region = str(random.randint(1, 92)).zfill(2)
-    inspection = str(random.randint(1, 99)).zfill(2)
-    numba = str(random.randint(1, 99999)).zfill(5)
-    rezult = region + inspection + numba
-    kontr = str(((2 * int(rezult[0]) + 4 * int(rezult[1]) + 10 * int(rezult[2]) +
-                  3 * int(rezult[3]) + 5 * int(rezult[4]) + 9 * int(rezult[5]) +
-                  4 * int(rezult[6]) + 6 * int(rezult[7]) + 8 * int(rezult[8])) % 11) % 10)
+    # Генерация случайных частей ИНН
+    rezult = (
+        f"{random.randint(1, 92):02d}"  # регион
+        f"{random.randint(1, 99):02d}"  # инспекция
+        f"{random.randint(1, 99999):05d}"  # номер
+    )
+
+    # Веса для контрольной цифры
+    weights = [2, 4, 10, 3, 5, 9, 4, 6, 8]
+
+    # Вычисление контрольной цифры
+    kontr = str(sum(int(rezult[i]) * weights[i] for i in range(9)) % 11 % 10)
     kontr = '0' if kontr == '10' else kontr
-    rezult += kontr
-    return rezult
+
+    return rezult + kontr
 
 
 def ogrn():
-    priznak = str(random.randint(1, 9))
-    godreg = str(random.randint(1, 16)).zfill(2)
-    region = str(random.randint(1, 92)).zfill(2)
-    inspection = str(random.randint(1, 99)).zfill(2)
-    zapis = str(random.randint(1, 99999)).zfill(5)
-    rezult = priznak + godreg + region + inspection + zapis
-    kontr = str((int(rezult) % 11) % 10)
+    # Генерация случайных частей ОГРН
+    rezult = (
+        f"{random.randint(1, 9)}"  # признак
+        f"{random.randint(1, 16):02d}"  # год регистрации
+        f"{random.randint(1, 92):02d}"  # регион
+        f"{random.randint(1, 99):02d}"  # инспекция
+        f"{random.randint(1, 99999):05d}"  # номер записи
+    )
+
+    # Вычисление контрольной цифры
+    kontr = str(int(rezult) % 11 % 10)
     kontr = '0' if kontr == '10' else kontr
-    rezult += kontr
-    return rezult
+
+    return rezult + kontr
 
 
 def kpp():
-    region = str(random.randint(1, 92)).zfill(2)
-    inspection = str(random.randint(1, 99)).zfill(2)
-    prichina = random.randint(1, 4)
-    prichina = ['01', '43', '44', '45'][prichina - 1]
-    numba = str(random.randint(1, 999)).zfill(3)
-    rezult = region + inspection + prichina + numba
-    return rezult
+    return (
+        f"{random.randint(1, 92):02d}"  # регион
+        f"{random.randint(1, 99):02d}"  # инспекция
+        f"{random.choice(['01', '43', '44', '45'])}"  # причина
+        f"{random.randint(1, 999):03d}"  # номер
+    )
 
 
 def snils():
-    rand1 = str(random.randint(2, 998)).zfill(3)
-    rand2 = str(random.randint(1, 999)).zfill(3)
-    rand3 = str(random.randint(1, 999)).zfill(3)
-    rezult = rand1 + rand2 + rand3
-    kontr = str(9 * int(rezult[0]) + 8 * int(rezult[1]) + 7 * int(rezult[2]) +
-                6 * int(rezult[3]) + 5 * int(rezult[4]) + 4 * int(rezult[5]) +
-                3 * int(rezult[6]) + 2 * int(rezult[7]) + 1 * int(rezult[8]))
-    if int(kontr) < 100:
-        pass
-    elif int(kontr) > 101:
-        kontr = str(int(kontr) % 101).zfill(2)
-        if int(kontr) > 99:
-            kontr = '00'
+    # Генерация случайных чисел и объединение их в строку
+    rand1 = random.randint(2, 998)
+    rand2 = random.randint(1, 999)
+    rand3 = random.randint(1, 999)
+    snils_base = f"{rand1:03}{rand2:03}{rand3:03}"
+
+    # Вычисление контрольной суммы
+    weights = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    kontr = sum(int(snils_base[i]) * weights[i] for i in range(9))
+
+    # Определение контрольного числа
+    if kontr < 100:
+        kontr = kontr
+    elif kontr > 101:
+        kontr = kontr % 101
+        if kontr > 99:
+            kontr = 0
     else:
-        kontr = '00'
-    rezult += kontr
-    return rezult
+        kontr = 0
+
+    # Добавление контрольного числа к базовому номеру
+    snils_full = f"{snils_base}{kontr:02}"
+    return snils_full
 
 
 # Генерация значений на основе ограничений XSD
