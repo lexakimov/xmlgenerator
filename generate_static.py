@@ -203,34 +203,6 @@ def generate_value(xsd_type, target_name):
         return "default_value"
 
 
-def process_type_content(xml_parent, xsd_type_content):
-    if isinstance(xsd_type_content, xmlschema.validators.groups.XsdGroup):
-        if xsd_type_content.model == 'sequence':
-            for xsd_type_content_child in xsd_type_content:
-                xml_child = etree.SubElement(xml_parent, xsd_type_content_child.name)
-                process_type_content(xml_child, xsd_type_content_child)
-
-        if xsd_type_content.model == 'choice':
-            xsd_type_content_child = random.choice(xsd_type_content)
-            xml_child = etree.SubElement(xml_parent, xsd_type_content_child.name)
-            process_type_content(xml_child, xsd_type_content_child)
-
-    elif isinstance(xsd_type_content, xmlschema.validators.elements.XsdElement):
-        if len(xsd_type_content) > 0:
-            for xsd_type_content_child in xsd_type_content:
-                xml_child = etree.SubElement(xml_parent, xsd_type_content_child.name)
-                add_elements(xml_child, xsd_type_content_child)
-                process_type_content(xml_child, xsd_type_content_child)
-        else:
-            # Если это элемент, создаем его и рекурсивно добавляем дочерние элементы
-            if hasattr(xsd_type_content, 'type'):
-                # Генерация значения элемента на основе его типа
-                element_value = generate_value(xsd_type_content.type, xsd_type_content.name)
-                xml_parent.text = element_value
-            add_elements(xml_parent, xsd_type_content)
-    else:
-        raise RuntimeError(xsd_type_content)
-
 # Рекурсивно добавляем элементы и атрибуты в соответствии с XSD-схемой
 def add_elements(xml_element, xsd_element):
     # Добавляем атрибуты, если они есть
@@ -242,9 +214,47 @@ def add_elements(xml_element, xsd_element):
                 xml_element.set(attr_name, str(attr_value))
 
     # Обрабатываем дочерние элементы
-    if hasattr(xsd_element, 'type') and hasattr(xsd_element.type, 'content'):
-        xsd_type_content = xsd_element.type.content
-        process_type_content(xml_element, xsd_type_content)
+    if hasattr(xsd_element, 'type'):
+        if hasattr(xsd_element.type, 'content'):
+            xsd_type_content_child = xsd_element.type.content
+
+            if isinstance(xsd_type_content_child, xmlschema.validators.elements.XsdElement):
+                for xsd_child in xsd_type_content_child:
+                    if isinstance(xsd_child, xmlschema.validators.elements.XsdElement):
+                        # Если это элемент, создаем его и рекурсивно добавляем дочерние элементы
+                        xml_child = etree.SubElement(xml_element, xsd_child.name)
+                        if hasattr(xsd_child, 'type'):
+                            # Генерация значения элемента на основе его типа
+                            element_value = generate_value(xsd_child.type, xsd_child.name)
+                            xml_child.text = element_value
+                        add_elements(xml_child, xsd_child)
+
+            elif isinstance(xsd_type_content_child, xmlschema.validators.groups.XsdGroup):
+
+                if xsd_type_content_child.model == 'sequence':
+                    for xsd_child_element in xsd_type_content_child:
+                        group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
+                        add_elements(group_child_element, xsd_child_element)
+
+                elif xsd_type_content_child.model == 'choice':
+                    xsd_child_element = random.choice(xsd_type_content_child)
+                    if isinstance(xsd_child_element, xmlschema.validators.elements.XsdElement):
+                        group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
+                        if hasattr(xsd_child_element, 'type'):
+                            # Генерация значения элемента на основе его типа
+                            element_value = generate_value(xsd_child_element.type, xsd_child_element.name)
+                            group_child_element.text = element_value
+                        add_elements(group_child_element, xsd_child_element)
+
+                else:
+                    raise RuntimeError(xsd_type_content_child)
+
+            else:
+                raise RuntimeError(xsd_type_content_child)
+        else:
+            # Генерация значения элемента на основе его типа
+            element_value = generate_value(xsd_element.type, xsd_element.name)
+            xml_element.text = element_value
 
 
 # Создание XML-документа на основе XSD-схемы
