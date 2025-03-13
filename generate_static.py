@@ -229,6 +229,16 @@ def add_elements(xml_element, xsd_element):
                     add_elements(group_child_element, group_child)
             if content.model == 'sequence':
                 for group_child in content:
+                    if isinstance(group_child, xmlschema.validators.groups.XsdGroup):
+                        if group_child.model == 'choice':
+                            group_child = random.choice(group_child)
+                            if isinstance(group_child, xmlschema.validators.elements.XsdElement):
+                                group_child_element = etree.SubElement(xml_element, group_child.name)
+                                if hasattr(group_child, 'type'):
+                                    # Генерация значения элемента на основе его типа
+                                    element_value = generate_value(group_child.type, group_child.name)
+                                    group_child_element.text = element_value
+                                add_elements(group_child_element, group_child)
                     if isinstance(group_child, xmlschema.validators.elements.XsdElement):
                         group_child_element = etree.SubElement(xml_element, group_child.name)
                         if hasattr(group_child, 'type'):
