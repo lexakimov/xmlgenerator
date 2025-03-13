@@ -191,7 +191,9 @@ def generate_value(xsd_type, target_name):
                 if hasattr(xsd_type, 'patterns') and xsd_type.patterns is not None:
                     # Генерация строки по regex
                     random_pattern = random.choice(xsd_type.patterns)
-                    return rstr.xeger(random_pattern.attrib['value'])
+                    xeger = rstr.xeger(random_pattern.attrib['value'])
+                    xeger = re.sub(r'\s', ' ', xeger)
+                    return xeger
 
             # Иначе генерируем случайную строку
             min_length = xsd_type.min_length or -1
@@ -296,7 +298,7 @@ def generate_xml_from_xsd(xsd_schema):
     return xml_root_element
 
 
-file = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/DP_IAKTPRM_1_987_00_05_01_02.xsd'
+file = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/DP_PRIRASXPRIN_1_994_01_05_01_02.xsd'
 
 xsd_directory = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/'
 xsd_names = [
