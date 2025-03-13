@@ -1,3 +1,4 @@
+import random
 import re
 import string
 from xml.dom import minidom
@@ -6,20 +7,7 @@ from xml.etree import ElementTree
 import xmlschema
 from lxml import etree
 from russian_names import RussianNames
-
-file = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/DP_IAKTPRM_1_987_00_05_01_02.xsd'
-
-xsd_directory = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/'
-xsd_names = [
-    "DP_IAKTPRM_1_987_00_05_01_02.xsd",
-]
-
-xsd_schema_filename = xsd_directory + xsd_names[0]
-
-# Загрузка XSD-схемы
-xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
-
-import random
+from xmlschema.validators import XsdComplexType
 
 
 def innfl():
@@ -121,11 +109,11 @@ def snils():
 
 
 # Генерация значений на основе ограничений XSD
-def generate_value(xsd_type, element_name=''):
+def generate_value(xsd_type, element_name):
     if xsd_type is None:
-        return "default_value"  # Возвращаем значение по умолчанию, если тип не определен
+        return None     # Возвращаем значение по умолчанию, если тип не определен
 
-    if xsd_type.simple_type is None:
+    if isinstance(xsd_type, XsdComplexType):
         return None
 
     # Проверяем базовый тип
@@ -169,12 +157,12 @@ def generate_value(xsd_type, element_name=''):
         # Генерация целого числа
         min_value = getattr(xsd_type, 'min_inclusive', 0)
         max_value = getattr(xsd_type, 'max_inclusive', 100)
-        return random.randint(min_value, max_value)
+        return str(random.randint(min_value, max_value))
     elif base_type.local_name == 'decimal':
         # Генерация десятичного числа
         min_value = float(getattr(xsd_type, 'min_inclusive', 0.0))
         max_value = float(getattr(xsd_type, 'max_inclusive', 100.0))
-        return round(random.uniform(min_value, max_value), 2)
+        return str(round(random.uniform(min_value, max_value), 2))
     elif base_type.local_name == 'boolean':
         # Генерация булевого значения
         return random.choice([True, False])
@@ -190,7 +178,8 @@ def add_elements(xml_element, xsd_element):
         for attr_name, attr in xsd_element.attributes.items():
             # Генерация значения атрибута на основе его типа
             attr_value = generate_value(attr.type, attr_name)
-            xml_element.set(attr_name, str(attr_value))
+            if attr_value is not None:
+                xml_element.set(attr_name, str(attr_value))
 
     # Обрабатываем дочерние элементы
     if hasattr(xsd_element, 'type') and hasattr(xsd_element.type, 'content'):
@@ -231,13 +220,146 @@ def prettify(elem):
     return reparsed.toprettyxml(indent="    ", )  # encoding='windows-1251'
 
 
-# Генерация XML-документа
-xml_root = generate_xml_from_xsd(xsd_schema)
+xsd_directory = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/'
+xsd_names = [
+    "DP_IAKTPRM_1_987_00_05_01_02.xsd",
+    "DP_INFSOOB_1_981_00_05_01_01.xsd",
+    "DP_IZVPOL_1_982_00_01_01_01.xsd",
+    "DP_IZVPOL_1_982_00_01_02_02.xsd",
+    "DP_IZVPOL_1_982_00_01_03_01.xsd",
+    "DP_OTORG12_1_986_00_05_01_02.xsd",
+    "DP_PDOTPR_1_983_00_01_01_01.xsd",
+    "DP_PDOTPR_1_983_00_01_02_02.xsd",
+    "DP_PDOTPR_1_983_00_01_03_01.xsd",
+    "DP_PDPOL_1_984_00_01_01_01.xsd",
+    "DP_PDPOL_1_984_00_01_02_02.xsd",
+    "DP_PDPOL_1_984_00_01_03_01.xsd",
+    "DP_PRANNUL_1_985_00_01_01_01.xsd",
+    "DP_PRANNUL_1_985_00_01_01_02.xsd",
+    "DP_PRIRASXDOP_1_994_02_05_01_01.xsd",
+    "DP_PRIRASXPRIN_1_994_01_05_01_02.xsd",
+    "DP_PTORG12_1_989_00_05_01_02.xsd",
+    "DP_REZRUISP_1_990_01_05_02_01.xsd",
+    "DP_REZRUZAK_1_990_02_05_02_01.xsd",
+    "DP_TOVTORGPOK_1_992_02_05_02_01.xsd",
+    "DP_TOVTORGPR_1_992_01_05_02_01.xsd",
+    "DP_UVUTOCH_1_985_00_01_01_01.xsd",
+    "DP_UVUTOCH_1_985_00_01_02_02.xsd",
+    "DP_UVUTOCH_1_985_00_01_03_01.xsd",
+    "DP_ZAKTPRM_1_990_00_05_01_02.xsd",
+    "ON_AKTREKLOTP_1_961_01_05_01_01.xsd",
+    "ON_AKTREKLPOL_1_961_02_05_01_01.xsd",
+    "ON_AKTREZRABP_1_971_01_01_00_02.xsd",
+    "ON_AKTREZRABZ_1_971_02_01_00_01.xsd",
+    "ON_AKTSVEROTP_1_972_01_05_01_01.xsd",
+    "ON_AKTSVERPOL_1_972_02_05_01_01.xsd",
+    "ON_CONSGRPO_1_965_05_05_01_01.xsd",
+    "ON_CONSIZM_1_965_03_05_01_01.xsd",
+    "ON_CONSIZMPDTV_1_965_04_05_01_01.xsd",
+    "ON_CONSOTPR_1_965_01_05_01_01.xsd",
+    "ON_CONSPRV_1_965_02_05_01_01.xsd",
+    "ON_CONSPRVYD_1_965_06_05_01_01.xsd",
+    "ON_DOGDOC_1_999_01_01_01_02.xsd",
+    "ON_DOGFRAKHTEL_1_976_01_05_01_01.xsd",
+    "ON_DOGFRASHCH_1_976_02_05_01_01.xsd",
+    "ON_DOGMPOTPR_1_966_01_05_01_01.xsd",
+    "ON_DOGMPPRV_1_966_02_05_01_01.xsd",
+    "ON_DOGMPSOGLS_1_964_04_05_01_01.xsd",
+    "ON_DOGMPSOGLS_1_966_04_05_01_01.xsd",
+    "ON_DOGMPSOGLSH_1_966_03_05_01_01.xsd",
+    "ON_DOGVTRGO_1_964_01_05_01_01.xsd",
+    "ON_DOGVTRPRV_1_964_02_05_01_02.xsd",
+    "ON_DOGVTRSOGLSH_1_964_03_05_01_02.xsd",
+    "ON_DOPLKNPOK_1_908_01_05_01_04.xsd",
+    "ON_DOPLKNPOK_1_908_01_05_02_01.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_01_05.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_02_01.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_04_01.xsd",
+    "ON_DORVEDGP_1_963_03_05_01_01.xsd",
+    "ON_DORVEDIZM_1_963_02_05_01_01.xsd",
+    "ON_DORVEDPRV_1_963_01_05_01_01.xsd",
+    "ON_GARANTLET_1_967_01_05_01_01.xsd",
+    "ON_GUCHSFAKT_1_910_01_05_01_03.xsd",
+    "ON_GUCHSFAKT_1_910_01_05_02_01.xsd",
+    "ON_KNPOK_1_898_01_05_01_04.xsd",
+    "ON_KNPOK_1_898_01_05_02_01.xsd",
+    "ON_KNPROD_1_899_01_05_01_05.xsd",
+    "ON_KNPROD_1_899_01_05_02_01.xsd",
+    "ON_KNPROD_1_899_01_05_04_01.xsd",
+    "ON_KORSCHFDOPPOK_1_996_02_05_02_01.xsd",
+    "ON_KORSCHFDOPPR_1_996_01_05_02_01.xsd",
+    "ON_KORSFAKT_1_911_01_05_01_03.xsd",
+    "ON_KORSFAKT_1_911_01_05_02_01.xsd",
+    "ON_KVPRIMGR_1_962_01_05_01_01.xsd",
+    "ON_NKORSCHFDOPPOK_1_996_04_05_01_03.xsd",
+    "ON_NKORSCHFDOPPR_1_996_03_05_01_04.xsd",
+    "ON_NSCHFDOPPOK_1_997_02_05_01_02.xsd",
+    "ON_NSCHFDOPPOK_1_997_02_05_02_01.xsd",
+    "ON_NSCHFDOPPOK_1_997_02_05_03_01.xsd",
+    "ON_NSCHFDOPPR_1_997_01_05_01_03.xsd",
+    "ON_NSCHFDOPPR_1_997_01_05_02_01.xsd",
+    "ON_NSCHFDOPPR_1_997_01_05_03_01.xsd",
+    "ON_OTZGARANT_1_967_02_05_01_01.xsd",
+    "ON_PRICELISTISP_1_883_01_05_01_01.xsd",
+    "ON_PRICELISTZAK_1_883_02_05_01_01.xsd",
+    "ON_PTLSODPARK_1_968_05_05_01_01.xsd",
+    "ON_PTLSODVZD_1_968_04_05_01_01.xsd",
+    "ON_PTLSPOSMO_1_968_06_05_01_01.xsd",
+    "ON_PTLSPRMO_1_968_02_05_01_01.xsd",
+    "ON_PTLSSOBTS_1_968_01_05_01_01.xsd",
+    "ON_PTLSVIPTS_1_968_03_05_01_01.xsd",
+    "ON_REESUSLDMS_1_881_00_05_01_01.xsd",
+    "ON_SCHFDOPPOK_1_995_02_05_01_05.xsd",
+    "ON_SCHFDOPPR_1_995_01_05_01_05.xsd",
+    "ON_SFAKT_1_897_01_05_01_03.xsd",
+    "ON_SFAKT_1_897_01_05_02_01.xsd",
+    "ON_SODSD_1_999_02_01_01_01.xsd",
+    "ON_SOGLK_1_999_03_01_01_01.xsd",
+    "ON_SOPVEDGO_1_974_02_05_01_01.xsd",
+    "ON_SOPVEDGP_1_974_03_05_01_01.xsd",
+    "ON_SOPVEDPER_1_974_01_05_01_01.xsd",
+    "ON_SPISDMS_1_882_00_05_01_02.xsd",
+    "ON_TRNACLGROT_1_973_01_05_01_01.xsd",
+    "ON_TRNACLGRPO_1_973_05_05_01_01.xsd",
+    "ON_TRNACLPPRIN_1_973_02_05_01_01.xsd",
+    "ON_TRNACLPVYN_1_973_06_05_01_01.xsd",
+    "ON_TRNPEREADR_1_973_03_05_01_01.xsd",
+    "ON_TRNPUDGO_1_973_08_05_01_01.xsd",
+    "ON_TRNPUDPER_1_973_07_05_01_02.xsd",
+    "ON_TRNVPRFINSOST_1_973_28_05_01_02.xsd",
+    "ON_TRNVPRFINSOSTPODTV_1_973_29_05_01_01.xsd",
+    "ON_TRNVPRGO_1_973_21_05_01_01.xsd",
+    "ON_TRNVPRGRPO_1_973_26_05_01_01.xsd",
+    "ON_TRNVPRPDTV_1_973_24_05_01_01.xsd",
+    "ON_TRNVPRPEREADR_1_973_23_05_01_01.xsd",
+    "ON_TRNVPRPRV_1_973_22_05_01_01.xsd",
+    "ON_TRNVPRVGP_1_973_27_05_01_01.xsd",
+    "ON_TRNVPRZAMEN_1_973_25_05_01_01.xsd",
+    "ON_TRNZAMEN_1_973_04_05_01_01.xsd",
+    "ON_ZAKAZNAR_1_975_01_05_01_01.xsd",
+    "ON_ZAKAZNARPOD_1_975_03_05_01_01.xsd",
+    "ON_ZAKAZNARSOG_1_975_02_05_01_01.xsd",
+    "ON_ZAKAZNARVOZ_1_975_04_05_01_01.xsd",
+    "ON_ZAKZVGO_1_969_01_05_01_01.xsd",
+    "ON_ZAKZVPER_1_969_02_05_01_02.xsd",
+]
 
-# Преобразование в строку и вывод
-xml_str = prettify(xml_root)
-print(xml_str)
+for xsd_name in xsd_names:
+    xsd_schema_filename = xsd_directory + xsd_name
 
-# # Сохранение в файл
-# with open('output.xml', 'w') as f:
-#     f.write(xml_str)
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print(f"Схема: {xsd_name}")
+
+    # Загрузка XSD-схемы
+    xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
+
+    # Генерация XML-документа
+    xml_root = generate_xml_from_xsd(xsd_schema)
+
+    # Преобразование в строку и вывод
+    xml_str = prettify(xml_root)
+    print(xml_str)
+
+    # # Сохранение в файл
+    # with open('output.xml', 'w') as f:
+    #     f.write(xml_str)
