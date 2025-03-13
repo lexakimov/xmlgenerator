@@ -214,12 +214,6 @@ def generate_xml_from_xsd(xsd_schema):
     return xml_root_element
 
 
-def prettify(elem):
-    rough_string = ElementTree.tostring(elem, 'windows-1251')
-    reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="    ", )  # encoding='windows-1251'
-
-
 xsd_directory = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/'
 xsd_names = [
     "DP_IAKTPRM_1_987_00_05_01_02.xsd",
@@ -356,10 +350,14 @@ for xsd_name in xsd_names:
     # Генерация XML-документа
     xml_root = generate_xml_from_xsd(xsd_schema)
 
-    # Преобразование в строку и вывод
-    xml_str = prettify(xml_root)
-    print(xml_str)
+    # Преобразование в строку и
+    rough_string = ElementTree.tostring(xml_root, encoding='utf-8')
+    reparsed = minidom.parseString(rough_string)
+    xml_str = reparsed.toprettyxml(indent="    ", encoding='windows-1251')
 
-    # # Сохранение в файл
-    # with open('output.xml', 'w') as f:
-    #     f.write(xml_str)
+    # Вывод
+    print(xml_str.decode('cp1251'))
+
+    # Сохранение в файл
+    with open('output_xml/output.xml', 'wb', ) as f:
+        f.write(xml_str)
