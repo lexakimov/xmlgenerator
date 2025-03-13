@@ -1,6 +1,7 @@
 import random
 import re
 import string
+import sys
 from xml.dom import minidom
 from xml.etree import ElementTree
 
@@ -382,33 +383,42 @@ xsd_names = [
     "ON_ZAKZVPER_1_969_02_05_01_02.xsd",
 ]
 
-for xsd_name in xsd_names:
-    xsd_schema_filename = xsd_directory + xsd_name
+def main():
+    for xsd_name in xsd_names:
+        xsd_schema_filename = xsd_directory + xsd_name
 
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print(f"Схема: {xsd_name}\n")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print(f"Схема: {xsd_name}\n")
 
-    matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
-    file_id_prefix = matches[0][0]
+        matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
+        file_id_prefix = matches[0][0]
 
-    # Загрузка XSD-схемы
-    xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
+        # Загрузка XSD-схемы
+        xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
 
-    # Генерация XML-документа
-    xml_root = generate_xml_from_xsd(xsd_schema)
+        # Генерация XML-документа
+        xml_root = generate_xml_from_xsd(xsd_schema)
 
-    # Преобразование в строку
-    rough_string = ElementTree.tostring(xml_root, encoding='utf-8')
-    reparsed = minidom.parseString(rough_string)
-    xml_str = reparsed.toprettyxml(indent="    ", encoding='windows-1251')
-    decoded = xml_str.decode('cp1251')
+        # Преобразование в строку
+        rough_string = ElementTree.tostring(xml_root, encoding='utf-8')
+        reparsed = minidom.parseString(rough_string)
+        xml_str = reparsed.toprettyxml(indent="    ", encoding='windows-1251')
+        decoded = xml_str.decode('cp1251')
 
-    # Вывод
-    print(decoded)
+        # Вывод
+        print(decoded)
 
-    # Валидация
-    xsd_schema.validate(decoded)
+        # Валидация
+        try:
+            xsd_schema.validate(decoded)
+        except BaseException as err:
+            print(err, file=sys.stderr)
+            sys.exit(1)
 
-    # Сохранение в файл
-    with open('output_xml/output.xml', 'wb', ) as f:
-        f.write(xml_str)
+        # Сохранение в файл
+        with open('output_xml/output.xml', 'wb', ) as f:
+            f.write(xml_str)
+
+
+if __name__ == "__main__":
+    main()
