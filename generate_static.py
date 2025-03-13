@@ -4,10 +4,11 @@ import string
 from xml.dom import minidom
 from xml.etree import ElementTree
 
+import rstr
 import xmlschema
 from lxml import etree
 from russian_names import RussianNames
-from xmlschema.validators import XsdComplexType
+from xmlschema.validators import XsdComplexType, XsdAtomicRestriction
 
 
 def innfl():
@@ -108,18 +109,35 @@ def snils():
     return snils_full
 
 
+def random_string(min_length=-1, max_length=-1):
+    min_length = min_length if min_length > -1 else 1
+    max_length = max_length if max_length >= min_length else 20
+    if max_length > 50:
+        max_length = 50
+    length = random.randint(min_length, max_length)
+    # Генерация случайной строки из букв латиницы
+    letters = string.ascii_letters  # Все буквы латиницы (a-z, A-Z)
+    return ''.join(random.choice(letters) for _ in range(length))
+
+
 # Генерация значений на основе ограничений XSD
-def generate_value(xsd_type, element_name):
+def generate_value(xsd_type, target_name):
+    # Тип не определен
     if xsd_type is None:
-        return None     # Возвращаем значение по умолчанию, если тип не определен
+        return None
 
     if isinstance(xsd_type, XsdComplexType):
         return None
 
+    if isinstance(xsd_type, XsdAtomicRestriction):
+        if hasattr(xsd_type, 'enumeration') and xsd_type.enumeration is not None:
+            # Если есть перечисление, выбираем случайное значение из него
+            return random.choice(xsd_type.enumeration)
+
     # Проверяем базовый тип
     base_type = getattr(xsd_type, 'base_type', None)
     if base_type is None:
-        return "default_value"  # Возвращаем значение по умолчанию, если базовый тип не определен
+        return "default_value"
 
     if base_type.local_name == 'string':
         # Генерация строки
@@ -128,40 +146,48 @@ def generate_value(xsd_type, element_name):
             return random.choice(xsd_type.enumeration)
         else:
 
-            if element_name == 'ИдФайл':
-                return RussianNames(name=False, surname=True, patronymic=False, gender=1).get_person()
-            if element_name == 'ВерсПрог':
+            if target_name == 'ИдФайл' or target_name == 'FileID':
+                return "ID_FILE"
+            if target_name == 'ВерсПрог':
                 return "Python XML generator 1.0"
 
-            if re.search('Фамилия', element_name, re.IGNORECASE):
+            if re.search('Фамилия', target_name, re.IGNORECASE):
                 return RussianNames(name=False, surname=True, patronymic=False, gender=1).get_person()
-            if re.search('Имя', element_name, re.IGNORECASE):
+            if re.search('Имя', target_name, re.IGNORECASE):
                 return RussianNames(name=True, surname=False, patronymic=False, gender=1).get_person()
-            if re.search('Отчество', element_name, re.IGNORECASE):
+            if re.search('Отчество', target_name, re.IGNORECASE):
                 return RussianNames(name=False, surname=False, patronymic=True, gender=1).get_person()
 
-            if re.search('ИННФЛ', element_name, re.IGNORECASE):
+            if re.search('ИННФЛ', target_name, re.IGNORECASE):
                 return innfl()
-            if re.search('ИННЮЛ', element_name, re.IGNORECASE):
+            if re.search('ИННЮЛ', target_name, re.IGNORECASE):
                 return innul()
-            if re.search('ОГРН', element_name, re.IGNORECASE):
+            if re.search('ОГРН', target_name, re.IGNORECASE):
                 return ogrn()
-            if re.search('КПП', element_name, re.IGNORECASE):
+            if re.search('КПП', target_name, re.IGNORECASE):
                 return kpp()
-            if re.search('СНИЛС', element_name, re.IGNORECASE):
+            if re.search('СНИЛС', target_name, re.IGNORECASE):
                 return snils()
 
+            if isinstance(xsd_type, XsdAtomicRestriction):
+                if hasattr(xsd_type, 'patterns') and xsd_type.patterns is not None:
+                    # Генерация строки по regex
+                    random_pattern = random.choice(xsd_type.patterns)
+                    return rstr.xeger(random_pattern.attrib['value'])
+
             # Иначе генерируем случайную строку
-            return ''.join(random.choices(string.ascii_letters, k=10))
+            min_length = xsd_type.min_length or -1
+            max_length = xsd_type.max_length or -1
+            return random_string(min_length, max_length)
     elif base_type.local_name == 'integer':
         # Генерация целого числа
         min_value = getattr(xsd_type, 'min_inclusive', 0)
-        max_value = getattr(xsd_type, 'max_inclusive', 100)
+        max_value = getattr(xsd_type, 'max_inclusive', 10000)
         return str(random.randint(min_value, max_value))
     elif base_type.local_name == 'decimal':
         # Генерация десятичного числа
         min_value = float(getattr(xsd_type, 'min_inclusive', 0.0))
-        max_value = float(getattr(xsd_type, 'max_inclusive', 100.0))
+        max_value = float(getattr(xsd_type, 'max_inclusive', 10000.0))
         return str(round(random.uniform(min_value, max_value), 2))
     elif base_type.local_name == 'boolean':
         # Генерация булевого значения
@@ -342,7 +368,10 @@ for xsd_name in xsd_names:
     xsd_schema_filename = xsd_directory + xsd_name
 
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print(f"Схема: {xsd_name}")
+    print(f"Схема: {xsd_name}\n")
+
+    matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
+    file_id_prefix = matches[0][0]
 
     # Загрузка XSD-схемы
     xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
@@ -350,13 +379,16 @@ for xsd_name in xsd_names:
     # Генерация XML-документа
     xml_root = generate_xml_from_xsd(xsd_schema)
 
-    # Преобразование в строку и
+    # Преобразование в строку
     rough_string = ElementTree.tostring(xml_root, encoding='utf-8')
     reparsed = minidom.parseString(rough_string)
     xml_str = reparsed.toprettyxml(indent="    ", encoding='windows-1251')
 
     # Вывод
     print(xml_str.decode('cp1251'))
+
+    # Валидация
+    xsd_schema.validate(rough_string)
 
     # Сохранение в файл
     with open('output_xml/output.xml', 'wb', ) as f:
