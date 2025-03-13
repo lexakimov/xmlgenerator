@@ -232,8 +232,14 @@ def add_elements(xml_element, xsd_element):
 
     # Обрабатываем дочерние элементы
     if hasattr(xsd_element, 'type') or (hasattr(xsd_element, 'model') and xsd_element.model == 'choice'):
-        if hasattr(xsd_element, 'type') and hasattr(xsd_element.type, 'content'):
-            xsd_type_content_child = xsd_element.type.content
+        if hasattr(xsd_element, 'type'):
+            if hasattr(xsd_element.type, 'content'):
+                xsd_type_content_child = xsd_element.type.content
+            else:
+                # Генерация значения элемента на основе его типа
+                element_value = generate_value(xsd_element.type, xsd_element.name)
+                xml_element.text = element_value
+                return
         else:
             xsd_type_content_child = xsd_element
 
@@ -295,7 +301,7 @@ file = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fn
 xsd_directory = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/'
 xsd_names = [
     # "DP_IAKTPRM_1_987_00_05_01_02.xsd",
-    "DP_INFSOOB_1_981_00_05_01_01.xsd",
+    # "DP_INFSOOB_1_981_00_05_01_01.xsd",
     # "DP_IZVPOL_1_982_00_01_01_01.xsd",
     # "DP_IZVPOL_1_982_00_01_02_02.xsd",
     # "DP_IZVPOL_1_982_00_01_03_01.xsd",
@@ -309,7 +315,7 @@ xsd_names = [
     # "DP_PRANNUL_1_985_00_01_01_01.xsd",
     # "DP_PRANNUL_1_985_00_01_01_02.xsd",
     # "DP_PRIRASXDOP_1_994_02_05_01_01.xsd",
-    # "DP_PRIRASXPRIN_1_994_01_05_01_02.xsd",
+    "DP_PRIRASXPRIN_1_994_01_05_01_02.xsd",
     # "DP_PTORG12_1_989_00_05_01_02.xsd",
     # "DP_REZRUISP_1_990_01_05_02_01.xsd",
     # "DP_REZRUZAK_1_990_02_05_02_01.xsd",
