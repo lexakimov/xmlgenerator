@@ -192,6 +192,11 @@ def generate_value(xsd_type, target_name):
     elif base_type.local_name == 'boolean':
         # Генерация булевого значения
         return random.choice([True, False])
+    elif isinstance(base_type, XsdAtomicRestriction):
+        if hasattr(base_type, 'patterns') and base_type.patterns is not None:
+            # Генерация строки по regex
+            random_pattern = random.choice(base_type.patterns)
+            return rstr.xeger(random_pattern.attrib['value'])
     else:
         # Для других типов возвращаем значение по умолчанию
         return "default_value"
@@ -209,24 +214,37 @@ def add_elements(xml_element, xsd_element):
 
     # Обрабатываем дочерние элементы
     if hasattr(xsd_element, 'type') and hasattr(xsd_element.type, 'content'):
-        for xsd_child in xsd_element.type.content:
-            if isinstance(xsd_child, xmlschema.validators.elements.XsdElement):
-                # Если это элемент, создаем его и рекурсивно добавляем дочерние элементы
-                xml_child = etree.SubElement(xml_element, xsd_child.name)
-                if hasattr(xsd_child, 'type'):
-                    # Генерация значения элемента на основе его типа
-                    element_value = generate_value(xsd_child.type, xsd_child.name)
-                    xml_child.text = element_value
-                add_elements(xml_child, xsd_child)
-            elif isinstance(xsd_child, xmlschema.validators.groups.XsdGroup):
-                # Если это группа, обрабатываем её элементы
-                for group_child in xsd_child:
+        content = xsd_element.type.content
+
+        if isinstance(content, xmlschema.validators.groups.XsdGroup):
+            if content.model == 'choice':
+                group_child = random.choice(content)
+                if isinstance(group_child, xmlschema.validators.elements.XsdElement):
+                    group_child_element = etree.SubElement(xml_element, group_child.name)
+                    if hasattr(group_child, 'type'):
+                        # Генерация значения элемента на основе его типа
+                        element_value = generate_value(group_child.type, group_child.name)
+                        group_child_element.text = element_value
+                    add_elements(group_child_element, group_child)
+            if content.model == 'sequence':
+                for group_child in content:
                     if isinstance(group_child, xmlschema.validators.elements.XsdElement):
                         group_child_element = etree.SubElement(xml_element, group_child.name)
                         if hasattr(group_child, 'type'):
                             # Генерация значения элемента на основе его типа
-                            group_child_element.text = str(generate_value(group_child.type, group_child.name))
+                            element_value = generate_value(group_child.type, group_child.name)
+                            group_child_element.text = element_value
                         add_elements(group_child_element, group_child)
+        else:
+            for xsd_child in content:
+                if isinstance(xsd_child, xmlschema.validators.elements.XsdElement):
+                    # Если это элемент, создаем его и рекурсивно добавляем дочерние элементы
+                    xml_child = etree.SubElement(xml_element, xsd_child.name)
+                    if hasattr(xsd_child, 'type'):
+                        # Генерация значения элемента на основе его типа
+                        element_value = generate_value(xsd_child.type, xsd_child.name)
+                        xml_child.text = element_value
+                    add_elements(xml_child, xsd_child)
 
 
 # Создание XML-документа на основе XSD-схемы
@@ -383,12 +401,13 @@ for xsd_name in xsd_names:
     rough_string = ElementTree.tostring(xml_root, encoding='utf-8')
     reparsed = minidom.parseString(rough_string)
     xml_str = reparsed.toprettyxml(indent="    ", encoding='windows-1251')
+    decoded = xml_str.decode('cp1251')
 
     # Вывод
-    print(xml_str.decode('cp1251'))
+    print(decoded)
 
     # Валидация
-    xsd_schema.validate(rough_string)
+    xsd_schema.validate(decoded)
 
     # Сохранение в файл
     with open('output_xml/output.xml', 'wb', ) as f:
