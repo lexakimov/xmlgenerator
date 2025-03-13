@@ -22,15 +22,10 @@ xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
 import random
 
 
-def zeros(s, length):
-    while len(s) < length:
-        s = '0' + s
-    return s
-
 def innfl():
-    region = zeros(str(random.randint(1, 92)), 2)
-    inspection = zeros(str(random.randint(1, 99)), 2)
-    numba = zeros(str(random.randint(1, 999999)), 6)
+    region = str(random.randint(1, 92)).zfill(2)
+    inspection = str(random.randint(1, 99)).zfill(2)
+    numba = str(random.randint(1, 999999)).zfill(6)
     rezult = region + inspection + numba
     kontr = str(((7 * int(rezult[0]) + 2 * int(rezult[1]) + 4 * int(rezult[2]) + 10 * int(rezult[3]) +
                   3 * int(rezult[4]) + 5 * int(rezult[5]) + 9 * int(rezult[6]) + 4 * int(rezult[7]) +
@@ -47,9 +42,9 @@ def innfl():
 
 
 def innul():
-    region = zeros(str(random.randint(1, 92)), 2)
-    inspection = zeros(str(random.randint(1, 99)), 2)
-    numba = zeros(str(random.randint(1, 99999)), 5)
+    region = str(random.randint(1, 92)).zfill(2)
+    inspection = str(random.randint(1, 99)).zfill(2)
+    numba = str(random.randint(1, 99999)).zfill(5)
     rezult = region + inspection + numba
     kontr = str(((2 * int(rezult[0]) + 4 * int(rezult[1]) + 10 * int(rezult[2]) +
                   3 * int(rezult[3]) + 5 * int(rezult[4]) + 9 * int(rezult[5]) +
@@ -61,10 +56,10 @@ def innul():
 
 def ogrn():
     priznak = str(random.randint(1, 9))
-    godreg = zeros(str(random.randint(1, 16)), 2)
-    region = zeros(str(random.randint(1, 92)), 2)
-    inspection = zeros(str(random.randint(1, 99)), 2)
-    zapis = zeros(str(random.randint(1, 99999)), 5)
+    godreg = str(random.randint(1, 16)).zfill(2)
+    region = str(random.randint(1, 92)).zfill(2)
+    inspection = str(random.randint(1, 99)).zfill(2)
+    zapis = str(random.randint(1, 99999)).zfill(5)
     rezult = priznak + godreg + region + inspection + zapis
     kontr = str((int(rezult) % 11) % 10)
     kontr = '0' if kontr == '10' else kontr
@@ -73,19 +68,19 @@ def ogrn():
 
 
 def kpp():
-    region = zeros(str(random.randint(1, 92)), 2)
-    inspection = zeros(str(random.randint(1, 99)), 2)
+    region = str(random.randint(1, 92)).zfill(2)
+    inspection = str(random.randint(1, 99)).zfill(2)
     prichina = random.randint(1, 4)
     prichina = ['01', '43', '44', '45'][prichina - 1]
-    numba = zeros(str(random.randint(1, 999)), 3)
+    numba = str(random.randint(1, 999)).zfill(3)
     rezult = region + inspection + prichina + numba
     return rezult
 
 
 def snils():
-    rand1 = zeros(str(random.randint(2, 998)), 3)
-    rand2 = zeros(str(random.randint(1, 999)), 3)
-    rand3 = zeros(str(random.randint(1, 999)), 3)
+    rand1 = str(random.randint(2, 998)).zfill(3)
+    rand2 = str(random.randint(1, 999)).zfill(3)
+    rand3 = str(random.randint(1, 999)).zfill(3)
     rezult = rand1 + rand2 + rand3
     kontr = str(9 * int(rezult[0]) + 8 * int(rezult[1]) + 7 * int(rezult[2]) +
                 6 * int(rezult[3]) + 5 * int(rezult[4]) + 4 * int(rezult[5]) +
@@ -93,8 +88,7 @@ def snils():
     if int(kontr) < 100:
         pass
     elif int(kontr) > 101:
-        kontr = str(int(kontr) % 101)
-        kontr = zeros(kontr, 2)
+        kontr = str(int(kontr) % 101).zfill(2)
         if int(kontr) > 99:
             kontr = '00'
     else:
