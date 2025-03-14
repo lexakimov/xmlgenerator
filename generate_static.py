@@ -2,6 +2,8 @@ import random
 import re
 import string
 import sys
+import uuid
+from datetime import datetime, timedelta
 from xml.dom import minidom
 from xml.etree import ElementTree
 
@@ -9,7 +11,7 @@ import rstr
 import xmlschema
 from lxml import etree
 from russian_names import RussianNames
-from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet
+from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdAnyElement
 
 
 def innfl():
@@ -136,6 +138,43 @@ def random_string(min_length=-1, max_length=-1):
     return ''.join(random.choice(letters) for _ in range(length))
 
 
+def generate_random_date(start_date: str, end_date: str) -> datetime:
+    # Преобразуем строки в объекты datetime
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+
+    # Вычисляем разницу в днях между начальной и конечной датой
+    delta = (end - start).days
+
+    # Генерируем случайное количество дней в пределах delta
+    random_days = random.randint(0, delta)
+
+    # Добавляем случайное количество дней к начальной дате
+    return start + timedelta(days=random_days)
+
+
+def counterparty_id():
+    part_1 = int(random.uniform(1000000000, 9999999999))
+    part_2 = int(random.uniform(100000000, 999999999))
+    part_3 = int(random.uniform(100000000000000000000, 999999999999999999999))
+
+    return f"2BM-{part_1}-{part_2}-{part_3}"
+
+
+def id_file(prefix):
+    # R_Т_A_О_GGGGMMDD_N, где:
+    # R_Т – префикс;
+    # А – идентификатор получателя;
+    # О – идентификатор отправителя;
+    # GGGG – год формирования передаваемого файла обмена, MM - месяц, DD - день;
+    # N – 36 символьный глобально уникальный идентификатор GUID (Globally Unique IDentifier).
+    receiver_id = counterparty_id()
+    sender_id = counterparty_id()
+    date_str = generate_random_date("2010-01-01", "2025-01-01").strftime("%Y%m%d")
+    n = uuid.uuid4()
+    return f"{prefix}_{receiver_id}_{sender_id}_{date_str}_{n}"
+
+
 # Генерация значений на основе ограничений XSD
 def generate_value(xsd_type, target_name):
     # Тип не определен
@@ -168,29 +207,31 @@ def generate_value(xsd_type, target_name):
         else:
 
             if target_name == 'ИдФайл' or target_name == 'FileID':
-                return "ID_FILE"
+                return id_file(prefix=file_id_prefix)
             if target_name == 'ВерсПрог':
                 return "Python XML generator 1.0"
 
             if re.search('Фамилия', target_name, re.IGNORECASE):
                 return RussianNames(name=False, surname=True, patronymic=False, gender=1).get_person()
-            elif re.search('Имя', target_name, re.IGNORECASE):
+            if (re.search('Имя', target_name, re.IGNORECASE)
+                    and not re.search('ИмяДопПакета', target_name, re.IGNORECASE)):
                 return RussianNames(name=True, surname=False, patronymic=False, gender=1).get_person()
-            elif re.search('Отчество', target_name, re.IGNORECASE):
+            if re.search('Отчество', target_name, re.IGNORECASE):
                 return RussianNames(name=False, surname=False, patronymic=True, gender=1).get_person()
 
-            elif re.search('ИННФЛ', target_name, re.IGNORECASE):
-                return innfl()
-            elif re.search('ИННЮЛ', target_name, re.IGNORECASE):
-                return innul()
-            elif re.search('ОГРНИП', target_name, re.IGNORECASE):
-                return ogrnip()
-            elif re.search('ОГРН', target_name, re.IGNORECASE):
-                return ogrn()
-            elif re.search('КПП', target_name, re.IGNORECASE):
-                return kpp()
-            elif re.search('СНИЛС', target_name, re.IGNORECASE):
-                return snils()
+            if xsd_type.local_name != 'ДатаТип':
+                if re.search('ИННФЛ', target_name, re.IGNORECASE):
+                    return innfl()
+                if re.search('ИННЮЛ', target_name, re.IGNORECASE):
+                    return innul()
+                if re.search('ОГРНИП', target_name, re.IGNORECASE):
+                    return ogrnip()
+                if re.search('ОГРН', target_name, re.IGNORECASE):
+                    return ogrn()
+                if re.search('КПП', target_name, re.IGNORECASE):
+                    return kpp()
+                if re.search('СНИЛС', target_name, re.IGNORECASE):
+                    return snils()
 
             if isinstance(xsd_type, XsdAtomicRestriction):
                 if hasattr(xsd_type, 'patterns') and xsd_type.patterns is not None:
@@ -442,6 +483,8 @@ xsd_names = [
     # "ON_ZAKZVPER_1_969_02_05_01_02.xsd",
 ]
 
+file_id_prefix = ""
+
 def main():
     for xsd_name in xsd_names:
         xsd_schema_filename = xsd_directory + xsd_name
@@ -450,6 +493,7 @@ def main():
         print(f"Схема: {xsd_name}\n")
 
         matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
+        global file_id_prefix
         file_id_prefix = matches[0][0]
 
         # Загрузка XSD-схемы
