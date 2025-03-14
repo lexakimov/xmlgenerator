@@ -7,7 +7,8 @@ import xmlschema
 from lxml import etree
 from russian_names import RussianNames
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdAnyElement, XsdElement, \
-    XsdGroup
+    XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
+    XsdMinLengthFacet
 
 from util_random import inn_fl, inn_ul, ogrn, ogrn_ip, kpp, snils, ascii_string, id_file
 
@@ -19,95 +20,159 @@ def generate_value(xsd_type, target_name):
     # Тип не определен
     if xsd_type is None: raise RuntimeError(f"xsd_type is None. Target name: {target_name}")
 
+    log = f"""
+    target_name: {target_name}
+    name: {xsd_type.name}
+    local_name: {xsd_type.local_name}
+    derivation: {xsd_type.derivation}
+    allow_empty: {xsd_type.allow_empty if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
+    enumeration: {xsd_type.enumeration if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
+    min_length: {xsd_type.min_length if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
+    max_length: {xsd_type.max_length if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
+    min_value: {xsd_type.min_value if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
+    max_value: {xsd_type.max_value if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
+    patterns: {xsd_type.patterns if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
+    validators: {xsd_type.validators if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}"""
+    # print(log)
+
+    log = f"""
+    primitive_type: {xsd_type.primitive_type if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
+    base_type: {xsd_type.base_type}"""
+    # print(log)
+
+    # xsd_type.primitive_type   # XsdAtomicBuiltin(name='xs:decimal xs:string')     'XsdComplexType' object has no attribute 'primitive_type'
+    # xsd_type.base_type        # XsdAtomicBuiltin(name='xs:decimal xs:integer xs:string CCРФТип СПДУЛТип') | None (complex)
+
+    # xsd_type                  # XsdAtomicRestriction(primitive_type='string')
+    # xsd_type.name             # None | str
+    # xsd_type.local_name       # None | str (ИННФЛТип, ДатаТип)
+
+    # xsd_type.derivation       # None | 'restriction' | None (complex)
+
+    # xsd_type.enumeration      # None | array | 'XsdComplexType' object has no attribute 'enumeration'
+    # xsd_type.patterns         # None | XsdPatternFacets | 'XsdComplexType' object has no attribute 'patterns'
+    # xsd_type.allow_empty      # True | False | 'XsdComplexType' object has no attribute 'allow_empty'
+    # xsd_type.min_length       # None | int | 'XsdComplexType' object has no attribute 'min_length'
+    # xsd_type.max_length       # None | int | 'XsdComplexType' object has no attribute 'max_length'
+    # xsd_type.min_value        # None | int | 'XsdComplexType' object has no attribute 'min_value'
+    # xsd_type.max_value        # None | 'XsdComplexType' object has no attribute 'max_value'
+    # xsd_type.validators       # () | [XsdEnumerationFacets(...)] | 'XsdComplexType' object has no attribute 'validators'
+
+
+    # Если есть перечисление, выбираем случайное значение из него
+    enumeration = getattr(xsd_type, 'enumeration', None)
+    if enumeration is not None:
+        return random.choice(enumeration)
+
+
     if isinstance(xsd_type, XsdComplexType):
         return None
 
-    # Если есть перечисление, выбираем случайное значение из него
-    if hasattr(xsd_type, 'enumeration') and xsd_type.enumeration is not None:
-        return random.choice(xsd_type.enumeration)
-
+    # -----------------------------------------------------------------------------------------------------------------
     # Проверяем базовый тип
     base_type = getattr(xsd_type, 'base_type', None)
+
+    # невозможный кейс (только если попался комплексный тип)
     if base_type is None: raise RuntimeError(f"base_type is None. Target name: {target_name}")
 
+    # -----------------------------------------------------------------------------------------------------------------
+    # Выясняем ограничения
+
+    allow_empty = getattr(xsd_type, 'allow_empty', None) # True | False
+
+    min_length = getattr(xsd_type, 'min_length', None) # None | int
+    max_length = getattr(xsd_type, 'max_length', None) # None | int
+
+    min_value = getattr(xsd_type, 'min_value', None) # None | int
+    max_value = getattr(xsd_type, 'max_value', None) # None
+
+    patterns = getattr(xsd_type, 'patterns', None) # None | XsdPatternFacets
+
+    validators = getattr(xsd_type, 'validators', None) # () | [XsdEnumerationFacets(...)]
+
     total_digits = None
-    for validator in xsd_type.validators:
-        if isinstance(validator, XsdTotalDigitsFacet):
+    fraction_digits = None
+    for validator in validators:
+        if isinstance(validator, XsdMinExclusiveFacet):
+            min_value = validator.value
+        elif isinstance(validator, XsdMinInclusiveFacet):
+            min_value = validator.value
+        elif isinstance(validator, XsdLengthFacet):
+            pass
+        elif isinstance(validator, XsdMinLengthFacet):
+            min_length = validator.value # то же самое
+        elif isinstance(validator, XsdMaxLengthFacet):
+            max_length = validator.value # то же самое
+        elif isinstance(validator, XsdTotalDigitsFacet):
             total_digits = validator.value
-
-    if base_type.local_name == 'string':
-        # Генерация строки
-        if hasattr(xsd_type, 'enumeration') and xsd_type.enumeration is not None:
-            # Если есть перечисление, выбираем случайное значение из него
-            return random.choice(xsd_type.enumeration)
+        elif isinstance(validator, XsdFractionDigitsFacet):
+            fraction_digits = validator.value
         else:
+            raise RuntimeError(f"Unhandled validator: {validator}")
 
-            if target_name == 'ИдФайл' or target_name == 'FileID':
-                return id_file_str
-            if target_name == 'ВерсПрог':
-                return "Python XML generator 1.0"
+    min_length = min_length or -1
+    max_length = max_length or -1
 
-            if re.search('Фамилия', target_name, re.IGNORECASE):
-                return RussianNames(name=False, surname=True, patronymic=False, gender=1).get_person()
-            if (re.search('Имя', target_name, re.IGNORECASE)
-                    and not re.search('ИмяДопПакета', target_name, re.IGNORECASE)):
-                return RussianNames(name=True, surname=False, patronymic=False, gender=1).get_person()
-            if re.search('Отчество', target_name, re.IGNORECASE):
-                return RussianNames(name=False, surname=False, patronymic=True, gender=1).get_person()
+    # -----------------------------------------------------------------------------------------------------------------
+    target_type = base_type.local_name # string | integer | decimal | CCРФТип | СПДУЛТип
 
-            if xsd_type.local_name != 'ДатаТип':
-                if re.search('ИННФЛ', target_name, re.IGNORECASE): return inn_fl()
-                if re.search('ИННЮЛ', target_name, re.IGNORECASE): return inn_ul()
-                if re.search('ОГРНИП', target_name, re.IGNORECASE): return ogrn_ip()
-                if re.search('ОГРН', target_name, re.IGNORECASE): return ogrn()
-                if re.search('КПП', target_name, re.IGNORECASE): return kpp()
-                if re.search('СНИЛС', target_name, re.IGNORECASE): return snils()
+    # Генерация строки
+    if target_type == 'string':
 
-            if isinstance(xsd_type, XsdAtomicRestriction):
-                if hasattr(xsd_type, 'patterns') and xsd_type.patterns is not None:
-                    # Генерация строки по regex
-                    random_pattern = random.choice(xsd_type.patterns)
-                    xeger = rstr.xeger(random_pattern.attrib['value'])
-                    xeger = re.sub(r'\s', ' ', xeger)
-                    return xeger
+        if target_name == 'ИдФайл' or target_name == 'FileID':
+            return id_file_str
+        if target_name == 'ВерсПрог':
+            return "Xsd2Xml 0.1.0"
 
-            # Иначе генерируем случайную строку
-            min_length = xsd_type.min_length or -1
-            max_length = xsd_type.max_length or -1
-            return ascii_string(min_length, max_length)
-    elif base_type.local_name == 'integer':
+        if re.search('Фамилия', target_name, re.IGNORECASE):
+            return RussianNames(name=False, surname=True, patronymic=False, gender=1).get_person()
+        if re.search('Имя', target_name, re.IGNORECASE) and not re.search('ИмяДопПакета', target_name, re.IGNORECASE):
+            return RussianNames(name=True, surname=False, patronymic=False, gender=1).get_person()
+        if re.search('Отчество', target_name, re.IGNORECASE):
+            return RussianNames(name=False, surname=False, patronymic=True, gender=1).get_person()
+
+        if xsd_type.local_name != 'ДатаТип':
+            if re.search('ИННФЛ', target_name, re.IGNORECASE): return inn_fl()
+            if re.search('ИННЮЛ', target_name, re.IGNORECASE): return inn_ul()
+            if re.search('ОГРНИП', target_name, re.IGNORECASE): return ogrn_ip()
+            if re.search('ОГРН', target_name, re.IGNORECASE): return ogrn()
+            if re.search('КПП', target_name, re.IGNORECASE): return kpp()
+            if re.search('СНИЛС', target_name, re.IGNORECASE): return snils()
+
+        if isinstance(xsd_type, XsdAtomicRestriction):
+            if patterns is not None:
+                # Генерация строки по regex
+                random_pattern = random.choice(xsd_type.patterns)
+                xeger = rstr.xeger(random_pattern.attrib['value'])
+                xeger = re.sub(r'\s', ' ', xeger)
+                return xeger
+
+        # Иначе генерируем случайную строку
+        return ascii_string(min_length, max_length)
+
+    if target_type == 'integer':
         # Генерация целого числа
-
         if total_digits:
             min_value = 10 ** (total_digits - 1)
             max_value = (10 ** total_digits) - 1
-        else:
-            min_value = getattr(xsd_type, 'min_inclusive', 0)
-            max_value = getattr(xsd_type, 'max_inclusive', 10000)
+        rnd_int = random.randint(min_value, max_value)
+        return str(rnd_int)
 
-        return str(random.randint(min_value, max_value))
-    elif base_type.local_name == 'decimal':
+    if target_type == 'decimal':
         # Генерация десятичного числа
-
         if total_digits:
             min_value = 10 ** (total_digits - 1 - 1)
             max_value = (10 ** (total_digits - 1)) - 1
-        else:
-            min_value = getattr(xsd_type, 'min_inclusive', 0)
-            max_value = getattr(xsd_type, 'max_inclusive', 10000)
-
-        rnd_int = int(random.uniform(min_value, max_value))
+        rnd_int = random.randint(min_value, max_value)
         return f"{int(rnd_int / 100)}.{rnd_int % 100}"
 
-    elif base_type.local_name == 'boolean':
-        # Генерация булевого значения
-        return random.choice([True, False])
-
-    elif isinstance(base_type, XsdAtomicRestriction):
-        if hasattr(base_type, 'patterns') and base_type.patterns is not None:
+    if isinstance(base_type, XsdAtomicRestriction):
+        patterns = getattr(base_type, 'patterns', None)
+        if patterns is not None:
             # Генерация строки по regex
             random_pattern = random.choice(base_type.patterns)
             return rstr.xeger(random_pattern.attrib['value'])
+
     else:
         raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
 
@@ -115,9 +180,9 @@ def generate_value(xsd_type, target_name):
 # Рекурсивно добавляем элементы и атрибуты в соответствии с XSD-схемой
 def add_elements(xml_element: etree.Element, xsd_element: XsdElement):
     # Добавляем атрибуты, если они есть
-    if hasattr(xsd_element, 'attributes'):
-        for attr_name, attr in xsd_element.attributes.items():
-            # Генерация значения атрибута на основе его типа
+    attributes = getattr(xsd_element, 'attributes', None)
+    if attributes is not None:
+        for attr_name, attr in attributes.items():
             attr_value = generate_value(attr.type, attr_name)
             if attr_value is not None:
                 xml_element.set(attr_name, str(attr_value))
@@ -144,6 +209,7 @@ def add_elements(xml_element: etree.Element, xsd_element: XsdElement):
                 if isinstance(xsd_child, XsdElement):
                     # Если это элемент, создаем его и рекурсивно добавляем дочерние элементы
                     xml_child = etree.SubElement(xml_element, xsd_child.name)
+
                     if hasattr(xsd_child, 'type'):
                         # Генерация значения элемента на основе его типа
                         element_value = generate_value(xsd_child.type, xsd_child.name)
@@ -174,7 +240,7 @@ def add_elements(xml_element: etree.Element, xsd_element: XsdElement):
 
             else: raise RuntimeError(xsd_type_content_child)
 
-        else: raise RuntimeError(xsd_type_content_child)
+        else: raise RuntimeError("error 183")
     else:
         # Генерация значения элемента на основе его типа
         element_value = generate_value(xsd_element.type, xsd_element.name)
@@ -194,6 +260,7 @@ def generate_xml_from_xsd(xsd_schema):
 file = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/ON_AKTREZRABP_1_971_01_01_00_02.xsd'
 
 xsd_directory = '/home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/'
+
 xsd_names = [
     "DP_IAKTPRM_1_987_00_05_01_02.xsd",
     "DP_INFSOOB_1_981_00_05_01_01.xsd",
@@ -318,11 +385,35 @@ xsd_names = [
 ]
 
 xsd_names_debug = [
-    "DP_IAKTPRM_1_987_00_05_01_02.xsd",]
+    "DP_IAKTPRM_1_987_00_05_01_02.xsd",
+]
+
+xsd_names_debug_problems = [
+    "ON_AKTREZRABP_1_971_01_01_00_02.xsd",
+    "ON_AKTREZRABZ_1_971_02_01_00_01.xsd",
+    "ON_DOGFRAKHTEL_1_976_01_05_01_01.xsd",
+    "ON_DOPLKNPOK_1_908_01_05_01_04.xsd",
+    "ON_DOPLKNPOK_1_908_01_05_02_01.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_01_05.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_02_01.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_04_01.xsd",
+    "ON_GARANTLET_1_967_01_05_01_01.xsd",
+    "ON_GUCHSFAKT_1_910_01_05_01_03.xsd",
+    "ON_GUCHSFAKT_1_910_01_05_02_01.xsd",
+    "ON_KNPOK_1_898_01_05_01_04.xsd",
+    "ON_KNPOK_1_898_01_05_02_01.xsd",
+    "ON_KNPROD_1_899_01_05_01_05.xsd",
+    "ON_KNPROD_1_899_01_05_02_01.xsd",
+    "ON_KNPROD_1_899_01_05_04_01.xsd",
+    "ON_REESUSLDMS_1_881_00_05_01_01.xsd",
+    "ON_SPISDMS_1_882_00_05_01_02.xsd",
+    "ON_ZAKZVGO_1_969_01_05_01_01.xsd",
+]
 
 def main():
     for xsd_name in xsd_names:
     # for xsd_name in xsd_names_debug:
+    # for xsd_name in xsd_names_debug_problems:
         xsd_schema_filename = xsd_directory + xsd_name
 
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -345,7 +436,7 @@ def main():
 
         # Вывод
         decoded = xml_str.decode('cp1251')
-        print(decoded)
+        # print(decoded)
 
         # Валидация
         try:
