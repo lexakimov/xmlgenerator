@@ -9,7 +9,7 @@ import rstr
 import xmlschema
 from lxml import etree
 from russian_names import RussianNames
-from xmlschema.validators import XsdComplexType, XsdAtomicRestriction
+from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet
 
 
 def innfl():
@@ -155,6 +155,11 @@ def generate_value(xsd_type, target_name):
     if base_type is None:
         return "default_value"
 
+    total_digits = None
+    for validator in xsd_type.validators:
+        if isinstance(validator, XsdTotalDigitsFacet):
+            total_digits = validator.value
+
     if base_type.local_name == 'string':
         # Генерация строки
         if hasattr(xsd_type, 'enumeration') and xsd_type.enumeration is not None:
@@ -201,14 +206,27 @@ def generate_value(xsd_type, target_name):
             return random_string(min_length, max_length)
     elif base_type.local_name == 'integer':
         # Генерация целого числа
-        min_value = getattr(xsd_type, 'min_inclusive', 0)
-        max_value = getattr(xsd_type, 'max_inclusive', 10000)
+
+        if total_digits:
+            min_value = 10 ** (total_digits - 1)
+            max_value = (10 ** total_digits) - 1
+        else:
+            min_value = getattr(xsd_type, 'min_inclusive', 0)
+            max_value = getattr(xsd_type, 'max_inclusive', 10000)
+
         return str(random.randint(min_value, max_value))
     elif base_type.local_name == 'decimal':
         # Генерация десятичного числа
-        min_value = float(getattr(xsd_type, 'min_inclusive', 0.0))
-        max_value = float(getattr(xsd_type, 'max_inclusive', 10000.0))
-        return str(round(random.uniform(min_value, max_value), 2))
+
+        if total_digits:
+            min_value = 10 ** (total_digits - 1 - 1)
+            max_value = (10 ** (total_digits - 1)) - 1
+        else:
+            min_value = getattr(xsd_type, 'min_inclusive', 0)
+            max_value = getattr(xsd_type, 'max_inclusive', 10000)
+
+        rnd_int = int(random.uniform(min_value, max_value))
+        return f"{int(rnd_int / 100)}.{rnd_int % 100}"
     elif base_type.local_name == 'boolean':
         # Генерация булевого значения
         return random.choice([True, False])
