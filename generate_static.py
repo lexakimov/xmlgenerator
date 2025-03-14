@@ -161,10 +161,17 @@ def generate_value(xsd_type, target_name):
     if target_type == 'decimal':
         # Генерация десятичного числа
         if total_digits:
-            min_value = 10 ** (total_digits - 1 - 1)
-            max_value = (10 ** (total_digits - 1)) - 1
+            if fraction_digits:
+                integer_digits = total_digits - fraction_digits
+                integer_part = random.randint(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
+                fractional_part = random.randint(0, (10 ** fraction_digits) - 1)
+                return f"{integer_part}.{fractional_part:0{fraction_digits}}"
+            else:
+                min_value = 10 ** (total_digits - 1)
+                max_value = (10 ** total_digits) - 1
+
         rnd_int = random.randint(min_value, max_value)
-        return f"{int(rnd_int / 100)}.{rnd_int % 100}"
+        return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
 
     if isinstance(base_type, XsdAtomicRestriction):
         patterns = getattr(base_type, 'patterns', None)
