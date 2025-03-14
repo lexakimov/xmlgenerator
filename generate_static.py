@@ -160,6 +160,7 @@ def counterparty_id():
 
     return f"2BM-{part_1}-{part_2}-{part_3}"
 
+id_file_str = ""
 
 def id_file(prefix):
     # R_Т_A_О_GGGGMMDD_N, где:
@@ -207,7 +208,7 @@ def generate_value(xsd_type, target_name):
         else:
 
             if target_name == 'ИдФайл' or target_name == 'FileID':
-                return id_file(prefix=file_id_prefix)
+                return id_file_str
             if target_name == 'ВерсПрог':
                 return "Python XML generator 1.0"
 
@@ -293,10 +294,14 @@ def add_elements(xml_element, xsd_element):
 
     # Обрабатываем дочерние элементы
     if hasattr(xsd_element, 'type') or (hasattr(xsd_element, 'model') and xsd_element.model == 'choice'):
+
+        if isinstance(xsd_element, XsdAnyElement):
+            return
+
         if hasattr(xsd_element, 'type'):
             if hasattr(xsd_element.type, 'content'):
                 xsd_type_content_child = xsd_element.type.content
-            else:
+            elif hasattr(xsd_element, 'name') and xsd_element.name is not None:
                 # Генерация значения элемента на основе его типа
                 element_value = generate_value(xsd_element.type, xsd_element.name)
                 xml_element.text = element_value
@@ -319,7 +324,8 @@ def add_elements(xml_element, xsd_element):
 
             if xsd_type_content_child.model == 'sequence':
                 for xsd_child_element in xsd_type_content_child:
-                    if not hasattr(xsd_child_element, 'model') or xsd_child_element.model != 'choice':
+                    if (not hasattr(xsd_child_element, 'model') or xsd_child_element.model != 'choice') and (
+                            hasattr(xsd_child_element, 'name') and xsd_child_element.name is not None):
                         group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
                     else:
                         group_child_element = xml_element
@@ -483,8 +489,6 @@ xsd_names = [
     # "ON_ZAKZVPER_1_969_02_05_01_02.xsd",
 ]
 
-file_id_prefix = ""
-
 def main():
     for xsd_name in xsd_names:
         xsd_schema_filename = xsd_directory + xsd_name
@@ -493,8 +497,10 @@ def main():
         print(f"Схема: {xsd_name}\n")
 
         matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
-        global file_id_prefix
+        global id_file_str
         file_id_prefix = matches[0][0]
+
+        id_file_str = id_file(file_id_prefix)
 
         # Загрузка XSD-схемы
         xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
@@ -519,7 +525,7 @@ def main():
             sys.exit(1)
 
         # Сохранение в файл
-        with open('output_xml/output.xml', 'wb', ) as f:
+        with open(f'output_xml/{id_file_str}.xml', 'wb', ) as f:
             f.write(xml_str)
 
 
