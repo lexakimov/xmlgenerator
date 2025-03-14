@@ -1,179 +1,17 @@
 import random
 import re
-import string
 import sys
-import uuid
-from datetime import datetime, timedelta
-from xml.dom import minidom
-from xml.etree import ElementTree
 
 import rstr
 import xmlschema
 from lxml import etree
 from russian_names import RussianNames
-from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdAnyElement
+from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdAnyElement, XsdElement, \
+    XsdGroup
 
-
-def innfl():
-    # Генерация случайных частей ИНН
-    region = f"{random.randint(1, 92):02d}"
-    inspection = f"{random.randint(1, 99):02d}"
-    numba = f"{random.randint(1, 999999):06d}"
-    rezult = region + inspection + numba
-
-    # Функция для вычисления контрольной цифры
-    def calculate_control_digit(s, weights):
-        total = sum(int(s[i]) * weights[i] for i in range(len(weights)))
-        return str((total % 11) % 10)
-
-    # Веса для первой и второй контрольных цифр
-    weights1 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
-    weights2 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
-
-    # Вычисление контрольных цифр
-    kontr1 = calculate_control_digit(rezult, weights1)
-    kontr1 = '0' if kontr1 == '10' else kontr1
-    rezult += kontr1
-
-    kontr2 = calculate_control_digit(rezult, weights2)
-    kontr2 = '0' if kontr2 == '10' else kontr2
-    rezult += kontr2
-
-    return rezult
-
-
-def innul():
-    # Генерация случайных частей ИНН
-    rezult = (
-        f"{random.randint(1, 92):02d}"  # регион
-        f"{random.randint(1, 99):02d}"  # инспекция
-        f"{random.randint(1, 99999):05d}"  # номер
-    )
-
-    # Веса для контрольной цифры
-    weights = [2, 4, 10, 3, 5, 9, 4, 6, 8]
-
-    # Вычисление контрольной цифры
-    kontr = str(sum(int(rezult[i]) * weights[i] for i in range(9)) % 11 % 10)
-    kontr = '0' if kontr == '10' else kontr
-
-    return rezult + kontr
-
-
-def ogrn():
-    # Генерация случайных частей ОГРН
-    rezult = (
-        f"{random.randint(1, 9)}"  # признак
-        f"{random.randint(1, 16):02d}"  # год регистрации
-        f"{random.randint(1, 92):02d}"  # регион
-        f"{random.randint(1, 99):02d}"  # инспекция
-        f"{random.randint(1, 99999):05d}"  # номер записи
-    )
-
-    # Вычисление контрольной цифры
-    kontr = str(int(rezult) % 11 % 10)
-    kontr = '0' if kontr == '10' else kontr
-
-    return rezult + kontr
-
-def ogrnip():
-    # Генерация случайных частей ОГРН
-    rezult = (
-        f"{random.randint(3, 4)}"  # признак
-        f"{random.randint(1, 16):02d}"  # год регистрации
-        f"{random.randint(1, 92):02d}"  # регион
-        f"{random.randint(1, 999999999):09d}"  # номер записи
-    )
-
-    # Вычисление контрольной цифры
-    kontr = str(int(rezult) % 11 % 10)
-    kontr = '0' if kontr == '10' else kontr
-
-    return rezult + kontr
-
-
-def kpp():
-    return (
-        f"{random.randint(1, 92):02d}"  # регион
-        f"{random.randint(1, 99):02d}"  # инспекция
-        f"{random.choice(['01', '43', '44', '45'])}"  # причина
-        f"{random.randint(1, 999):03d}"  # номер
-    )
-
-
-def snils():
-    # Генерация случайных чисел и объединение их в строку
-    rand1 = random.randint(2, 998)
-    rand2 = random.randint(1, 999)
-    rand3 = random.randint(1, 999)
-    snils_base = f"{rand1:03}{rand2:03}{rand3:03}"
-
-    # Вычисление контрольной суммы
-    weights = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-    kontr = sum(int(snils_base[i]) * weights[i] for i in range(9))
-
-    # Определение контрольного числа
-    if kontr < 100:
-        kontr = kontr
-    elif kontr > 101:
-        kontr = kontr % 101
-        if kontr > 99:
-            kontr = 0
-    else:
-        kontr = 0
-
-    # Добавление контрольного числа к базовому номеру
-    snils_full = f"{snils_base}{kontr:02}"
-    return snils_full
-
-
-def random_string(min_length=-1, max_length=-1):
-    min_length = min_length if min_length > -1 else 1
-    max_length = max_length if max_length >= min_length else 20
-    if max_length > 50:
-        max_length = 50
-    length = random.randint(min_length, max_length)
-    # Генерация случайной строки из букв латиницы
-    letters = string.ascii_letters  # Все буквы латиницы (a-z, A-Z)
-    return ''.join(random.choice(letters) for _ in range(length))
-
-
-def generate_random_date(start_date: str, end_date: str) -> datetime:
-    # Преобразуем строки в объекты datetime
-    start = datetime.strptime(start_date, "%Y-%m-%d")
-    end = datetime.strptime(end_date, "%Y-%m-%d")
-
-    # Вычисляем разницу в днях между начальной и конечной датой
-    delta = (end - start).days
-
-    # Генерируем случайное количество дней в пределах delta
-    random_days = random.randint(0, delta)
-
-    # Добавляем случайное количество дней к начальной дате
-    return start + timedelta(days=random_days)
-
-
-def counterparty_id():
-    part_1 = int(random.uniform(1000000000, 9999999999))
-    part_2 = int(random.uniform(100000000, 999999999))
-    part_3 = int(random.uniform(100000000000000000000, 999999999999999999999))
-
-    return f"2BM-{part_1}-{part_2}-{part_3}"
+from util_random import inn_fl, inn_ul, ogrn, ogrn_ip, kpp, snils, ascii_string, id_file
 
 id_file_str = ""
-
-def id_file(prefix):
-    # R_Т_A_О_GGGGMMDD_N, где:
-    # R_Т – префикс;
-    # А – идентификатор получателя;
-    # О – идентификатор отправителя;
-    # GGGG – год формирования передаваемого файла обмена, MM - месяц, DD - день;
-    # N – 36 символьный глобально уникальный идентификатор GUID (Globally Unique IDentifier).
-    receiver_id = counterparty_id()
-    sender_id = counterparty_id()
-    date_str = generate_random_date("2010-01-01", "2025-01-01").strftime("%Y%m%d")
-    n = uuid.uuid4()
-    return f"{prefix}_{receiver_id}_{sender_id}_{date_str}_{n}"
 
 
 # Генерация значений на основе ограничений XSD
@@ -222,11 +60,11 @@ def generate_value(xsd_type, target_name):
 
             if xsd_type.local_name != 'ДатаТип':
                 if re.search('ИННФЛ', target_name, re.IGNORECASE):
-                    return innfl()
+                    return inn_fl()
                 if re.search('ИННЮЛ', target_name, re.IGNORECASE):
-                    return innul()
+                    return inn_ul()
                 if re.search('ОГРНИП', target_name, re.IGNORECASE):
-                    return ogrnip()
+                    return ogrn_ip()
                 if re.search('ОГРН', target_name, re.IGNORECASE):
                     return ogrn()
                 if re.search('КПП', target_name, re.IGNORECASE):
@@ -245,7 +83,7 @@ def generate_value(xsd_type, target_name):
             # Иначе генерируем случайную строку
             min_length = xsd_type.min_length or -1
             max_length = xsd_type.max_length or -1
-            return random_string(min_length, max_length)
+            return ascii_string(min_length, max_length)
     elif base_type.local_name == 'integer':
         # Генерация целого числа
 
@@ -309,9 +147,9 @@ def add_elements(xml_element, xsd_element):
         else:
             xsd_type_content_child = xsd_element
 
-        if isinstance(xsd_type_content_child, xmlschema.validators.elements.XsdElement):
+        if isinstance(xsd_type_content_child, XsdElement):
             for xsd_child in xsd_type_content_child:
-                if isinstance(xsd_child, xmlschema.validators.elements.XsdElement):
+                if isinstance(xsd_child, XsdElement):
                     # Если это элемент, создаем его и рекурсивно добавляем дочерние элементы
                     xml_child = etree.SubElement(xml_element, xsd_child.name)
                     if hasattr(xsd_child, 'type'):
@@ -320,7 +158,7 @@ def add_elements(xml_element, xsd_element):
                         xml_child.text = element_value
                     add_elements(xml_child, xsd_child)
 
-        elif isinstance(xsd_type_content_child, xmlschema.validators.groups.XsdGroup):
+        elif isinstance(xsd_type_content_child, XsdGroup):
 
             if xsd_type_content_child.model == 'sequence':
                 for xsd_child_element in xsd_type_content_child:
@@ -334,7 +172,7 @@ def add_elements(xml_element, xsd_element):
 
             elif xsd_type_content_child.model == 'choice':
                 xsd_child_element = random.choice(xsd_type_content_child)
-                if isinstance(xsd_child_element, xmlschema.validators.elements.XsdElement):
+                if isinstance(xsd_child_element, XsdElement):
                     group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
                     if hasattr(xsd_child_element, 'type'):
                         # Генерация значения элемента на основе его типа
@@ -438,12 +276,12 @@ xsd_names = [
     # "ON_KVPRIMGR_1_962_01_05_01_01.xsd",
     # "ON_NKORSCHFDOPPOK_1_996_04_05_01_03.xsd",
     # "ON_NKORSCHFDOPPR_1_996_03_05_01_04.xsd",
-    "ON_NSCHFDOPPOK_1_997_02_05_01_02.xsd",
-    "ON_NSCHFDOPPOK_1_997_02_05_02_01.xsd",
-    "ON_NSCHFDOPPOK_1_997_02_05_03_01.xsd",
-    "ON_NSCHFDOPPR_1_997_01_05_01_03.xsd",
-    "ON_NSCHFDOPPR_1_997_01_05_02_01.xsd",
-    "ON_NSCHFDOPPR_1_997_01_05_03_01.xsd",
+    # "ON_NSCHFDOPPOK_1_997_02_05_01_02.xsd",
+    # "ON_NSCHFDOPPOK_1_997_02_05_02_01.xsd",
+    # "ON_NSCHFDOPPOK_1_997_02_05_03_01.xsd",
+    # "ON_NSCHFDOPPR_1_997_01_05_01_03.xsd",
+    # "ON_NSCHFDOPPR_1_997_01_05_02_01.xsd",
+    # "ON_NSCHFDOPPR_1_997_01_05_03_01.xsd",
     # "ON_OTZGARANT_1_967_02_05_01_01.xsd",
     # "ON_PRICELISTISP_1_883_01_05_01_01.xsd",
     # "ON_PRICELISTZAK_1_883_02_05_01_01.xsd",
@@ -496,10 +334,10 @@ def main():
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print(f"Схема: {xsd_name}\n")
 
+        # извлекаем префикс
         matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
-        global id_file_str
         file_id_prefix = matches[0][0]
-
+        global id_file_str
         id_file_str = id_file(file_id_prefix)
 
         # Загрузка XSD-схемы
@@ -509,12 +347,10 @@ def main():
         xml_root = generate_xml_from_xsd(xsd_schema)
 
         # Преобразование в строку
-        rough_string = ElementTree.tostring(xml_root, encoding='utf-8')
-        reparsed = minidom.parseString(rough_string)
-        xml_str = reparsed.toprettyxml(indent="    ", encoding='windows-1251')
-        decoded = xml_str.decode('cp1251')
+        xml_str = etree.tostring(xml_root, encoding='windows-1251', pretty_print=True)
 
         # Вывод
+        decoded = xml_str.decode('cp1251')
         print(decoded)
 
         # Валидация
