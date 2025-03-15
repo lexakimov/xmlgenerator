@@ -4,16 +4,17 @@ import sys
 
 import rstr
 import xmlschema
+from faker import Faker
 from lxml import etree
-from russian_names import RussianNames
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdAnyElement, XsdElement, \
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
     XsdMinLengthFacet
 
-from util_random import inn_fl, inn_ul, ogrn, ogrn_ip, kpp, snils, ascii_string, id_file
+from util_random import ascii_string, id_file
 
 id_file_str = ""
 
+fake = Faker('ru_RU')
 
 # Генерация значений на основе ограничений XSD
 def generate_value(xsd_type, target_name):
@@ -78,7 +79,7 @@ def generate_value(xsd_type, target_name):
     # -----------------------------------------------------------------------------------------------------------------
     # Выясняем ограничения
 
-    allow_empty = getattr(xsd_type, 'allow_empty', None) # True | False
+    allow_empty = getattr(xsd_type, 'allow_empty', None) # True | False TODO
 
     min_length = getattr(xsd_type, 'min_length', None) # None | int
     max_length = getattr(xsd_type, 'max_length', None) # None | int
@@ -86,12 +87,12 @@ def generate_value(xsd_type, target_name):
     min_value = getattr(xsd_type, 'min_value', None) # None | int
     max_value = getattr(xsd_type, 'max_value', None) # None
 
+    total_digits = None
+    fraction_digits = None
+
     patterns = getattr(xsd_type, 'patterns', None) # None | XsdPatternFacets
 
     validators = getattr(xsd_type, 'validators', None) # () | [XsdEnumerationFacets(...)]
-
-    total_digits = None
-    fraction_digits = None
     for validator in validators:
         if isinstance(validator, XsdMinExclusiveFacet):
             min_value = validator.value
@@ -125,19 +126,19 @@ def generate_value(xsd_type, target_name):
             return "Xsd2Xml 0.1.0"
 
         if re.search('Фамилия', target_name, re.IGNORECASE):
-            return RussianNames(name=False, surname=True, patronymic=False, gender=1).get_person()
+            return fake.last_name_male()
         if re.search('Имя', target_name, re.IGNORECASE) and not re.search('ИмяДопПакета', target_name, re.IGNORECASE):
-            return RussianNames(name=True, surname=False, patronymic=False, gender=1).get_person()
+            return fake.first_name_male()
         if re.search('Отчество', target_name, re.IGNORECASE):
-            return RussianNames(name=False, surname=False, patronymic=True, gender=1).get_person()
+            return fake.middle_name_male()
 
         if xsd_type.local_name != 'ДатаТип':
-            if re.search('ИННФЛ', target_name, re.IGNORECASE): return inn_fl()
-            if re.search('ИННЮЛ', target_name, re.IGNORECASE): return inn_ul()
-            if re.search('ОГРНИП', target_name, re.IGNORECASE): return ogrn_ip()
-            if re.search('ОГРН', target_name, re.IGNORECASE): return ogrn()
-            if re.search('КПП', target_name, re.IGNORECASE): return kpp()
-            if re.search('СНИЛС', target_name, re.IGNORECASE): return snils()
+            if re.search('ИННФЛ', target_name, re.IGNORECASE): return fake.individuals_inn()
+            if re.search('ИННЮЛ', target_name, re.IGNORECASE): return fake.businesses_inn()
+            if re.search('ОГРНИП', target_name, re.IGNORECASE): return fake.individuals_ogrn()
+            if re.search('ОГРН', target_name, re.IGNORECASE): return fake.businesses_ogrn()
+            if re.search('КПП', target_name, re.IGNORECASE): return fake.kpp()
+            if re.search('СНИЛС', target_name, re.IGNORECASE): return fake.snils()
 
         if isinstance(xsd_type, XsdAtomicRestriction):
             if patterns is not None:
@@ -145,6 +146,14 @@ def generate_value(xsd_type, target_name):
                 random_pattern = random.choice(xsd_type.patterns)
                 xeger = rstr.xeger(random_pattern.attrib['value'])
                 xeger = re.sub(r'\s', ' ', xeger)
+                if max_length is not None and len(xeger) > max_length:
+                    print(
+                        f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be longer than {max_length}",
+                        file=sys.stderr)
+                if min_length is not None and len(xeger) < min_length:
+                    print(
+                        f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be shorter than {min_length}",
+                        file=sys.stderr)
                 return xeger
 
         # Иначе генерируем случайную строку
