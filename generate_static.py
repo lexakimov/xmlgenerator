@@ -6,7 +6,7 @@ import rstr
 import xmlschema
 from faker import Faker
 from lxml import etree
-from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdAnyElement, XsdElement, \
+from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdElement, \
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
     XsdMinLengthFacet
 
@@ -204,63 +204,45 @@ def add_elements(xml_element: etree.Element, xsd_element: XsdElement):
                 xml_element.set(attr_name, str(attr_value))
 
     # Обрабатываем дочерние элементы
-    if hasattr(xsd_element, 'type') or (hasattr(xsd_element, 'model') and xsd_element.model == 'choice'):
-
-        if isinstance(xsd_element, XsdAnyElement):
+    xsd_element_type = getattr(xsd_element, 'type', None)
+    if xsd_element_type is not None:
+        if hasattr(xsd_element_type, 'content'):
+            xsd_type_content_child = xsd_element_type.content
+        elif hasattr(xsd_element, 'name') and xsd_element.name is not None:
+            # Генерация значения элемента на основе его типа
+            element_value = generate_value(xsd_element_type, xsd_element.name)
+            xml_element.text = element_value
             return
-
-        if hasattr(xsd_element, 'type'):
-            if hasattr(xsd_element.type, 'content'):
-                xsd_type_content_child = xsd_element.type.content
-            elif hasattr(xsd_element, 'name') and xsd_element.name is not None:
-                # Генерация значения элемента на основе его типа
-                element_value = generate_value(xsd_element.type, xsd_element.name)
-                xml_element.text = element_value
-                return
-        else:
-            xsd_type_content_child = xsd_element
-
-        if isinstance(xsd_type_content_child, XsdElement):
-            for xsd_child in xsd_type_content_child:
-                if isinstance(xsd_child, XsdElement):
-                    # Если это элемент, создаем его и рекурсивно добавляем дочерние элементы
-                    xml_child = etree.SubElement(xml_element, xsd_child.name)
-
-                    if hasattr(xsd_child, 'type'):
-                        # Генерация значения элемента на основе его типа
-                        element_value = generate_value(xsd_child.type, xsd_child.name)
-                        xml_child.text = element_value
-                    add_elements(xml_child, xsd_child)
-
-        elif isinstance(xsd_type_content_child, XsdGroup):
-
-            if xsd_type_content_child.model == 'sequence':
-                for xsd_child_element in xsd_type_content_child:
-                    if (not hasattr(xsd_child_element, 'model') or xsd_child_element.model != 'choice') and (
-                            hasattr(xsd_child_element, 'name') and xsd_child_element.name is not None):
-                        group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
-                    else:
-                        group_child_element = xml_element
-
-                    add_elements(group_child_element, xsd_child_element)
-
-            elif xsd_type_content_child.model == 'choice':
-                xsd_child_element = random.choice(xsd_type_content_child)
-                if isinstance(xsd_child_element, XsdElement):
-                    group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
-                    if hasattr(xsd_child_element, 'type'):
-                        # Генерация значения элемента на основе его типа
-                        element_value = generate_value(xsd_child_element.type, xsd_child_element.name)
-                        group_child_element.text = element_value
-                    add_elements(group_child_element, xsd_child_element)
-
-            else: raise RuntimeError(xsd_type_content_child)
-
-        else: raise RuntimeError("error 183")
     else:
-        # Генерация значения элемента на основе его типа
-        element_value = generate_value(xsd_element.type, xsd_element.name)
-        xml_element.text = element_value
+        xsd_type_content_child = xsd_element
+
+    if isinstance(xsd_type_content_child, XsdGroup):
+
+        if xsd_type_content_child.model == 'sequence':
+            for xsd_child_element in xsd_type_content_child:
+                if (not hasattr(xsd_child_element, 'model') or xsd_child_element.model != 'choice') and (
+                        hasattr(xsd_child_element, 'name') and xsd_child_element.name is not None):
+                    group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
+                else:
+                    group_child_element = xml_element
+
+                add_elements(group_child_element, xsd_child_element)
+
+        elif xsd_type_content_child.model == 'choice':
+            xsd_child_element = random.choice(xsd_type_content_child)
+            if isinstance(xsd_child_element, XsdElement):
+                group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
+                if hasattr(xsd_child_element, 'type'):
+                    # Генерация значения элемента на основе его типа
+                    element_value = generate_value(xsd_child_element.type, xsd_child_element.name)
+                    group_child_element.text = element_value
+                add_elements(group_child_element, xsd_child_element)
+
+        else:
+            raise RuntimeError(xsd_type_content_child)
+
+    else:
+        raise RuntimeError("error 183")
 
 # Создание XML-документа на основе XSD-схемы
 def generate_xml_from_xsd(xsd_schema):
@@ -401,7 +383,7 @@ xsd_names = [
 ]
 
 xsd_names_debug = [
-    "DP_IAKTPRM_1_987_00_05_01_02.xsd",
+    "ON_AKTREZRABP_1_971_01_01_00_02.xsd",
 ]
 
 xsd_names_debug_problems = [
@@ -468,3 +450,28 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# TODO
+# def validate_xml_with_schematron(xml_file, schematron_file):
+#     # Загрузка Schematron-схемы
+#     with open(schematron_file, 'rb') as f:
+#         schematron_doc = etree.parse(f)
+#
+#     # Преобразование Schematron в XSLT
+#     schematron = etree.Schematron(schematron_doc)
+#
+#     # Загрузка XML-документа
+#     with open(xml_file, 'rb') as f:
+#         xml_doc = etree.parse(f)
+#
+#     # Валидация XML-документа
+#     is_valid = schematron.validate(xml_doc)
+#
+#     if is_valid:
+#         print("XML документ валиден по Schematron-схеме.")
+#     else:
+#         print("XML документ не валиден по Schematron-схеме.")
+#         print(schematron.error_log)
+
+# Пример использования
+# validate_xml_with_schematron('example.xml', 'schema.sch')
