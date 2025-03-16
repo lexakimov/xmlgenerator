@@ -21,50 +21,10 @@ def generate_value(xsd_type, target_name):
     # Тип не определен
     if xsd_type is None: raise RuntimeError(f"xsd_type is None. Target name: {target_name}")
 
-    log = f"""
-    target_name: {target_name}
-    name: {xsd_type.name}
-    local_name: {xsd_type.local_name}
-    derivation: {xsd_type.derivation}
-    allow_empty: {xsd_type.allow_empty if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
-    enumeration: {xsd_type.enumeration if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
-    min_length: {xsd_type.min_length if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
-    max_length: {xsd_type.max_length if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
-    min_value: {xsd_type.min_value if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
-    max_value: {xsd_type.max_value if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
-    patterns: {xsd_type.patterns if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
-    validators: {xsd_type.validators if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}"""
-    # print(log)
-
-    log = f"""
-    primitive_type: {xsd_type.primitive_type if not isinstance(xsd_type, XsdComplexType) else "(!!COMPLEX!!)"}
-    base_type: {xsd_type.base_type}"""
-    # print(log)
-
-    # xsd_type.primitive_type   # XsdAtomicBuiltin(name='xs:decimal xs:string')     'XsdComplexType' object has no attribute 'primitive_type'
-    # xsd_type.base_type        # XsdAtomicBuiltin(name='xs:decimal xs:integer xs:string CCРФТип СПДУЛТип') | None (complex)
-
-    # xsd_type                  # XsdAtomicRestriction(primitive_type='string')
-    # xsd_type.name             # None | str
-    # xsd_type.local_name       # None | str (ИННФЛТип, ДатаТип)
-
-    # xsd_type.derivation       # None | 'restriction' | None (complex)
-
-    # xsd_type.enumeration      # None | array | 'XsdComplexType' object has no attribute 'enumeration'
-    # xsd_type.patterns         # None | XsdPatternFacets | 'XsdComplexType' object has no attribute 'patterns'
-    # xsd_type.allow_empty      # True | False | 'XsdComplexType' object has no attribute 'allow_empty'
-    # xsd_type.min_length       # None | int | 'XsdComplexType' object has no attribute 'min_length'
-    # xsd_type.max_length       # None | int | 'XsdComplexType' object has no attribute 'max_length'
-    # xsd_type.min_value        # None | int | 'XsdComplexType' object has no attribute 'min_value'
-    # xsd_type.max_value        # None | 'XsdComplexType' object has no attribute 'max_value'
-    # xsd_type.validators       # () | [XsdEnumerationFacets(...)] | 'XsdComplexType' object has no attribute 'validators'
-
-
     # Если есть перечисление, выбираем случайное значение из него
     enumeration = getattr(xsd_type, 'enumeration', None)
     if enumeration is not None:
         return random.choice(enumeration)
-
 
     if isinstance(xsd_type, XsdComplexType):
         return None
@@ -194,7 +154,7 @@ def generate_value(xsd_type, target_name):
 
 
 # Рекурсивно добавляем элементы и атрибуты в соответствии с XSD-схемой
-def add_elements(xml_element: etree.Element, xsd_element: XsdElement):
+def add_elements(xml_element: etree.Element, xsd_element):
     # Добавляем атрибуты, если они есть
     attributes = getattr(xsd_element, 'attributes', None)
     if attributes is not None:
@@ -205,44 +165,91 @@ def add_elements(xml_element: etree.Element, xsd_element: XsdElement):
 
     # Обрабатываем дочерние элементы
     xsd_element_type = getattr(xsd_element, 'type', None)
-    if xsd_element_type is not None:
-        if hasattr(xsd_element_type, 'content'):
-            xsd_type_content_child = xsd_element_type.content
-        elif hasattr(xsd_element, 'name') and xsd_element.name is not None:
-            # Генерация значения элемента на основе его типа
-            element_value = generate_value(xsd_element_type, xsd_element.name)
-            xml_element.text = element_value
+
+    # xsd_element                       XsdElement | XsdGroup
+    # xsd_element.type:                 XsdComplexType | XsdAtomicRestriction (если XsdElement) ; NoneType (если XsdGroup)
+    # xsd_element.type.name             None
+    # xsd_element.type.base_type        XsdAtomicBuiltin(name='xs:string')
+    # xsd_element.type.content          (!!NO ATTR!!)
+    # xsd_element.type.content.occurs   (!!NO ATTR!!)
+    # xsd_element.type.content_type_label simple
+    # xsd_element.type.derivation       None | restriction
+    # xsd_element.type.allow_empty      True | False
+    # xsd_element.type.enumeration      None | arr (при XsdAtomicRestriction)
+    # xsd_element.type.patterns         None
+    # xsd_element.type.validators       [XsdMinLengthFacet(value=1, fixed=False), XsdMaxLengthFacet(value=2000, fixed=False)]
+    # xsd_element.type.min_length       1
+    # xsd_element.type.max_length       2000
+    # xsd_element.type.min_value        None
+    # xsd_element.type.max_value        None
+
+    #     log = f"""    {xml_element.tag}
+    # xsd_element:                    {type(xsd_element).__name__}
+    # xsd_element.type:               {type(xsd_element_type).__name__}
+    # xsd_element.type.name:          {xsd_element_type.name if hasattr(xsd_element_type, 'name') else "(!!NO ATTR!!)"}
+    # xsd_element.type.base_type:     {xsd_element_type.base_type if hasattr(xsd_element_type, 'base_type') else "(!!NO ATTR!!)"}
+    # xsd_element.type.derivation:    {xsd_element_type.derivation if hasattr(xsd_element_type, 'derivation') else "(!!NO ATTR!!)"}
+    # xsd_element.type.content:       {xsd_element_type.content if hasattr(xsd_element_type, 'content') else "(!!NO ATTR!!)"}
+    # xsd_element.type.content.occurs:{xsd_element_type.content.occurs if hasattr(xsd_element_type, 'content') else "(!!NO ATTR!!)"}
+    # xsd_element.type.content_type_label: {xsd_element_type.content_type_label if hasattr(xsd_element_type, 'content_type_label') else "(!!NO ATTR!!)"}
+    # xsd_element.type.allow_empty:   {xsd_element_type.allow_empty if hasattr(xsd_element_type, 'allow_empty') else "(!!NO ATTR!!)"}
+    # xsd_element.type.enumeration:   {xsd_element_type.enumeration if hasattr(xsd_element_type, 'enumeration') else "(!!NO ATTR!!)"}
+    # xsd_element.type.patterns:      {xsd_element_type.patterns if hasattr(xsd_element_type, 'patterns') else "(!!NO ATTR!!)"}
+    # xsd_element.type.validators:    {xsd_element_type.validators if hasattr(xsd_element_type, 'validators') else "(!!NO ATTR!!)"}
+    # xsd_element.type.min_length:    {xsd_element_type.min_length if hasattr(xsd_element_type, 'min_length') else "(!!NO ATTR!!)"}
+    # xsd_element.type.max_length:    {xsd_element_type.max_length if hasattr(xsd_element_type, 'max_length') else "(!!NO ATTR!!)"}
+    # xsd_element.type.min_value:     {xsd_element_type.min_value if hasattr(xsd_element_type, 'min_value') else "(!!NO ATTR!!)"}
+    # xsd_element.type.max_value:     {xsd_element_type.max_value if hasattr(xsd_element_type, 'max_value') else "(!!NO ATTR!!)"}
+    # """
+    #     print(log)
+
+    if isinstance(xsd_element, XsdElement):
+
+        # xsd_element.type:               XsdComplexType | XsdAtomicRestriction
+        # xsd_element.type.base_type:     None | XsdAtomicBuiltin(name='xs:string') - при XsdAtomicRestriction
+        # xsd_element.type.derivation:    None | restriction
+
+        # log = f"""    {xml_element.tag}
+        # element: {type(xsd_element).__name__} type: {type(xsd_element_type).__name__}
+        # type.base_type:     {xsd_element_type.base_type if hasattr(xsd_element_type, 'base_type') else "(!!NO ATTR!!)"}
+        # type.content:       {xsd_element_type.content if hasattr(xsd_element_type, 'content') else "(!!NO ATTR!!)"}
+        # """
+        # print(log)
+
+        if isinstance(xsd_element_type, XsdAtomicRestriction):
+            text = generate_value(xsd_element_type, xsd_element.name)
+            xml_element.text = text
             return
-    else:
-        xsd_type_content_child = xsd_element
-
-    if isinstance(xsd_type_content_child, XsdGroup):
-
-        if xsd_type_content_child.model == 'sequence':
-            for xsd_child_element in xsd_type_content_child:
-                if (not hasattr(xsd_child_element, 'model') or xsd_child_element.model != 'choice') and (
-                        hasattr(xsd_child_element, 'name') and xsd_child_element.name is not None):
-                    group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
-                else:
-                    group_child_element = xml_element
-
-                add_elements(group_child_element, xsd_child_element)
-
-        elif xsd_type_content_child.model == 'choice':
-            xsd_child_element = random.choice(xsd_type_content_child)
-            if isinstance(xsd_child_element, XsdElement):
-                group_child_element = etree.SubElement(xml_element, xsd_child_element.name)
-                if hasattr(xsd_child_element, 'type'):
-                    # Генерация значения элемента на основе его типа
-                    element_value = generate_value(xsd_child_element.type, xsd_child_element.name)
-                    group_child_element.text = element_value
-                add_elements(group_child_element, xsd_child_element)
-
+        elif isinstance(xsd_element_type, XsdComplexType):
+            xsd_element_type_content = xsd_element_type.content
+            if isinstance(xsd_element_type_content, XsdGroup):
+                add_elements(xml_element, xsd_element_type_content)
+            else:
+                raise RuntimeError()
         else:
-            raise RuntimeError(xsd_type_content_child)
+            raise RuntimeError()
 
+    elif isinstance(xsd_element, XsdGroup):
+        model = xsd_element.model
+        if model == 'sequence':
+            for xsd_child_element_type in xsd_element:
+                if isinstance(xsd_child_element_type, XsdElement):
+                    xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
+                elif isinstance(xsd_child_element_type, XsdGroup):
+                    xml_child_element = xml_element
+                else:
+                    raise RuntimeError(xsd_child_element_type)
+                add_elements(xml_child_element, xsd_child_element_type)
+            return
+        elif model == 'choice':
+            xsd_child_element_type = random.choice(xsd_element)
+            xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
+            add_elements(xml_child_element, xsd_child_element_type)
+            return
+        else:
+            raise RuntimeError()
     else:
-        raise RuntimeError("error 183")
+        raise RuntimeError()
 
 # Создание XML-документа на основе XSD-схемы
 def generate_xml_from_xsd(xsd_schema):
