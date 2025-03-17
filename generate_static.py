@@ -105,6 +105,14 @@ def generate_value(xsd_type, target_name):
             return fake.middle_name_male()
 
         if xsd_type.local_name != 'ДатаТип':
+            if re.search('АдрТекст', target_name, re.IGNORECASE): return fake.address()
+            if re.search('Район', target_name, re.IGNORECASE): return fake.administrative_unit()
+            if re.search('Дом', target_name, re.IGNORECASE): return fake.building_number()
+            if re.search('Город', target_name, re.IGNORECASE): return fake.city_name()
+            if re.search('Индекс', target_name, re.IGNORECASE): return fake.postcode()
+            if re.search('НаимОрг', target_name, re.IGNORECASE): return fake.company()
+            if re.search('НаимБанк', target_name, re.IGNORECASE): return fake.bank()
+            if re.search('Тлф', target_name, re.IGNORECASE): return fake.phone_number()
             if re.search('ИННФЛ', target_name, re.IGNORECASE): return fake.individuals_inn()
             if re.search('ИННЮЛ', target_name, re.IGNORECASE): return fake.businesses_inn()
             if re.search('ОГРНИП', target_name, re.IGNORECASE): return fake.individuals_ogrn()
@@ -386,7 +394,7 @@ def main():
 
         # Вывод
         decoded = xml_str.decode('cp1251')
-        # print(decoded)
+        print(decoded)
 
         # Валидация
         try:
