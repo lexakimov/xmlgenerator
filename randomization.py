@@ -3,6 +3,8 @@ import string
 import uuid
 from datetime import datetime, timedelta
 
+from faker import Faker
+
 
 def ascii_string(min_length=-1, max_length=-1):
     min_length = min_length if min_length > -1 else 1
@@ -50,3 +52,11 @@ def id_file(prefix):
     # N – 36 символьный глобально уникальный идентификатор GUID
     n = uuid.uuid4()
     return f"{prefix}_{receiver_id}_{sender_id}_{date_str}_{n}"
+
+
+fake = Faker('ru_RU')
+
+
+def snils_formatted():
+    snils = fake.snils()
+    return f"{snils[:3]}-{snils[3:6]}-{snils[6:9]} {snils[9:]}"
