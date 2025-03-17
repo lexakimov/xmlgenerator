@@ -8,7 +8,7 @@ from faker import Faker
 from lxml import etree
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdElement, \
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
-    XsdMinLengthFacet
+    XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin
 
 from util_random import ascii_string, id_file
 
@@ -19,7 +19,8 @@ fake = Faker('ru_RU')
 # Генерация значений на основе ограничений XSD
 def generate_value(xsd_type, target_name):
     # Тип не определен
-    if xsd_type is None: raise RuntimeError(f"xsd_type is None. Target name: {target_name}")
+    if xsd_type is None:
+        raise RuntimeError(f"xsd_type is None. Target name: {target_name}")
 
     # Если есть перечисление, выбираем случайное значение из него
     enumeration = getattr(xsd_type, 'enumeration', None)
@@ -29,12 +30,23 @@ def generate_value(xsd_type, target_name):
     if isinstance(xsd_type, XsdComplexType):
         return None
 
+    if isinstance(xsd_type, XsdAtomicBuiltin):
+        local_name = xsd_type.local_name
+        if local_name == 'gYear':
+            return random.randint(2000, 2050)
+        else:
+            # python_type = xsd_type.python_type
+            # pattern = python_type.pattern
+            # return rstr.xeger(pattern)
+            raise RuntimeError(local_name)
+
     # -----------------------------------------------------------------------------------------------------------------
     # Проверяем базовый тип
     base_type = getattr(xsd_type, 'base_type', None)
 
     # невозможный кейс (только если попался комплексный тип)
-    if base_type is None: raise RuntimeError(f"base_type is None. Target name: {target_name}")
+    if base_type is None:
+        raise RuntimeError(f"base_type is None. Target name: {target_name}")
 
     # -----------------------------------------------------------------------------------------------------------------
     # Выясняем ограничения
@@ -98,7 +110,9 @@ def generate_value(xsd_type, target_name):
             if re.search('ОГРНИП', target_name, re.IGNORECASE): return fake.individuals_ogrn()
             if re.search('ОГРН', target_name, re.IGNORECASE): return fake.businesses_ogrn()
             if re.search('КПП', target_name, re.IGNORECASE): return fake.kpp()
-            if re.search('СНИЛС', target_name, re.IGNORECASE): return fake.snils()
+            if re.search('СНИЛС', target_name, re.IGNORECASE):
+                snils = fake.snils()
+                return f"{snils[:3]}-{snils[3:6]}-{snils[6:9]} {snils[9:]}"
 
         if isinstance(xsd_type, XsdAtomicRestriction):
             if patterns is not None:
@@ -155,67 +169,18 @@ def generate_value(xsd_type, target_name):
 
 # Рекурсивно добавляем элементы и атрибуты в соответствии с XSD-схемой
 def add_elements(xml_element: etree.Element, xsd_element):
+    xsd_element_type = getattr(xsd_element, 'type', None)
+
     # Добавляем атрибуты, если они есть
-    attributes = getattr(xsd_element, 'attributes', None)
-    if attributes is not None:
+    attributes = getattr(xsd_element, 'attributes', dict())
+    if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
         for attr_name, attr in attributes.items():
             attr_value = generate_value(attr.type, attr_name)
             if attr_value is not None:
                 xml_element.set(attr_name, str(attr_value))
 
     # Обрабатываем дочерние элементы
-    xsd_element_type = getattr(xsd_element, 'type', None)
-
-    # xsd_element                       XsdElement | XsdGroup
-    # xsd_element.type:                 XsdComplexType | XsdAtomicRestriction (если XsdElement) ; NoneType (если XsdGroup)
-    # xsd_element.type.name             None
-    # xsd_element.type.base_type        XsdAtomicBuiltin(name='xs:string')
-    # xsd_element.type.content          (!!NO ATTR!!)
-    # xsd_element.type.content.occurs   (!!NO ATTR!!)
-    # xsd_element.type.content_type_label simple
-    # xsd_element.type.derivation       None | restriction
-    # xsd_element.type.allow_empty      True | False
-    # xsd_element.type.enumeration      None | arr (при XsdAtomicRestriction)
-    # xsd_element.type.patterns         None
-    # xsd_element.type.validators       [XsdMinLengthFacet(value=1, fixed=False), XsdMaxLengthFacet(value=2000, fixed=False)]
-    # xsd_element.type.min_length       1
-    # xsd_element.type.max_length       2000
-    # xsd_element.type.min_value        None
-    # xsd_element.type.max_value        None
-
-    #     log = f"""    {xml_element.tag}
-    # xsd_element:                    {type(xsd_element).__name__}
-    # xsd_element.type:               {type(xsd_element_type).__name__}
-    # xsd_element.type.name:          {xsd_element_type.name if hasattr(xsd_element_type, 'name') else "(!!NO ATTR!!)"}
-    # xsd_element.type.base_type:     {xsd_element_type.base_type if hasattr(xsd_element_type, 'base_type') else "(!!NO ATTR!!)"}
-    # xsd_element.type.derivation:    {xsd_element_type.derivation if hasattr(xsd_element_type, 'derivation') else "(!!NO ATTR!!)"}
-    # xsd_element.type.content:       {xsd_element_type.content if hasattr(xsd_element_type, 'content') else "(!!NO ATTR!!)"}
-    # xsd_element.type.content.occurs:{xsd_element_type.content.occurs if hasattr(xsd_element_type, 'content') else "(!!NO ATTR!!)"}
-    # xsd_element.type.content_type_label: {xsd_element_type.content_type_label if hasattr(xsd_element_type, 'content_type_label') else "(!!NO ATTR!!)"}
-    # xsd_element.type.allow_empty:   {xsd_element_type.allow_empty if hasattr(xsd_element_type, 'allow_empty') else "(!!NO ATTR!!)"}
-    # xsd_element.type.enumeration:   {xsd_element_type.enumeration if hasattr(xsd_element_type, 'enumeration') else "(!!NO ATTR!!)"}
-    # xsd_element.type.patterns:      {xsd_element_type.patterns if hasattr(xsd_element_type, 'patterns') else "(!!NO ATTR!!)"}
-    # xsd_element.type.validators:    {xsd_element_type.validators if hasattr(xsd_element_type, 'validators') else "(!!NO ATTR!!)"}
-    # xsd_element.type.min_length:    {xsd_element_type.min_length if hasattr(xsd_element_type, 'min_length') else "(!!NO ATTR!!)"}
-    # xsd_element.type.max_length:    {xsd_element_type.max_length if hasattr(xsd_element_type, 'max_length') else "(!!NO ATTR!!)"}
-    # xsd_element.type.min_value:     {xsd_element_type.min_value if hasattr(xsd_element_type, 'min_value') else "(!!NO ATTR!!)"}
-    # xsd_element.type.max_value:     {xsd_element_type.max_value if hasattr(xsd_element_type, 'max_value') else "(!!NO ATTR!!)"}
-    # """
-    #     print(log)
-
     if isinstance(xsd_element, XsdElement):
-
-        # xsd_element.type:               XsdComplexType | XsdAtomicRestriction
-        # xsd_element.type.base_type:     None | XsdAtomicBuiltin(name='xs:string') - при XsdAtomicRestriction
-        # xsd_element.type.derivation:    None | restriction
-
-        # log = f"""    {xml_element.tag}
-        # element: {type(xsd_element).__name__} type: {type(xsd_element_type).__name__}
-        # type.base_type:     {xsd_element_type.base_type if hasattr(xsd_element_type, 'base_type') else "(!!NO ATTR!!)"}
-        # type.content:       {xsd_element_type.content if hasattr(xsd_element_type, 'content') else "(!!NO ATTR!!)"}
-        # """
-        # print(log)
-
         if isinstance(xsd_element_type, XsdAtomicRestriction):
             text = generate_value(xsd_element_type, xsd_element.name)
             xml_element.text = text
@@ -237,6 +202,10 @@ def add_elements(xml_element: etree.Element, xsd_element):
                     xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                 elif isinstance(xsd_child_element_type, XsdGroup):
                     xml_child_element = xml_element
+                elif isinstance(xsd_child_element_type, XsdAnyElement):
+                    xml_child_element = etree.SubElement(xml_element, "Any")
+                    # return
+                    # pass
                 else:
                     raise RuntimeError(xsd_child_element_type)
                 add_elements(xml_child_element, xsd_child_element_type)
@@ -248,6 +217,10 @@ def add_elements(xml_element: etree.Element, xsd_element):
             return
         else:
             raise RuntimeError()
+
+    elif isinstance(xsd_element, XsdAnyElement):
+        pass
+
     else:
         raise RuntimeError()
 
@@ -294,8 +267,8 @@ xsd_names = [
     "DP_ZAKTPRM_1_990_00_05_01_02.xsd",
     "ON_AKTREKLOTP_1_961_01_05_01_01.xsd",
     "ON_AKTREKLPOL_1_961_02_05_01_01.xsd",
-    # "ON_AKTREZRABP_1_971_01_01_00_02.xsd", ----
-    # "ON_AKTREZRABZ_1_971_02_01_00_01.xsd", ----
+    "ON_AKTREZRABP_1_971_01_01_00_02.xsd",
+    "ON_AKTREZRABZ_1_971_02_01_00_01.xsd",
     "ON_AKTSVEROTP_1_972_01_05_01_01.xsd",
     "ON_AKTSVERPOL_1_972_02_05_01_01.xsd",
     "ON_CONSGRPO_1_965_05_05_01_01.xsd",
@@ -305,7 +278,7 @@ xsd_names = [
     "ON_CONSPRV_1_965_02_05_01_01.xsd",
     "ON_CONSPRVYD_1_965_06_05_01_01.xsd",
     "ON_DOGDOC_1_999_01_01_01_02.xsd",
-    # "ON_DOGFRAKHTEL_1_976_01_05_01_01.xsd", ----
+    "ON_DOGFRAKHTEL_1_976_01_05_01_01.xsd",
     "ON_DOGFRASHCH_1_976_02_05_01_01.xsd",
     "ON_DOGMPOTPR_1_966_01_05_01_01.xsd",
     "ON_DOGMPPRV_1_966_02_05_01_01.xsd",
@@ -315,22 +288,22 @@ xsd_names = [
     "ON_DOGVTRGO_1_964_01_05_01_01.xsd",
     "ON_DOGVTRPRV_1_964_02_05_01_02.xsd",
     "ON_DOGVTRSOGLSH_1_964_03_05_01_02.xsd",
-    # "ON_DOPLKNPOK_1_908_01_05_01_04.xsd", ----
-    # "ON_DOPLKNPOK_1_908_01_05_02_01.xsd", ----
-    # "ON_DOPLKNPROD_1_909_01_05_01_05.xsd", ----
-    # "ON_DOPLKNPROD_1_909_01_05_02_01.xsd", ----
-    # "ON_DOPLKNPROD_1_909_01_05_04_01.xsd", ----
+    "ON_DOPLKNPOK_1_908_01_05_01_04.xsd",
+    "ON_DOPLKNPOK_1_908_01_05_02_01.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_01_05.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_02_01.xsd",
+    "ON_DOPLKNPROD_1_909_01_05_04_01.xsd",
     "ON_DORVEDGP_1_963_03_05_01_01.xsd",
     "ON_DORVEDIZM_1_963_02_05_01_01.xsd",
     "ON_DORVEDPRV_1_963_01_05_01_01.xsd",
-    # "ON_GARANTLET_1_967_01_05_01_01.xsd", ----
-    # "ON_GUCHSFAKT_1_910_01_05_01_03.xsd", ----
-    # "ON_GUCHSFAKT_1_910_01_05_02_01.xsd", ----
-    # "ON_KNPOK_1_898_01_05_01_04.xsd", ----
-    # "ON_KNPOK_1_898_01_05_02_01.xsd", ----
-    # "ON_KNPROD_1_899_01_05_01_05.xsd", ----
-    # "ON_KNPROD_1_899_01_05_02_01.xsd", ----
-    # "ON_KNPROD_1_899_01_05_04_01.xsd", ----
+    "ON_GARANTLET_1_967_01_05_01_01.xsd",
+    "ON_GUCHSFAKT_1_910_01_05_01_03.xsd",
+    "ON_GUCHSFAKT_1_910_01_05_02_01.xsd",
+    "ON_KNPOK_1_898_01_05_01_04.xsd",
+    "ON_KNPOK_1_898_01_05_02_01.xsd",
+    "ON_KNPROD_1_899_01_05_01_05.xsd",
+    "ON_KNPROD_1_899_01_05_02_01.xsd",
+    "ON_KNPROD_1_899_01_05_04_01.xsd",
     "ON_KORSCHFDOPPOK_1_996_02_05_02_01.xsd",
     "ON_KORSCHFDOPPR_1_996_01_05_02_01.xsd",
     "ON_KORSFAKT_1_911_01_05_01_03.xsd",
@@ -353,7 +326,7 @@ xsd_names = [
     "ON_PTLSPRMO_1_968_02_05_01_01.xsd",
     "ON_PTLSSOBTS_1_968_01_05_01_01.xsd",
     "ON_PTLSVIPTS_1_968_03_05_01_01.xsd",
-    # "ON_REESUSLDMS_1_881_00_05_01_01.xsd", ----
+    "ON_REESUSLDMS_1_881_00_05_01_01.xsd",
     "ON_SCHFDOPPOK_1_995_02_05_01_05.xsd",
     "ON_SCHFDOPPR_1_995_01_05_01_05.xsd",
     "ON_SFAKT_1_897_01_05_01_03.xsd",
@@ -363,7 +336,7 @@ xsd_names = [
     "ON_SOPVEDGO_1_974_02_05_01_01.xsd",
     "ON_SOPVEDGP_1_974_03_05_01_01.xsd",
     "ON_SOPVEDPER_1_974_01_05_01_01.xsd",
-    # "ON_SPISDMS_1_882_00_05_01_02.xsd", ----
+    "ON_SPISDMS_1_882_00_05_01_02.xsd",
     "ON_TRNACLGROT_1_973_01_05_01_01.xsd",
     "ON_TRNACLGRPO_1_973_05_05_01_01.xsd",
     "ON_TRNACLPPRIN_1_973_02_05_01_01.xsd",
@@ -385,40 +358,12 @@ xsd_names = [
     "ON_ZAKAZNARPOD_1_975_03_05_01_01.xsd",
     "ON_ZAKAZNARSOG_1_975_02_05_01_01.xsd",
     "ON_ZAKAZNARVOZ_1_975_04_05_01_01.xsd",
-    # "ON_ZAKZVGO_1_969_01_05_01_01.xsd", ----
-    "ON_ZAKZVPER_1_969_02_05_01_02.xsd",
-]
-
-xsd_names_debug = [
-    "ON_AKTREZRABP_1_971_01_01_00_02.xsd",
-]
-
-xsd_names_debug_problems = [
-    "ON_AKTREZRABP_1_971_01_01_00_02.xsd",
-    "ON_AKTREZRABZ_1_971_02_01_00_01.xsd",
-    "ON_DOGFRAKHTEL_1_976_01_05_01_01.xsd",
-    "ON_DOPLKNPOK_1_908_01_05_01_04.xsd",
-    "ON_DOPLKNPOK_1_908_01_05_02_01.xsd",
-    "ON_DOPLKNPROD_1_909_01_05_01_05.xsd",
-    "ON_DOPLKNPROD_1_909_01_05_02_01.xsd",
-    "ON_DOPLKNPROD_1_909_01_05_04_01.xsd",
-    "ON_GARANTLET_1_967_01_05_01_01.xsd",
-    "ON_GUCHSFAKT_1_910_01_05_01_03.xsd",
-    "ON_GUCHSFAKT_1_910_01_05_02_01.xsd",
-    "ON_KNPOK_1_898_01_05_01_04.xsd",
-    "ON_KNPOK_1_898_01_05_02_01.xsd",
-    "ON_KNPROD_1_899_01_05_01_05.xsd",
-    "ON_KNPROD_1_899_01_05_02_01.xsd",
-    "ON_KNPROD_1_899_01_05_04_01.xsd",
-    "ON_REESUSLDMS_1_881_00_05_01_01.xsd",
-    "ON_SPISDMS_1_882_00_05_01_02.xsd",
     "ON_ZAKZVGO_1_969_01_05_01_01.xsd",
+    "ON_ZAKZVPER_1_969_02_05_01_02.xsd",
 ]
 
 def main():
     for xsd_name in xsd_names:
-    # for xsd_name in xsd_names_debug:
-    # for xsd_name in xsd_names_debug_problems:
         xsd_schema_filename = xsd_directory + xsd_name
 
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
