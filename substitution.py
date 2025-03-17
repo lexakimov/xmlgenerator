@@ -1,8 +1,9 @@
 import re
 from typing import Dict, Callable
 
-from generate_static import id_file_str, config
-from util_random import fake, snils_formatted
+from randomization import fake, snils_formatted, id_file
+
+global id_file_str
 
 rnd_functions: Dict[str, Callable[[], str]] = {
     "фамилия": fake.last_name_male,
@@ -26,8 +27,16 @@ rnd_functions: Dict[str, Callable[[], str]] = {
 }
 
 
-def get_value_override(target_name):
-    for pattern, substitution in config.global_.value_override.items():
+def init_id_file(xsd_name):
+    matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
+    file_id_prefix = matches[0][0]
+    global id_file_str
+    id_file_str = id_file(file_id_prefix)
+    return id_file_str
+
+
+def get_value_override(target_name, items):
+    for pattern, substitution in items:
         if re.search(pattern, target_name, re.IGNORECASE):
             rnd_func_matches = re.findall(r"\$rnd\('(.*)'\)", substitution, re.IGNORECASE)
             if rnd_func_matches:

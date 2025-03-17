@@ -34,7 +34,7 @@ class Config:
     source: SourceConfig
     output: OutputConfig
     global_: GlobalConfig
-    specific: Dict[str, str] = None
+    specific: Dict[str, GlobalConfig] = None
 
 
 def load_config(file_path: str) -> Config:

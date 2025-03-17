@@ -137,7 +137,7 @@ global:
     max_occurs: 5
 
   value_override:
-    "^(ИдФайл|FileID)$":   "$rnd('фнс__ид_файл')"
+    "^(ИдФайл|FileID)$":      "$rnd('фнс__ид_файл')"
     "^(ВерсПрог|VersProg)$":  "Xsd2Xml 0.1.0"
 
     "Фамилия":   "$rnd('фамилия')"
@@ -159,7 +159,9 @@ global:
     "КПП":       "$rnd('кпп')"
     "СНИЛС":     "$rnd('снилс')"
 
-specific: {}
-#  "DP_IAKTPRM_1_987_00_05_01_02.xsd":
-#    post-validate: schema # none, schematron
-#    value-override: {}
+specific:
+  "DP_IAKTPRM_1_987_00_05_01_02.xsd":
+    randomization:
+      max_occurs: 4
+    value_override:
+      "ТЕСТ":     "$rnd('снилс')"

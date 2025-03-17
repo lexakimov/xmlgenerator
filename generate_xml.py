@@ -1,6 +1,7 @@
 import random
 import re
 import sys
+from pathlib import Path
 
 import rstr
 import xmlschema
@@ -10,10 +11,8 @@ from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalD
     XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin
 
 from cofiguration import load_config
-from randomization import ascii_string, id_file
-from substitution import get_value_override
-
-id_file_str = ""
+from randomization import ascii_string
+from substitution import get_value_override, init_id_file
 
 config = load_config('config.yml')
 
@@ -93,7 +92,8 @@ def generate_value(xsd_type, target_name):
     # Генерация строки
     if target_type == 'string':
 
-        is_found, value_override = get_value_override(target_name)
+        overwordings = config.global_.value_override.items()
+        is_found, value_override = get_value_override(target_name, overwordings)
         if is_found:
             return value_override
 
@@ -220,25 +220,22 @@ def generate_xml_from_xsd(xsd_schema):
 
 def main():
     config_source = config.source
+    config_output = config.output
+    print(f"Найдено схем: {len(config_source.file_names)}")
+    Path(config_output.directory).mkdir(parents=True, exist_ok=True)
 
     for xsd_name in config_source.file_names:
         xsd_schema_filename = config_source.directory + xsd_name
 
-        print(f"Схема: {xsd_name}\n")
+        print(f"Схема: {xsd_name}")
 
         # извлекаем префикс
-        matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
-        file_id_prefix = matches[0][0]
-        global id_file_str
-        id_file_str = id_file(file_id_prefix)
+        id_file = init_id_file(xsd_name)
 
         # Загрузка XSD-схемы
         xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
-
         # Генерация XML-документа
         xml_root = generate_xml_from_xsd(xsd_schema)
-
-        config_output = config.output
 
         # Преобразование в строку
         xml_str = etree.tostring(xml_root, encoding=config_output.encoding, pretty_print=config_output.pretty)
@@ -263,7 +260,7 @@ def main():
             raise RuntimeError("not yet implemented")
 
         # Сохранение в файл
-        with open(f'output_xml/{id_file_str}.xml', 'wb', ) as f:
+        with open(f'{config_output.directory}/{id_file}.xml', 'wb') as f:
             f.write(xml_str)
 
 
