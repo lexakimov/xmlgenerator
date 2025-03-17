@@ -14,7 +14,8 @@ from cofiguration import load_config
 from randomization import ascii_string
 from substitution import get_value_override, init_id_file
 
-config = load_config('config.yml')
+global config
+global config_for_file
 
 # Генерация значений на основе ограничений XSD
 def generate_value(xsd_type, target_name):
@@ -71,7 +72,8 @@ def generate_value(xsd_type, target_name):
         elif isinstance(validator, XsdMinInclusiveFacet):
             min_value = validator.value
         elif isinstance(validator, XsdLengthFacet):
-            pass
+            min_length = validator.value # то же самое
+            max_length = validator.value # то же самое
         elif isinstance(validator, XsdMinLengthFacet):
             min_length = validator.value # то же самое
         elif isinstance(validator, XsdMaxLengthFacet):
@@ -92,8 +94,12 @@ def generate_value(xsd_type, target_name):
     # Генерация строки
     if target_type == 'string':
 
-        overwordings = config.global_.value_override.items()
-        is_found, value_override = get_value_override(target_name, overwordings)
+        overwordings = config.global_.value_override
+        if config_for_file and config_for_file.value_override:
+            overwordings = overwordings.copy()
+            overwordings.update(config_for_file.value_override)
+
+        is_found, value_override = get_value_override(target_name, overwordings.items())
         if is_found:
             return value_override
 
@@ -219,12 +225,23 @@ def generate_xml_from_xsd(xsd_schema):
 
 
 def main():
+    global config
+    global config_for_file
+    config = load_config('config.yml')
     config_source = config.source
     config_output = config.output
+    config_specific = config.specific
+
     print(f"Найдено схем: {len(config_source.file_names)}")
     Path(config_output.directory).mkdir(parents=True, exist_ok=True)
 
     for xsd_name in config_source.file_names:
+        config_for_file = None
+        for pattern, conf in config_specific.items():
+            if re.match(pattern, xsd_name):
+                config_for_file = conf
+                break
+
         xsd_schema_filename = config_source.directory + xsd_name
 
         print(f"Схема: {xsd_name}")

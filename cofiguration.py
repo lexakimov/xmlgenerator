@@ -1,5 +1,5 @@
 from dataclasses import dataclass, is_dataclass
-from typing import List, Dict
+from typing import List, Dict, get_args
 
 import yaml
 
@@ -45,6 +45,9 @@ def load_config(file_path: str) -> Config:
         if is_dataclass(cls):
             field_types = {str(f.name).rstrip("_"): f.type for f in cls.__dataclass_fields__.values()}
             return cls(**{k if k != 'global' else f'{k}_': map_to_class(v, field_types[k]) for k, v in data.items()})
+        elif isinstance(data, dict):
+            val_cls = get_args(cls)[1]
+            return dict(**{k: map_to_class(v, val_cls) for k, v in data.items()})
         elif isinstance(data, list):
             return [map_to_class(item, cls.__args__[0]) for item in data]
         else:

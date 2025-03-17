@@ -160,8 +160,7 @@ global:
     "СНИЛС":     "$rnd('снилс')"
 
 specific:
-  "DP_IAKTPRM_1_987_00_05_01_02.xsd":
+  "DP_INFSOOB_1_981_00_05_01_01":
     randomization:
       max_occurs: 4
-    value_override:
-      "ТЕСТ":     "$rnd('снилс')"
+    value_override: {}
