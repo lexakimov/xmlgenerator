@@ -1,7 +1,10 @@
+#!/usr/bin/python3
+
 import random
 import re
 import sys
 from pathlib import Path
+from argparse import ArgumentParser, HelpFormatter
 
 import rstr
 import xmlschema
@@ -160,6 +163,13 @@ def generate_value(xsd_type, target_name):
 def add_elements(xml_element: etree.Element, xsd_element):
     xsd_element_type = getattr(xsd_element, 'type', None)
 
+    # -----------------------------------------------------------------------------------------------------------------
+    # Выясняем ограничения
+    min_occurs = getattr(xsd_element, 'min_occurs', None) # None | int
+    max_occurs = getattr(xsd_element, 'max_occurs', None) # None | int
+    effective_min_occurs = getattr(xsd_element, 'effective_min_occurs', None) # None | int
+    effective_max_occurs = getattr(xsd_element, 'effective_max_occurs', None) # None | int
+
     # Добавляем атрибуты, если они есть
     attributes = getattr(xsd_element, 'attributes', dict())
     if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
@@ -224,7 +234,35 @@ def generate_xml_from_xsd(xsd_schema):
     return xml_root_element
 
 
+def parse_args():
+    class MyParser(ArgumentParser):
+        def error(self, message):
+            sys.stderr.write('error: %s\n' % message)
+            self.print_help()
+            sys.exit(2)
+
+    class CustomHelpFormatter(HelpFormatter):
+        def __init__(self, prog):
+            super().__init__(prog, max_help_position=36, width=120)
+
+    parser = MyParser(
+        prog='xml-generator',
+        description='Generates XML documents from XSD schemas',
+        formatter_class=CustomHelpFormatter
+        #epilog='Text at the bottom of help'
+    )
+
+    parser.add_argument("-s", "--schema", metavar="<source.xsd>", dest="source_xsd", required=True, help="select the source xsd schema")
+    parser.add_argument("-o", "--output", metavar="<output.xml>", dest="output_xml", required=False, help="save result to file")
+    parser.add_argument("-c", "--config", metavar="<config.yml>", dest="config_yaml", help="pass yaml configuration file")
+    parser.add_argument("-d", "--debug", action="store_true", help="enable debug mode")
+    parser.add_argument("-v", "--version", action='version', version='%(prog)s 0.1.0', help="shows current version")
+
+    return parser.parse_args()
+
 def main():
+    args = parse_args()
+
     global config
     global config_for_file
     config = load_config('config.yml')
