@@ -1,6 +1,8 @@
 import re
 from typing import Dict, Callable
 
+from rstr import rstr
+
 from randomization import fake, snils_formatted, id_file
 
 global id_file_str
@@ -42,6 +44,10 @@ def get_value_override(target_name, items):
             if rnd_func_matches:
                 rnd_function = rnd_functions[rnd_func_matches[0]]
                 return True, rnd_function()
-            else:
-                return True, substitution
+
+            regexp_func_matches = re.findall(r"\$rexp\('(.*)'\)", substitution, re.IGNORECASE)
+            if regexp_func_matches:
+                return True, rstr.xeger(regexp_func_matches[0])
+
+            return True, substitution
     return False, None

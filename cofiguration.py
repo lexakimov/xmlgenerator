@@ -21,6 +21,7 @@ class OutputConfig:
 @dataclass
 class RandomizationConfig:
     max_occurs: int
+    probability: float = None
 
 @dataclass
 class GlobalConfig:

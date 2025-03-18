@@ -3,8 +3,8 @@
 import random
 import re
 import sys
-from pathlib import Path
 from argparse import ArgumentParser, HelpFormatter
+from pathlib import Path
 
 import rstr
 import xmlschema
@@ -163,20 +163,26 @@ def generate_value(xsd_type, target_name):
 def add_elements(xml_element: etree.Element, xsd_element):
     xsd_element_type = getattr(xsd_element, 'type', None)
 
-    # -----------------------------------------------------------------------------------------------------------------
-    # Выясняем ограничения
-    min_occurs = getattr(xsd_element, 'min_occurs', None) # None | int
-    max_occurs = getattr(xsd_element, 'max_occurs', None) # None | int
-    effective_min_occurs = getattr(xsd_element, 'effective_min_occurs', None) # None | int
-    effective_max_occurs = getattr(xsd_element, 'effective_max_occurs', None) # None | int
-
     # Добавляем атрибуты, если они есть
     attributes = getattr(xsd_element, 'attributes', dict())
     if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
         for attr_name, attr in attributes.items():
+            use = attr.use  # optional | required
+            if use == 'optional':
+                # TODO generate random
+                #  if generated > config.global_.randomization.probability:
+                #      return
+                pass
             attr_value = generate_value(attr.type, attr_name)
             if attr_value is not None:
                 xml_element.set(attr_name, str(attr_value))
+
+    # -----------------------------------------------------------------------------------------------------------------
+    # Выясняем ограничения
+    min_occurs = getattr(xsd_element, 'min_occurs', None)  # None | int
+    max_occurs = getattr(xsd_element, 'max_occurs', None)  # None | int
+    effective_min_occurs = getattr(xsd_element, 'effective_min_occurs', None)  # None | int
+    effective_max_occurs = getattr(xsd_element, 'effective_max_occurs', None)  # None | int
 
     # Обрабатываем дочерние элементы
     if isinstance(xsd_element, XsdElement):
@@ -218,6 +224,7 @@ def add_elements(xml_element: etree.Element, xsd_element):
             raise RuntimeError()
 
     elif isinstance(xsd_element, XsdAnyElement):
+        # для any не добавляем никаких дочерних тегов и атрибутов
         pass
 
     else:
