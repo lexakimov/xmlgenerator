@@ -28,7 +28,6 @@ class GlobalConfig:
     value_override: Dict[str, str]
     randomization: RandomizationConfig
 
-
 @dataclass
 class Config:
     debug: bool

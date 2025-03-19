@@ -55,7 +55,12 @@ def generate_value(xsd_type, target_name):
     # -----------------------------------------------------------------------------------------------------------------
     # Выясняем ограничения
 
-    allow_empty = getattr(xsd_type, 'allow_empty', None) # True | False TODO
+    # TODO
+    #  decimal  allow_empty: True
+    #  integer  allow_empty: True
+    #  string   allow_empty: False
+    #  string   allow_empty: True
+    allow_empty = getattr(xsd_type, 'allow_empty', None) # True | False
 
     min_length = getattr(xsd_type, 'min_length', None) # None | int
     max_length = getattr(xsd_type, 'max_length', None) # None | int
@@ -252,8 +257,16 @@ def parse_args():
         def __init__(self, prog):
             super().__init__(prog, max_help_position=36, width=120)
 
+    # xsdxmlgen
+    # xmlgen
+    # genxml
+    # genxmlfromxsd
+    # xmlgenerator
+    # xsdgenxml
+    # xsdtoxml
+    # xml_
     parser = MyParser(
-        prog='xml-generator',
+        prog='xsd2xml-gen',
         description='Generates XML documents from XSD schemas',
         formatter_class=CustomHelpFormatter
         #epilog='Text at the bottom of help'
@@ -268,7 +281,7 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    args = parse_args()
+    # args = parse_args()
 
     global config
     global config_for_file
@@ -295,7 +308,7 @@ def main():
         id_file = init_id_file(xsd_name)
 
         # Загрузка XSD-схемы
-        xsd_schema = xmlschema.XMLSchema(xsd_schema_filename)
+        xsd_schema = xmlschema.XMLSchema(xsd_schema_filename, ) # loglevel='DEBUG'
         # Генерация XML-документа
         xml_root = generate_xml_from_xsd(xsd_schema)
 
