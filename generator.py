@@ -8,7 +8,7 @@ from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalD
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
     XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin
 
-from cofiguration import GeneratorConfig
+from configuration import GeneratorConfig
 from randomization import Randomizer
 from substitution import Substitutor
 

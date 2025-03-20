@@ -1,5 +1,7 @@
 import sys
 
+from xmlschema import XMLSchemaValidationError
+
 
 class XmlValidator:
     def __init__(self, post_validate: str, fail_fast: bool):
@@ -16,7 +18,7 @@ class XmlValidator:
     def _validate_with_schema(self, xsd_schema, document):
         try:
             xsd_schema.validate(document)
-        except BaseException as err:
+        except XMLSchemaValidationError as err:
             print(err, file=sys.stderr)
             if self.fail_fast:
                 sys.exit(1)

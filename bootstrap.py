@@ -7,7 +7,7 @@ from lxml import etree
 from xmlschema import XMLSchema
 
 from arguments import parse_args
-from cofiguration import load_config
+from configuration import load_config
 from generator import XmlGenerator
 from randomization import Randomizer
 from substitution import Substitutor
