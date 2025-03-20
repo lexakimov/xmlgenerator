@@ -9,7 +9,8 @@ from xmlschema import XMLSchema
 from arguments import parse_args
 from cofiguration import load_config
 from generator import XmlGenerator
-from substitution import init_id_file
+from randomization import Randomizer
+from substitution import Substitutor
 from validation import XmlValidator
 
 
@@ -24,16 +25,19 @@ def main():
     print(f"Найдено схем: {len(source_conf.file_names)}")
     Path(output_conf.directory).mkdir(parents=True, exist_ok=True)
 
-    generator = XmlGenerator(global_conf)
+    randomizer = Randomizer()
+    substitutor = Substitutor(randomizer)
+    generator = XmlGenerator(global_conf, randomizer, substitutor)
     validator = XmlValidator(output_conf.post_validate, output_conf.fail_fast)
 
     for xsd_name in source_conf.file_names:
-        print(f"Схема: {xsd_name}")
+        randomizer.reset_context()
+        print(f"Processing schema: {xsd_name}")
         xsd_schema_filename = source_conf.directory + xsd_name
-        config_local = get_local_config(local_configs, xsd_name)
-
-        # извлекаем префикс
-        id_file = init_id_file(xsd_name)
+        # get configuration override for current schema
+        config_local = _get_local_config(local_configs, xsd_name)
+        # Generate a filename for the XML file based on the XSD schema name (without extension)
+        xml_filename = substitutor.make_filename(xsd_name)
 
         # Load XSD schema
         xsd_schema = XMLSchema(xsd_schema_filename, )  # loglevel='DEBUG'
@@ -52,11 +56,11 @@ def main():
         validator.validate(xsd_schema, decoded)
 
         # Export XML to file
-        with open(f'{output_conf.directory}/{id_file}.xml', 'wb') as f:
+        with open(f'{output_conf.directory}/{xml_filename}.xml', 'wb') as f:
             f.write(xml_str)
 
 
-def get_local_config(local_configs, xsd_name):
+def _get_local_config(local_configs, xsd_name):
     config_local = None
     for pattern, conf in local_configs.items():
         if re.match(pattern, xsd_name):

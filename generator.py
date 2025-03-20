@@ -1,4 +1,3 @@
-import random
 import re
 import sys
 
@@ -10,13 +9,15 @@ from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalD
     XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin
 
 from cofiguration import GeneratorConfig
-from randomization import ascii_string
-from substitution import get_value_override
+from randomization import Randomizer
+from substitution import Substitutor
 
 
 class XmlGenerator:
-    def __init__(self, config: GeneratorConfig):
+    def __init__(self, config: GeneratorConfig, randomizer: Randomizer, substitutor: Substitutor):
         self.global_config = config
+        self.randomizer = randomizer
+        self.substitutor = substitutor
 
     def generate_xml(self, xsd_schema: xmlschema.XMLSchema, local_config: GeneratorConfig) -> etree.Element:
         xsd_root_element = xsd_schema.root_elements[0]
@@ -25,6 +26,8 @@ class XmlGenerator:
         return xml_root_element
 
     def _add_elements(self, xml_element: etree.Element, xsd_element, local_config: GeneratorConfig) -> None:
+        rnd = self.randomizer.rnd
+
         xsd_element_type = getattr(xsd_element, 'type', None)
 
         # Add attributes if they are
@@ -79,7 +82,7 @@ class XmlGenerator:
                     self._add_elements(xml_child_element, xsd_child_element_type, local_config)
                 return
             elif model == 'choice':
-                xsd_child_element_type = random.choice(xsd_element)
+                xsd_child_element_type = rnd.choice(xsd_element)
                 xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                 self._add_elements(xml_child_element, xsd_child_element_type, local_config)
                 return
@@ -97,10 +100,12 @@ class XmlGenerator:
         if xsd_type is None:
             raise RuntimeError(f"xsd_type is None. Target name: {target_name}")
 
+        rnd = self.randomizer.rnd
+
         # If there is an enumeration, select a random value from it
         enumeration = getattr(xsd_type, 'enumeration', None)
         if enumeration is not None:
-            return random.choice(enumeration)
+            return rnd.choice(enumeration)
 
         if isinstance(xsd_type, XsdComplexType):
             return None
@@ -108,7 +113,7 @@ class XmlGenerator:
         if isinstance(xsd_type, XsdAtomicBuiltin):
             local_name = xsd_type.local_name
             if local_name == 'gYear':
-                return random.randint(2000, 2050)
+                return rnd.randint(2000, 2050)
             else:
                 # python_type = xsd_type.python_type
                 # pattern = python_type.pattern
@@ -178,14 +183,14 @@ class XmlGenerator:
                 overwordings = overwordings.copy()
                 overwordings.update(local_config.value_override)
 
-            is_found, value_override = get_value_override(target_name, overwordings.items())
+            is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
             if is_found:
                 return value_override
 
             if isinstance(xsd_type, XsdAtomicRestriction):
                 if patterns is not None:
                     # Генерация строки по regex
-                    random_pattern = random.choice(xsd_type.patterns)
+                    random_pattern = rnd.choice(xsd_type.patterns)
                     xeger = rstr.xeger(random_pattern.attrib['value'])
                     xeger = re.sub(r'\s', ' ', xeger)
                     if max_length is not None and len(xeger) > max_length:
@@ -199,14 +204,14 @@ class XmlGenerator:
                     return xeger
 
             # Иначе генерируем случайную строку
-            return ascii_string(min_length, max_length)
+            return self.randomizer.ascii_string(min_length, max_length)
 
         if target_type == 'integer':
             # Генерация целого числа
             if total_digits:
                 min_value = 10 ** (total_digits - 1)
                 max_value = (10 ** total_digits) - 1
-            rnd_int = random.randint(min_value, max_value)
+            rnd_int = rnd.randint(min_value, max_value)
             return str(rnd_int)
 
         if target_type == 'decimal':
@@ -214,21 +219,21 @@ class XmlGenerator:
             if total_digits:
                 if fraction_digits:
                     integer_digits = total_digits - fraction_digits
-                    integer_part = random.randint(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
-                    fractional_part = random.randint(0, (10 ** fraction_digits) - 1)
+                    integer_part = rnd.randint(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
+                    fractional_part = rnd.randint(0, (10 ** fraction_digits) - 1)
                     return f"{integer_part}.{fractional_part:0{fraction_digits}}"
                 else:
                     min_value = 10 ** (total_digits - 1)
                     max_value = (10 ** total_digits) - 1
 
-            rnd_int = random.randint(min_value, max_value)
+            rnd_int = rnd.randint(min_value, max_value)
             return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
 
         if isinstance(base_type, XsdAtomicRestriction):
             patterns = getattr(base_type, 'patterns', None)
             if patterns is not None:
                 # Генерация строки по regex
-                random_pattern = random.choice(base_type.patterns)
+                random_pattern = rnd.choice(base_type.patterns)
                 return rstr.xeger(random_pattern.attrib['value'])
 
         else:
