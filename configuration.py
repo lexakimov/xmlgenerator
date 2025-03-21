@@ -1,26 +1,19 @@
 from dataclasses import dataclass, is_dataclass, field
-from typing import List, Dict, get_args, Optional
+from typing import Dict, get_args, Optional
 
 import yaml
 
 
 @dataclass
-class SourceConfig:
-    directory: str
-    file_names: List[str]
-
-@dataclass
 class OutputConfig:
-    directory: str
     encoding: str
     pretty: bool
-    log_result: bool
     post_validate: str
     fail_fast: bool
 
 @dataclass
 class RandomizationConfig:
-    max_occurs: int
+    max_occurs: Optional[int] = None
     probability: Optional[float] = None
 
 @dataclass
@@ -31,11 +24,24 @@ class GeneratorConfig:
 @dataclass
 class Config:
     debug: bool
-    source: SourceConfig
     output: OutputConfig
     global_: GeneratorConfig
     specific: Dict[str, GeneratorConfig] = field(default_factory=lambda: {})
 
+def default_config() -> Config:
+    return Config(
+        debug=False,
+        output=OutputConfig(
+            encoding='utf-8',
+            pretty=True,
+            post_validate='schema',
+            fail_fast=True
+        ),
+        global_=GeneratorConfig(
+            value_override={},
+            randomization=RandomizationConfig()
+        )
+    )
 
 def load_config(file_path: str) -> Config:
     with open(file_path, 'r') as file:
