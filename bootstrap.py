@@ -43,7 +43,7 @@ def main():
         xml_root = generator.generate_xml(xsd_schema, config_local)
 
         # Marshall to string
-        xml_str = etree.tostring(xml_root, encoding=output_conf.encoding, pretty_print=output_conf.pretty)
+        xml_str = etree.tostring(xml_root, encoding=output_conf.encoding, pretty_print=args.pretty)
         decoded = xml_str.decode('cp1251' if output_conf.encoding == 'windows-1251' else output_conf.encoding)
 
         # Print out to console

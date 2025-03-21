@@ -56,6 +56,7 @@ def parse_args():
                         help="paths to xsd schema(s) or directory with xsd schemas")
     parser.add_argument("-c", "--config", metavar="<config.yml>", dest="config_yaml", help="pass yaml configuration file")
     parser.add_argument("-o", "--output", metavar="<output.xml>", dest="output_xml", help="save output to dir or file")
+    parser.add_argument("-p", "--pretty", action="store_true", help="prettify output XML")
     parser.add_argument("-d", "--debug", action="store_true", help="enable debug mode")
     parser.add_argument("-v", "--version", action='version', version='%(prog)s 0.1.0', help="shows current version")
     parser.add_argument("--seed", metavar="<seed>", help="set randomization seed")

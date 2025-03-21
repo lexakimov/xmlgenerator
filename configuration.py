@@ -7,7 +7,6 @@ import yaml
 @dataclass
 class OutputConfig:
     encoding: str
-    pretty: bool
     post_validate: str
     fail_fast: bool
 
@@ -33,7 +32,6 @@ def default_config() -> Config:
         debug=False,
         output=OutputConfig(
             encoding='utf-8',
-            pretty=True,
             post_validate='schema',
             fail_fast=True
         ),
