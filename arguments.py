@@ -3,27 +3,32 @@ from argparse import ArgumentParser, HelpFormatter
 from pathlib import Path
 
 '''
-# Печать help
+# печать help
 xmlgenerator
 
-# Генерация из одного файла, вывод в stdout (только XML)
-xmlgenerator test.xsd
-xmlgenerator *.xsd
+xmlgenerator test.xsd               # генерация из одного файла, вывод в stdout (только xml)
 
-xmlgenerator -s test.xsd  // -s обязателен
+xmlgenerator *.xsd                  # генерация из n файлов, вывод в stdout (только xml)
+xmlgenerator path/
+xmlgenerator path/*.xsd
 
-# Генерация из ОДНОГО файла, вывод в stdout (только XML) + глобальные параметры
-xmlgenerator -s test.xsd -c config.yml
+xmlgenerator -o test.xml test.xsd   # генерация из одного файла, вывод в файл
 
-# Генерация из одного файла, вывод в файл (только XML)
-xmlgenerator -s test.xsd -o test.xml
+xmlgenerator -o out_dir/ test.xsd   # генерация из одного файла, вывод в директорию
 
-# Генерация из одного файла, вывод в файл (только XML) + глобальные параметры
-xmlgenerator -s test.xsd -o test.xml -c config.yml
+xmlgenerator -o out_dir/ *.xsd      # генерация из n файлов, вывод в директорию
+xmlgenerator -o out_dir/ path/
+xmlgenerator -o out_dir/ path/*.xsd
 
-# Источники должны быть описаны в конфигурационном файле. Вывод в stdout (только XML).
-xmlgenerator -c config.yml
 
+# xsdxmlgen
+# xmlgen
+# genxml
+# genxmlfromxsd
+# xmlgenerator
+# xsdgenxml
+# xsdtoxml
+# xml_
 '''
 
 def parse_args():
@@ -37,14 +42,6 @@ def parse_args():
         def __init__(self, prog):
             super().__init__(prog, max_help_position=36, width=120)
 
-    # xsdxmlgen
-    # xmlgen
-    # genxml
-    # genxmlfromxsd
-    # xmlgenerator
-    # xsdgenxml
-    # xsdtoxml
-    # xml_
     parser = MyParser(
         prog='xmlgenerator',
         description='Generates XML documents from XSD schemas',
@@ -62,7 +59,8 @@ def parse_args():
         "-c", "--config",
         metavar="<config.yml>",
         dest="config_yaml",
-        help="pass yaml configuration file")
+        help="pass yaml configuration file"
+    )
     parser.add_argument(
         "-o", "--output",
         metavar="<output.xml>",
