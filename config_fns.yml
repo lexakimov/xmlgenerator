@@ -4,8 +4,6 @@ debug: false
 
 # Параметры вывода сгенерированных xml документов
 output:
-  # целевая кодировка XML файлов [windows-1251 | utf-8]
-  encoding: windows-1251
   # валидация сгенерированного XML документа [none | schema | schematron]
   post_validate: schema
   # прерывать выполнение при ошибке валидации
