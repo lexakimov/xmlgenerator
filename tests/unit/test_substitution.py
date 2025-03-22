@@ -1,6 +1,6 @@
 import pytest
 
-from substitution import _pattern
+from xmlgenerator.substitution import _pattern
 
 
 @pytest.mark.parametrize("expression, expected_groups_count", [

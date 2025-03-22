@@ -4,7 +4,7 @@ from typing import Dict, Callable
 
 import rstr
 
-from randomization import Randomizer
+from xmlgenerator.randomization import Randomizer
 
 __all__ = ['Substitutor']
 

@@ -8,9 +8,9 @@ from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalD
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
     XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin
 
-from configuration import GeneratorConfig
-from randomization import Randomizer
-from substitution import Substitutor
+from xmlgenerator.configuration import GeneratorConfig
+from xmlgenerator.randomization import Randomizer
+from xmlgenerator.substitution import Substitutor
 
 
 class XmlGenerator:

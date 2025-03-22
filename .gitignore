@@ -3,3 +3,5 @@
 /.env
 /output_xml/*
 /generated_xml/
+/build/
+/xmlgenerator.egg-info/

@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from arguments import parse_args
+from xmlgenerator.arguments import parse_args
 
 
 def parse(cmd_line):

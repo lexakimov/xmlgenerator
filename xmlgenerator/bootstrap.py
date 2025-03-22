@@ -5,12 +5,12 @@ import re
 from lxml import etree
 from xmlschema import XMLSchema
 
-from arguments import parse_args
-from configuration import load_config, default_config
-from generator import XmlGenerator
-from randomization import Randomizer
-from substitution import Substitutor
-from validation import XmlValidator
+from xmlgenerator.arguments import parse_args
+from xmlgenerator.configuration import load_config, default_config
+from xmlgenerator.generator import XmlGenerator
+from xmlgenerator.randomization import Randomizer
+from xmlgenerator.substitution import Substitutor
+from xmlgenerator.validation import XmlValidator
 
 
 def main():
