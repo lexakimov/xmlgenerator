@@ -18,8 +18,9 @@ class RandomizationConfig:
 
 @dataclass
 class GeneratorConfig:
-    value_override: Dict[str, str]
-    randomization: RandomizationConfig
+    randomization: RandomizationConfig = None
+    output_filename: Optional[str] = None
+    value_override: Dict[str, str] = field(default_factory=lambda: {})
 
 @dataclass
 class Config:

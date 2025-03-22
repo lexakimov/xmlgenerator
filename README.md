@@ -3,7 +3,7 @@
 # output file names pattern ???
 # one file mode
 # seed
-
+# debug mode
 
 # проверка типов mypy
 
@@ -45,14 +45,20 @@ xmlgenerator -o out_dir/ path/*.xsd
 # xsdtoxml
 # xml_
 '''
+```
 
 
+### Установка
 
-Установка
-
+```shell
 pip install .
 ```
 
+### Удаление
+
+```shell
+pip uninstall xmlgenerator
+```
 
 
 # XML Generator
