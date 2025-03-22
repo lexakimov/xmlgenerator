@@ -2,17 +2,25 @@ import re
 import uuid
 from typing import Dict, Callable
 
+import rstr
+
 from randomization import Randomizer
 
 __all__ = ['Substitutor']
 
-_pattern = re.compile(pattern=r'\{\{\s*(?:(?P<function>.*?)\s*(?:\|\s*(?P<modifier>.*?))?)?\s*\}\}')
+_pattern = re.compile(pattern=r'\{\{\s*(?:(?P<function>\S+?)(?:\(\s*(?P<argument>[^)]*)\s*\))?\s*(?:\|\s*(?P<modifier>.*?))?)?\s*}}')
 
+def _rand_int(randomizer, a):
+    args = str(a).split(sep=",")
+    return str(randomizer.rnd.randint(int(args[0]), int(args[1])))
 
-def _init_providers(randomizer: Randomizer) -> Dict[str, Callable[[], str]]:
+def _init_providers(randomizer: Randomizer) -> Dict[str, Callable[[], str] | Callable[[str], str]]:
     fake = randomizer.fake
     return {
+        "regex": lambda a: rstr.xeger(a),
+        "number": lambda a: _rand_int(randomizer, a),
         "file_name": lambda: randomizer._id_file,
+
         'uuid': lambda: str(uuid.uuid4()),
         "last_name": fake.last_name_male,
         "first_name": fake.first_name_male,
@@ -49,11 +57,15 @@ class Substitutor:
                 matches = _pattern.finditer(expression)
                 for match in matches:
                     func_name = match[1]
-                    modifier = match[2]
-                    provider_func = self.providers_dict[func_name]
-                    if not provider_func:
+                    func_args = match[2]
+                    func_mod = match[3]
+                    func_lambda = self.providers_dict[func_name]
+                    if not func_lambda:
                         raise RuntimeError(f"Unknown function {func_name}")
-                    match modifier:
+
+                    provider_func = lambda : func_lambda() if not func_args else func_lambda(func_args)
+
+                    match func_mod:
                         case None:
                             resolved_value = provider_func()
                         case 'global':
@@ -63,7 +75,7 @@ class Substitutor:
                             resolved_value = local_context.get(func_name) or provider_func()
                             local_context[func_name] = resolved_value
                         case _:
-                            raise RuntimeError(f"Unknown modifier {modifier}")
+                            raise RuntimeError(f"Unknown modifier: {func_mod}")
 
                     span_to_replacement[match.span()] = resolved_value
 
