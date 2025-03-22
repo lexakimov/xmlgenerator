@@ -2,46 +2,20 @@ import sys
 from argparse import ArgumentParser, HelpFormatter
 from pathlib import Path
 
-'''
-# печать help
-xmlgenerator
 
-xmlgenerator test.xsd               # генерация из одного файла, вывод в stdout (только xml)
-
-xmlgenerator *.xsd                  # генерация из n файлов, вывод в stdout (только xml)
-xmlgenerator path/
-xmlgenerator path/*.xsd
-
-xmlgenerator -o test.xml test.xsd   # генерация из одного файла, вывод в файл
-
-xmlgenerator -o out_dir/ test.xsd   # генерация из одного файла, вывод в директорию
-
-xmlgenerator -o out_dir/ *.xsd      # генерация из n файлов, вывод в директорию
-xmlgenerator -o out_dir/ path/
-xmlgenerator -o out_dir/ path/*.xsd
+class MyParser(ArgumentParser):
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % message)
+        self.print_help()
+        sys.exit(2)
 
 
-# xsdxmlgen
-# xmlgen
-# genxml
-# genxmlfromxsd
-# xmlgenerator
-# xsdgenxml
-# xsdtoxml
-# xml_
-'''
+class CustomHelpFormatter(HelpFormatter):
+    def __init__(self, prog):
+        super().__init__(prog, max_help_position=36, width=120)
+
 
 def parse_args():
-    class MyParser(ArgumentParser):
-        def error(self, message):
-            sys.stderr.write('error: %s\n' % message)
-            self.print_help()
-            sys.exit(2)
-
-    class CustomHelpFormatter(HelpFormatter):
-        def __init__(self, prog):
-            super().__init__(prog, max_help_position=36, width=120)
-
     parser = MyParser(
         prog='xmlgenerator',
         description='Generates XML documents from XSD schemas',
@@ -98,32 +72,40 @@ def parse_args():
 
     args = parser.parse_args()
 
+    if args.config_yaml:
+        config_path = Path(args.config_yaml)
+        if not config_path.exists() or not config_path.is_file():
+            parser.error(f"configuration file {config_path} does not exist.")
+
     # Собираем все .xsd файлы
-    xsd_files = []
-    for source_path in args.source_paths:
-        path = Path(source_path)
-        if path.is_dir():
-            # Добавляем только файлы с расширением .xsd (без учета регистра)
-            xsd_files.extend(path.glob('*.[xX][sS][dD]'))
-        elif path.is_file() and path.suffix.lower() == '.xsd':
-            # Если это файл с расширением .xsd, добавляем его
-            xsd_files.append(path)
-
-    # Сортируем файлы по имени
-    xsd_files.sort()
-
-    if not xsd_files:
-        parser.error("No source xsd schemas provided.")
+    xsd_files = _collect_xsd_files(args.source_paths, parser)
 
     # Обработка пути вывода
     output_path = Path(args.output_xml) if args.output_xml else None
 
     # Проверка: если несколько XSD файлов, то output должен быть директорией
     if len(xsd_files) > 1 and output_path and not (output_path.is_dir() or args.output_xml.endswith(('/', '\\'))):
-        parser.error("Option -o/--output must be a directory when multiple source xsd schemas are provided.")
+        parser.error("option -o/--output must be a directory when multiple source xsd schemas are provided.")
 
     # Создание директории, если output указан как директория
     if output_path and (output_path.is_dir() or args.output_xml.endswith(('/', '\\'))):
         output_path.mkdir(parents=True, exist_ok=True)
 
     return args, xsd_files, output_path
+
+
+def _collect_xsd_files(source_paths, parser):
+    xsd_files = []
+    for source_path in source_paths:
+        path = Path(source_path).resolve()
+        if path.is_dir():
+            xsd_files.extend(path.glob('*.[xX][sS][dD]'))
+        elif path.is_file() and path.suffix.lower() == '.xsd':
+            xsd_files.append(path)
+        elif not path.exists() and path.suffix.lower() == '.xsd':
+            parser.error(f"file {source_path} doesn't exists.")
+    if not xsd_files:
+        parser.error("no source xsd schemas provided.")
+    xsd_files = list(set(xsd_files))
+    xsd_files.sort()
+    return xsd_files
