@@ -8,7 +8,7 @@ from xmlgenerator.randomization import Randomizer
 
 __all__ = ['Substitutor']
 
-_pattern = re.compile(pattern=r'\{\{\s*(?:(?P<function>\S+?)(?:\(\s*(?P<argument>[^)]*)\s*\))?\s*(?:\|\s*(?P<modifier>.*?))?)?\s*}}')
+_pattern = re.compile(pattern=r'\{\{\s*(?:(?P<function>\S*?)(?:\(\s*(?P<argument>[^)]*)\s*\))?\s*(?:\|\s*(?P<modifier>.*?))?)?\s*}}')
 
 def _rand_int(randomizer, a):
     args = str(a).split(sep=",")
