@@ -29,14 +29,8 @@ class Config:
 def default_config() -> Config:
     return Config(
         debug=False,
-        output=OutputConfig(
-            post_validate='schema',
-            fail_fast=True
-        ),
-        global_=GeneratorConfig(
-            value_override={},
-            randomization=RandomizationConfig()
-        )
+        output=OutputConfig(post_validate='schema', fail_fast=True),
+        global_=GeneratorConfig(value_override={}, randomization=RandomizationConfig())
     )
 
 def load_config(file_path: str) -> Config:
