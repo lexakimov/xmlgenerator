@@ -1,82 +1,95 @@
 import dataclasses
+import re
 import sys
-from dataclasses import dataclass, is_dataclass, field
-from typing import Dict, get_args, Optional
+from dataclasses import dataclass, field, Field
+from typing import Dict, get_args, get_origin, Any
 
 import yaml
 
 
 @dataclass
-class OutputConfig:
-    post_validate: str
-    fail_fast: bool
-
-@dataclass
 class RandomizationConfig:
-    max_occurs: Optional[int] = None
-    probability: Optional[float] = None
+    max_occurs: int = field(default=None)
+    probability: float = field(default=None)
 
 @dataclass
 class GeneratorConfig:
-    randomization: RandomizationConfig = None
-    output_filename: Optional[str] = None
+    source_filename: str = None
+    output_filename: str = None
+    randomization: RandomizationConfig = field(default_factory=lambda: RandomizationConfig())
     value_override: Dict[str, str] = field(default_factory=lambda: {})
 
 @dataclass
 class Config:
-    output: OutputConfig
-    global_: GeneratorConfig
+    global_: GeneratorConfig = field(default_factory=lambda: GeneratorConfig())
     specific: Dict[str, GeneratorConfig] = field(default_factory=lambda: {})
 
-def default_config() -> Config:
-    return Config(
-        output=OutputConfig(post_validate='schema', fail_fast=True),
-        global_=GeneratorConfig(value_override={}, randomization=RandomizationConfig())
-    )
+    def get_for_file(self, xsd_name):
+        config_local: GeneratorConfig | None = None
+        for pattern, conf in self.specific.items():
+            if re.match(pattern, xsd_name):
+                config_local = conf
+                break
+        return config_local if config_local else self.global_
 
-def load_config(file_path: str) -> Config:
+
+def load_config(file_path: str) -> "Config":
+    if not file_path:
+        return Config()
     with open(file_path, 'r') as file:
-        config_data = yaml.safe_load(file)
-
-    loaded_config = _map_to_class(config_data, Config)
-    _validate(loaded_config)
-
-    return loaded_config
+        config_data: dict[str, str] = yaml.safe_load(file) or {}
+        return _map_to_class(config_data, Config, "")
 
 
-def _map_to_class(data, cls):
-    if is_dataclass(cls):
-        field_types = {str(f.name).rstrip("_"): f.type for f in cls.__dataclass_fields__.values()}
-        required_fields = {
-            f.name
-            for f in cls.__dataclass_fields__.values()
-            if f.default is dataclasses.MISSING and f.default_factory is dataclasses.MISSING
-        }
-        items_ = {}
+def _map_to_class(data, cls, parent: str):
+    # Обработка dataclass
+    if dataclasses.is_dataclass(cls):
+        class_fields: dict[str, Field] = cls.__dataclass_fields__
+        required_fields: list[str] = []
+        yaml_items: dict[str, Any] = {}
+
+        for name, class_field in class_fields.items():
+            if class_field.default is dataclasses.MISSING and class_field.default_factory is dataclasses.MISSING:
+                required_fields.append(name)
 
         if data:
-            for k, v in data.items():
-                if k not in field_types:
-                    raise ValueError(f"Unexpected field: {k}")
-                key = k if k != 'global' else f'{k}_'
-                val = _map_to_class(v, field_types[k])
-                items_[key] = val
+            for yaml_name, value in data.items():
+                class_field_name = yaml_name if yaml_name != "global" else "global_"
+                if class_field_name not in class_fields:
+                    print(f"YAML parse error: unexpected property: {parent}.{yaml_name}", file=sys.stderr)
+                    sys.exit(1)
 
-        missing_fields = required_fields - items_.keys()
+                # Определяем тип поля
+                field_type = class_fields[class_field_name].type
+                yaml_items[class_field_name] = _map_to_class(value, field_type, f"{parent}.{yaml_name}")
+
+        # Проверка на отсутствие обязательных полей
+        missing_fields = required_fields - yaml_items.keys()
         if missing_fields:
-            print(f"Missing required fields: {', '.join(missing_fields)}", file=sys.stderr)
+            print(f"YAML parse error: missing required properties in {parent}:", file=sys.stderr)
+            for missing_field in missing_fields:
+                yaml_field_name = missing_field if missing_field != "global_" else "global"
+                print(yaml_field_name, file=sys.stderr)
             sys.exit(1)
 
-        return cls(**items_)
+        return cls(**yaml_items)
 
-    elif isinstance(data, dict):
-        val_cls = get_args(cls)[1]
-        return dict(**{k: _map_to_class(v, val_cls) for k, v in data.items()})
-    elif isinstance(data, list):
-        return [_map_to_class(item, cls.__args__[0]) for item in data]
+    # Обработка словарей
+    elif get_origin(cls) is dict:
+        key_type, value_type = get_args(cls)
+        if not data:
+            data = {}
+        return {
+            k: _map_to_class(v, value_type, f"{parent}.{k}")
+            for k, v in data.items()
+        }
+
+    # Обработка списков
+    elif get_origin(cls) is list:
+        item_type = get_args(cls)[0]
+        return [_map_to_class(item, item_type, f"{parent}[{i}]") for i, item in enumerate(data)]
+
+    # Базовые типы (int, str, bool и т.д.)
     else:
         return data
 
-
-def _validate(config: Config):
-    pass

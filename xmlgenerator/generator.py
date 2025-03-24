@@ -14,8 +14,7 @@ from xmlgenerator.substitution import Substitutor
 
 
 class XmlGenerator:
-    def __init__(self, config: GeneratorConfig, randomizer: Randomizer, substitutor: Substitutor):
-        self.global_config = config
+    def __init__(self, randomizer: Randomizer, substitutor: Substitutor):
         self.randomizer = randomizer
         self.substitutor = substitutor
 
@@ -178,11 +177,7 @@ class XmlGenerator:
         # Генерация строки
         if target_type == 'string':
 
-            overwordings = self.global_config.value_override
-            if local_config and local_config.value_override:
-                overwordings = overwordings.copy()
-                overwordings.update(local_config.value_override)
-
+            overwordings = local_config.value_override
             is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
             if is_found:
                 return value_override

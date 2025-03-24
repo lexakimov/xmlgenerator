@@ -38,13 +38,26 @@ def parse_args():
     parser.add_argument(
         "-o", "--output",
         metavar="<output.xml>",
-        dest="output_xml",
+        dest="output_path",
         help="save output to dir or file"
     )
     parser.add_argument(
         "-p", "--pretty",
         action="store_true",
         help="prettify output XML"
+    )
+    parser.add_argument(
+        "-v", "--validation",
+        metavar="<validation>",
+        choices=["none", "schema", "schematron"],
+        default="schema",
+        help="validate generated XML document (none, schema, schematron, default is schema)"
+    )
+    parser.add_argument(
+        "-ff", "--fail-fast",
+        action="store_true",
+        default="true",
+        help="terminate execution on validation error"
     )
     parser.add_argument(
         "-e", "--encoding",
@@ -54,20 +67,20 @@ def parse_args():
         help="output XML encoding (utf-8, windows-1251, default is utf-8)"
     )
     parser.add_argument(
+        "--seed",
+        metavar="<seed>",
+        help="set randomization seed"
+    )
+    parser.add_argument(
         "-d", "--debug",
         action="store_true",
         help="enable debug mode"
     )
     parser.add_argument(
-        "-v", "--version",
+        "-V", "--version",
         action='version',
         version='%(prog)s 0.1.0',
         help="shows current version"
-    )
-    parser.add_argument(
-        "--seed",
-        metavar="<seed>",
-        help="set randomization seed"
     )
 
     args = parser.parse_args()
@@ -81,14 +94,14 @@ def parse_args():
     xsd_files = _collect_xsd_files(args.source_paths, parser)
 
     # Обработка пути вывода
-    output_path = Path(args.output_xml) if args.output_xml else None
+    output_path = Path(args.output_path) if args.output_path else None
 
     # Проверка: если несколько XSD файлов, то output должен быть директорией
-    if len(xsd_files) > 1 and output_path and not (output_path.is_dir() or args.output_xml.endswith(('/', '\\'))):
+    if len(xsd_files) > 1 and output_path and not (output_path.is_dir() or args.output_path.endswith(('/', '\\'))):
         parser.error("option -o/--output must be a directory when multiple source xsd schemas are provided.")
 
     # Создание директории, если output указан как директория
-    if output_path and (output_path.is_dir() or args.output_xml.endswith(('/', '\\'))):
+    if output_path and (output_path.is_dir() or args.output_path.endswith(('/', '\\'))):
         output_path.mkdir(parents=True, exist_ok=True)
 
     return args, xsd_files, output_path

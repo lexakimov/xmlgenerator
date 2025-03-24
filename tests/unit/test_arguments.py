@@ -39,7 +39,7 @@ def test_parse_args_help(capsys):
 
 def test_parse_args_version(capsys):
     with pytest.raises(SystemExit) as excinfo:
-        parse('program -v')
+        parse('program -V')
 
     captured = capsys.readouterr()
     assert excinfo.value.code == 0
@@ -63,7 +63,7 @@ def test_parse_args_02(capsys):
     assert args.debug is False
     assert args.config_yaml is None
     assert args.encoding == 'utf-8'
-    assert args.output_xml is None
+    assert args.output_path is None
     assert args.pretty is False
     assert args.seed is None
     assert len(xsd_files) is 1
@@ -80,7 +80,7 @@ def test_parse_args_02_1(capsys):
     assert args.debug is False
     assert args.config_yaml is None
     assert args.encoding == 'utf-8'
-    assert args.output_xml is None
+    assert args.output_path is None
     assert args.pretty is False
     assert args.seed is None
     assert len(xsd_files) is 2
@@ -97,7 +97,7 @@ def test_parse_args_02_2(capsys):
     assert args.debug is False
     assert args.config_yaml is None
     assert args.encoding == 'utf-8'
-    assert args.output_xml is None
+    assert args.output_path is None
     assert args.pretty is False
     assert args.seed is None
     assert len(xsd_files) is 1
@@ -114,7 +114,7 @@ def test_parse_args_03(capsys):
     assert args.debug is False
     assert args.config_yaml is None
     assert args.encoding == 'utf-8'
-    assert args.output_xml is None
+    assert args.output_path is None
     assert args.pretty is False
     assert args.seed is None
     assert len(xsd_files) is 2

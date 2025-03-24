@@ -1,10 +1,8 @@
-import re
-
 from lxml import etree
 from xmlschema import XMLSchema
 
 from xmlgenerator.arguments import parse_args
-from xmlgenerator.configuration import load_config, default_config
+from xmlgenerator.configuration import load_config
 from xmlgenerator.generator import XmlGenerator
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
@@ -14,24 +12,21 @@ from xmlgenerator.validation import XmlValidator
 def main():
     args, xsd_files, output_path = parse_args()
 
-    config = load_config(args.config_yaml) if args.config_yaml else default_config()
-    output_conf = config.output
-    global_conf = config.global_
-    local_configs = config.specific
+    config = load_config(args.config_yaml)
 
     print(f"Найдено схем: {len(xsd_files)}")
 
-    randomizer = Randomizer()
+    randomizer = Randomizer(args.seed)
     substitutor = Substitutor(randomizer)
-    generator = XmlGenerator(global_conf, randomizer, substitutor)
-    validator = XmlValidator(output_conf.post_validate, output_conf.fail_fast)
+    generator = XmlGenerator(randomizer, substitutor)
+    validator = XmlValidator(args.validation, args.fail_fast)
 
     for xsd_file in xsd_files:
         randomizer.reset_context()
         print(f"Processing schema: {xsd_file.name}")
 
         # get configuration override for current schema
-        config_local = _get_local_config(local_configs, xsd_file.name)
+        config_local = config.get_for_file(xsd_file.name)
         # Generate a filename for the XML file based on the XSD schema name (without extension)
         xml_filename = substitutor.make_filename(xsd_file.name)
 
@@ -59,16 +54,6 @@ def main():
             with open(output_file, 'wb') as f:
                 f.write(xml_str)
             print(f"Saved document: {output_file.name}")
-
-
-def _get_local_config(local_configs, xsd_name):
-    config_local = None
-    for pattern, conf in local_configs.items():
-        if re.match(pattern, xsd_name):
-            config_local = conf
-            break
-    return config_local
-
 
 if __name__ == "__main__":
     main()
