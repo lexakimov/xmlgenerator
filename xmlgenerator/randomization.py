@@ -11,13 +11,7 @@ class Randomizer:
         self.rnd = random.Random(seed)
         self.fake = Faker(locale='ru_RU')
         self.fake.seed_instance(seed)
-        self._local_context = {}
-        self._global_context = {}
         self._id_file = None
-
-    def reset_context(self):
-        self._local_context.clear()
-        pass
 
     def ascii_string(self, min_length=-1, max_length=-1):
         min_length = min_length if min_length > -1 else 1

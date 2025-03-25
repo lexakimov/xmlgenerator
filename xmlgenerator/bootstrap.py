@@ -9,11 +9,9 @@ from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
 
 
-# TODO debug logging
 # TODO избавиться от Randomizer.counterparty_id
 # TODO избавиться от Randomizer.id_file
 # TODO избавиться от Randomizer self._id_file = None
-# TODO перенести _local_context и _global_context из Randomizer в Substitutor
 # TODO реализовать source_extracted
 # TODO реализовать source_filename
 # TODO реализовать output_filename
@@ -22,6 +20,7 @@ from xmlgenerator.validation import XmlValidator
 # TODO Generator - реализовать вероятность для optional
 # TODO Generator - реализовать вероятность для allow_empty = True
 # TODO Generator - реализовать min_occurs и max_occurs
+# TODO debug logging
 # TODO Почистить и перевести комментарии
 
 
@@ -38,7 +37,7 @@ def main():
     validator = XmlValidator(args.validation, args.fail_fast)
 
     for xsd_file in xsd_files:
-        randomizer.reset_context()
+        substitutor.reset_context()
         print(f"Processing schema: {xsd_file.name}")
 
         # get configuration override for current schema

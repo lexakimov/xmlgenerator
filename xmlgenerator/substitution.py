@@ -48,11 +48,15 @@ class Substitutor:
     def __init__(self, randomizer: Randomizer):
         self.randomizer = randomizer
         self.providers_dict = _init_providers(randomizer)
+        self._local_context = {}
+        self._global_context = {}
+
+    def reset_context(self):
+        self._local_context.clear()
 
     def substitute_value(self, target_name, items):
-        # TODO перенести их в Substitutor
-        global_context = self.randomizer._global_context
-        local_context = self.randomizer._local_context
+        global_context = self._global_context
+        local_context = self._local_context
         for target_name_pattern, expression in items:
             if re.search(target_name_pattern, target_name, re.IGNORECASE):
                 result_value: str = expression
