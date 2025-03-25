@@ -1,6 +1,5 @@
 import re
 import uuid
-from typing import Dict, Callable
 
 import rstr
 
@@ -14,42 +13,40 @@ def _rand_int(randomizer, a):
     args = str(a).split(sep=",")
     return str(randomizer.rnd.randint(int(args[0]), int(args[1])))
 
-def _init_providers(randomizer: Randomizer) -> Dict[str, Callable[[], str] | Callable[[str], str]]:
-    fake = randomizer.fake
-    return {
-        'uuid': lambda: str(uuid.uuid4()),
-        "regex": lambda a: rstr.xeger(a),
-        "number": lambda a: _rand_int(randomizer, a),
-
-        "source_extracted": lambda: randomizer._id_file,
-        "source_filename": lambda: randomizer._id_file,
-        "output_filename": lambda: randomizer._id_file,
-
-        "last_name": fake.last_name_male,
-        "first_name": fake.first_name_male,
-        "middle_name": fake.middle_name_male,
-        'address_text': fake.address,
-        'administrative_unit': fake.administrative_unit,
-        'house_number': fake.building_number,
-        'city_name': fake.city_name,
-        'postcode': fake.postcode,
-        'company_name': fake.company,
-        'bank_name': fake.bank,
-        'phone_number': fake.phone_number,
-        'inn_fl': fake.individuals_inn,
-        'inn_ul': fake.businesses_inn,
-        'ogrn_ip': fake.individuals_ogrn,
-        'ogrn_fl': fake.businesses_ogrn,
-        'kpp': fake.kpp,
-        'snils_formatted': randomizer.snils_formatted,
-    }
-
 class Substitutor:
     def __init__(self, randomizer: Randomizer):
+        fake = randomizer.fake
         self.randomizer = randomizer
-        self.providers_dict = _init_providers(randomizer)
         self._local_context = {}
         self._global_context = {}
+        self.providers_dict = {
+            # локальные функции
+            "source_extracted": lambda: self._local_context["source_filename"], # TODO
+            "source_filename": lambda: self._local_context["source_filename"],
+            "output_filename": lambda: self.get_output_filename(),
+
+            'uuid': lambda: str(uuid.uuid4()),
+            "regex": lambda a: rstr.xeger(a),
+            "number": lambda a: _rand_int(randomizer, a),
+
+            "last_name": fake.last_name_male,
+            "first_name": fake.first_name_male,
+            "middle_name": fake.middle_name_male,
+            'address_text': fake.address,
+            'administrative_unit': fake.administrative_unit,
+            'house_number': fake.building_number,
+            'city_name': fake.city_name,
+            'postcode': fake.postcode,
+            'company_name': fake.company,
+            'bank_name': fake.bank,
+            'phone_number': fake.phone_number,
+            'inn_fl': fake.individuals_inn,
+            'inn_ul': fake.businesses_inn,
+            'ogrn_ip': fake.individuals_ogrn,
+            'ogrn_fl': fake.businesses_ogrn,
+            'kpp': fake.kpp,
+            'snils_formatted': randomizer.snils_formatted,
+        }
 
     def reset_context(self):
         self._local_context.clear()
@@ -92,7 +89,12 @@ class Substitutor:
                 return True, result_value
         return False, None
 
-    def make_filename(self, xsd_name):
-        matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
-        file_id_prefix = matches[0][0]
-        return self.randomizer.id_file(file_id_prefix)
+    def get_output_filename(self, xsd_name=None):
+        resolved_value = self._local_context.get("output_filename")
+        if not resolved_value and xsd_name:
+            matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
+            file_id_prefix = matches[0][0]
+            resolved_value = self.randomizer.id_file(file_id_prefix)
+            self._local_context["source_filename"] = xsd_name
+            self._local_context["output_filename"] = resolved_value
+        return resolved_value

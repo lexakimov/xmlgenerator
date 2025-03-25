@@ -9,13 +9,12 @@ from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
 
 
-# TODO избавиться от Randomizer.counterparty_id
+# TODO реализовать от Substitutor.set_filename
 # TODO избавиться от Randomizer.id_file
-# TODO избавиться от Randomizer self._id_file = None
+# TODO пристроить _rand_int
 # TODO реализовать source_extracted
 # TODO реализовать source_filename
 # TODO реализовать output_filename
-# TODO избавиться от Substitutor.make_filename
 # TODO валидация по Schematron
 # TODO Generator - реализовать вероятность для optional
 # TODO Generator - реализовать вероятность для allow_empty = True
@@ -43,7 +42,7 @@ def main():
         # get configuration override for current schema
         config_local = config.get_for_file(xsd_file.name)
         # Generate a filename for the XML file based on the XSD schema name (without extension)
-        xml_filename = substitutor.make_filename(xsd_file.name)
+        xml_filename = substitutor.get_output_filename(xsd_file.name)
 
         # Load XSD schema
         xsd_schema = XMLSchema(xsd_file)  # loglevel='DEBUG'

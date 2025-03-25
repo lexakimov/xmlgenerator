@@ -11,7 +11,6 @@ class Randomizer:
         self.rnd = random.Random(seed)
         self.fake = Faker(locale='ru_RU')
         self.fake.seed_instance(seed)
-        self._id_file = None
 
     def ascii_string(self, min_length=-1, max_length=-1):
         min_length = min_length if min_length > -1 else 1
@@ -41,23 +40,21 @@ class Randomizer:
         snils = self.fake.snils()
         return f"{snils[:3]}-{snils[3:6]}-{snils[6:9]} {snils[9:]}"
 
-    def counterparty_id(self):
-        part_1 = int(self.rnd.uniform(1000000000, 9999999999))
-        part_2 = int(self.rnd.uniform(100000000, 999999999))
-        part_3 = int(self.rnd.uniform(100000000000000000000, 999999999999999999999))
-
-        return f"2BM-{part_1}-{part_2}-{part_3}"
-
     def id_file(self, prefix):
+        def counterparty_id():
+            part_1 = int(self.rnd.uniform(1000000000, 9999999999))
+            part_2 = int(self.rnd.uniform(100000000, 999999999))
+            part_3 = int(self.rnd.uniform(100000000000000000000, 999999999999999999999))
+            return f"2BM-{part_1}-{part_2}-{part_3}"
+
         # R_Т_A_О_GGGGMMDD_N, где:
         # R_Т – префикс
         # А – идентификатор получателя
-        receiver_id = self.counterparty_id()
+        receiver_id = counterparty_id()
         # О – идентификатор отправителя
-        sender_id = self.counterparty_id()
+        sender_id = counterparty_id()
         # GGGG – год формирования передаваемого файла обмена, MM - месяц, DD - день
         date_str = self.random_date("2010-01-01", "2025-01-01").strftime("%Y%m%d")
         # N – 36 символьный глобально уникальный идентификатор GUID
         n = uuid.uuid4()
-        self._id_file = f"{prefix}_{receiver_id}_{sender_id}_{date_str}_{n}"
-        return self._id_file
+        return f"{prefix}_{receiver_id}_{sender_id}_{date_str}_{n}"
