@@ -17,11 +17,14 @@ def _rand_int(randomizer, a):
 def _init_providers(randomizer: Randomizer) -> Dict[str, Callable[[], str] | Callable[[str], str]]:
     fake = randomizer.fake
     return {
+        'uuid': lambda: str(uuid.uuid4()),
         "regex": lambda a: rstr.xeger(a),
         "number": lambda a: _rand_int(randomizer, a),
-        "file_name": lambda: randomizer._id_file,
 
-        'uuid': lambda: str(uuid.uuid4()),
+        "source_extracted": lambda: randomizer._id_file,
+        "source_filename": lambda: randomizer._id_file,
+        "output_filename": lambda: randomizer._id_file,
+
         "last_name": fake.last_name_male,
         "first_name": fake.first_name_male,
         "middle_name": fake.middle_name_male,
@@ -41,13 +44,13 @@ def _init_providers(randomizer: Randomizer) -> Dict[str, Callable[[], str] | Cal
         'snils_formatted': randomizer.snils_formatted,
     }
 
-
 class Substitutor:
     def __init__(self, randomizer: Randomizer):
         self.randomizer = randomizer
         self.providers_dict = _init_providers(randomizer)
 
     def substitute_value(self, target_name, items):
+        # TODO перенести их сюда
         global_context = self.randomizer._global_context
         local_context = self.randomizer._local_context
         for target_name_pattern, expression in items:

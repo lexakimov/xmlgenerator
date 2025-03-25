@@ -174,14 +174,13 @@ class XmlGenerator:
         # -----------------------------------------------------------------------------------------------------------------
         target_type = base_type.local_name  # string | integer | decimal | CCРФТип | СПДУЛТип
 
+        overwordings = local_config.value_override
+        is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
+        if is_found:
+            return value_override
+
         # Генерация строки
         if target_type == 'string':
-
-            overwordings = local_config.value_override
-            is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
-            if is_found:
-                return value_override
-
             if isinstance(xsd_type, XsdAtomicRestriction):
                 if patterns is not None:
                     # Генерация строки по regex

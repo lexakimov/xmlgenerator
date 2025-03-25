@@ -25,15 +25,17 @@ class Config:
     specific: Dict[str, GeneratorConfig] = field(default_factory=lambda: {})
 
     def get_for_file(self, xsd_name):
-        config_local: GeneratorConfig | None = None
         for pattern, conf in self.specific.items():
             if re.match(pattern, xsd_name):
-                config_local = conf
-                break
-        return config_local if config_local else self.global_
+                base_dict = dataclasses.asdict(self.global_)
+                override_dict = dataclasses.asdict(conf, dict_factory=lambda x: {k: v for (k, v) in x if v is not None})
+                updated_dict = _recursive_update(base_dict, override_dict)
+                return _map_to_class(updated_dict, GeneratorConfig, "")
+
+        return self.global_
 
 
-def load_config(file_path: str) -> "Config":
+def load_config(file_path: str | None) -> "Config":
     if not file_path:
         return Config()
     with open(file_path, 'r') as file:
@@ -93,3 +95,11 @@ def _map_to_class(data, cls, parent: str):
     else:
         return data
 
+
+def _recursive_update(original, updates):
+    for key, value in updates.items():
+        if key in original and isinstance(original[key], dict) and isinstance(value, dict):
+            _recursive_update(original[key], value)
+        else:
+            original[key] = value
+    return original

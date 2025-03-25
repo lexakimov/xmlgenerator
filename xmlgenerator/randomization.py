@@ -9,7 +9,8 @@ from faker import Faker
 class Randomizer:
     def __init__(self, seed=None):
         self.rnd = random.Random(seed)
-        self.fake = Faker('ru_RU')
+        self.fake = Faker(locale='ru_RU')
+        self.fake.seed_instance(seed)
         self._local_context = {}
         self._global_context = {}
         self._id_file = None
