@@ -9,6 +9,22 @@ from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
 
 
+# TODO debug logging
+# TODO избавиться от Randomizer.counterparty_id
+# TODO избавиться от Randomizer.id_file
+# TODO избавиться от Randomizer self._id_file = None
+# TODO перенести _local_context и _global_context из Randomizer в Substitutor
+# TODO реализовать source_extracted
+# TODO реализовать source_filename
+# TODO реализовать output_filename
+# TODO избавиться от Substitutor.make_filename
+# TODO валидация по Schematron
+# TODO Generator - реализовать вероятность для optional
+# TODO Generator - реализовать вероятность для allow_empty = True
+# TODO Generator - реализовать min_occurs и max_occurs
+# TODO Почистить и перевести комментарии
+
+
 def main():
     args, xsd_files, output_path = parse_args()
 

@@ -20,7 +20,6 @@ def parse_args():
         prog='xmlgenerator',
         description='Generates XML documents from XSD schemas',
         formatter_class=CustomHelpFormatter
-        #epilog='Text at the bottom of help'
     )
 
     parser.add_argument(

@@ -50,7 +50,7 @@ class Substitutor:
         self.providers_dict = _init_providers(randomizer)
 
     def substitute_value(self, target_name, items):
-        # TODO перенести их сюда
+        # TODO перенести их в Substitutor
         global_context = self.randomizer._global_context
         local_context = self.randomizer._local_context
         for target_name_pattern, expression in items:
