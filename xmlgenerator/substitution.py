@@ -9,10 +9,6 @@ __all__ = ['Substitutor']
 
 _pattern = re.compile(pattern=r'\{\{\s*(?:(?P<function>\S*?)(?:\(\s*(?P<argument>[^)]*)\s*\))?\s*(?:\|\s*(?P<modifier>.*?))?)?\s*}}')
 
-def _rand_int(randomizer, a):
-    args = str(a).split(sep=",")
-    return str(randomizer.rnd.randint(int(args[0]), int(args[1])))
-
 class Substitutor:
     def __init__(self, randomizer: Randomizer):
         fake = randomizer.fake
@@ -20,14 +16,15 @@ class Substitutor:
         self._local_context = {}
         self._global_context = {}
         self.providers_dict = {
-            # локальные функции
-            "source_extracted": lambda: self._local_context["source_filename"], # TODO
+            # Функции локального контекста
             "source_filename": lambda: self._local_context["source_filename"],
+            "source_extracted": lambda: self._local_context["source_extracted"],
             "output_filename": lambda: self.get_output_filename(),
 
             'uuid': lambda: str(uuid.uuid4()),
             "regex": lambda a: rstr.xeger(a),
-            "number": lambda a: _rand_int(randomizer, a),
+            "number": self._rand_int,
+            "date": self._rand_date,
 
             "last_name": fake.last_name_male,
             "first_name": fake.first_name_male,
@@ -48,8 +45,28 @@ class Substitutor:
             'snils_formatted': randomizer.snils_formatted,
         }
 
-    def reset_context(self):
+    def _rand_int(self, a):
+        args = str(a).split(sep=",")
+        return str(self.randomizer.rnd.randint(int(args[0]), int(args[1])))
+
+    def _rand_date(self, a):
+        args = str(a).split(sep=",")
+        return str(self.randomizer.random_date(args[0], args[1]))
+
+    def reset_context(self, xsd_filename, config_local):
         self._local_context.clear()
+        self._local_context["source_filename"] = xsd_filename
+
+        source_filename = config_local.source_filename
+        matches = re.findall(source_filename, xsd_filename)
+        file_id_prefix = matches[0][0]
+        self._local_context["source_extracted"] = file_id_prefix
+
+        resolved_value = self.randomizer.id_file(file_id_prefix)
+        self._local_context['output_filename'] = resolved_value
+
+    def get_output_filename(self):
+        return self._local_context.get("output_filename")   # TODO
 
     def substitute_value(self, target_name, items):
         global_context = self._global_context
@@ -88,13 +105,3 @@ class Substitutor:
 
                 return True, result_value
         return False, None
-
-    def get_output_filename(self, xsd_name=None):
-        resolved_value = self._local_context.get("output_filename")
-        if not resolved_value and xsd_name:
-            matches = re.findall("^((ON|DP)_[A-Z0-9]*)_.*", xsd_name)
-            file_id_prefix = matches[0][0]
-            resolved_value = self.randomizer.id_file(file_id_prefix)
-            self._local_context["source_filename"] = xsd_name
-            self._local_context["output_filename"] = resolved_value
-        return resolved_value
