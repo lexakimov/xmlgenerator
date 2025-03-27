@@ -1,0 +1,23 @@
+global:
+  value_override:
+    global_0: "global 0 value"
+    global_1: "global 1 value"
+    global_2: "global 2 value"
+
+specific:
+  Schema_01:
+    value_override:
+      specific_1: "specific 1 value"  # Добавляет
+      global_1: "specific 2 value"      # Переопределяет
+      global_2:                       # Удаляет
+
+
+# Поскольку ключи value_override - это регулярные выражения, то их порядок имеет значение (чем выше, тем приоритетнее).
+# Поэтому значения value_override из specific должны быть выше, чем из global.
+#
+# Порядок ключей в словаре для Schema_01 должен быть таким:
+#   specific_1: "specific 1 value"
+#   global_1:   "specific 2 value"
+#   global_2:
+#   global_0:   "global 0 value"
+#

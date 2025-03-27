@@ -111,8 +111,8 @@ def test_get_for_file_merge_local_and_global_4():
     assert config.value_override["Имя"] == "first_name-1"
 
 
-def test_load_config_overlapping_patterns():
-    configuration = conf.load_config('data/config_overlapping_patterns.yaml')
+def test_load_config_name_patterns_overlapping():
+    configuration = conf.load_config('data/config_name_patterns_overlapping.yaml')
 
     config = configuration.get_for_file("Schema_ABC")
     assert config.output_filename == "pattern1"
@@ -124,3 +124,18 @@ def test_load_config_overlapping_patterns():
     # Should use the config from the first matching pattern 'Schema_.*'
     config = configuration.get_for_file("Schema_B")
     assert config.output_filename == "pattern2"
+
+
+def test_load_config_value_override_priority():
+    configuration = conf.load_config('data/config_value_override_priority.yaml')
+
+    config = configuration.get_for_file("Schema_01")
+
+    value_override = list(config.value_override.items())
+
+    assert len(value_override) == 4
+    assert value_override[0] == ("specific_1", "specific 1 value")
+    assert value_override[1] == ("global_1", "specific 2 value")
+    assert value_override[2] == ("global_2", None)
+    assert value_override[3] == ("global_0", "global 0 value")
+

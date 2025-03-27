@@ -57,7 +57,7 @@ global:
   # Поиск по ключу происходит без учета регистра.
   value_override:
     "^(ИдФайл|FileID)$": "{{ output_filename }}"
-    "^(ВерсПрог|VersProg)$": "Xsd2Xml 0.1.0"
+    "^(ВерсПрог|VersProg)$": "xmlgenerator 0.1.0"
     "Фамилия":   "{{ last_name }}"
     "Имя":       "{{ first_name }}"
     "Отчество":  "{{ middle_name }}"
@@ -82,6 +82,7 @@ global:
 # Поиск по ключу происходит без учета регистра.
 specific:
   "DP_INFSOOB_1_981_00_05_01_01":
-    randomization:
-      max_occurs: 4
     value_override: {}
+  ON_PTLSODVZD:
+    value_override:
+      ОдомВыезд:  # reset

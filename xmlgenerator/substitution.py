@@ -75,8 +75,9 @@ class Substitutor:
     def substitute_value(self, target_name, items):
         for target_name_pattern, expression in items:
             if re.search(target_name_pattern, target_name, re.IGNORECASE):
-                result_value = self._process_expression(expression)
-                return True, result_value
+                if expression:
+                    result_value = self._process_expression(expression)
+                    return True, result_value
         return False, None
 
     def _process_expression(self, expression):

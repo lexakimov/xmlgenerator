@@ -1,9 +1,4 @@
 ```
-# TODO
-# output file names pattern ???
-# one file mode
-# seed
-# debug mode
 
 # проверка типов mypy
 
@@ -20,7 +15,6 @@
 
 
 
-'''
 xmlgenerator test.xsd               # генерация из одного файла, вывод в stdout (только xml)
 
 xmlgenerator *.xsd                  # генерация из n файлов, вывод в stdout (только xml)
@@ -44,7 +38,6 @@ xmlgenerator -o out_dir/ path/*.xsd
 # xsdgenxml
 # xsdtoxml
 # xml_
-'''
 ```
 
 

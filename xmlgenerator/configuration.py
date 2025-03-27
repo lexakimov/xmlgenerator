@@ -40,7 +40,9 @@ class Config:
                 base_dict = dataclasses.asdict(self.global_)
                 override_dict = dataclasses.asdict(conf, dict_factory=lambda x: {k: v for (k, v) in x if v is not None})
                 updated_dict = _recursive_update(base_dict, override_dict)
-                return _map_to_class(updated_dict, GeneratorConfig, "")
+                merged_config = _map_to_class(updated_dict, GeneratorConfig, "")
+                merged_config.value_override = _merge_dicts(conf.value_override, self.global_.value_override)
+                return merged_config
 
         return self.global_
 
@@ -53,7 +55,7 @@ def load_config(file_path: str | None) -> "Config":
         return _map_to_class(config_data, Config, "")
 
 
-def _map_to_class(data, cls, parent: str):
+def _map_to_class(data_dict: dict, cls, parent_path: str):
     # Обработка dataclass
     if dataclasses.is_dataclass(cls):
         class_fields: dict[str, Field] = cls.__dataclass_fields__
@@ -64,21 +66,21 @@ def _map_to_class(data, cls, parent: str):
             if class_field.default is dataclasses.MISSING and class_field.default_factory is dataclasses.MISSING:
                 required_fields.append(name)
 
-        if data:
-            for yaml_name, value in data.items():
+        if data_dict:
+            for yaml_name, value in data_dict.items():
                 class_field_name = yaml_name if yaml_name != "global" else "global_"
                 if class_field_name not in class_fields:
-                    print(f"YAML parse error: unexpected property: {parent}.{yaml_name}", file=sys.stderr)
+                    print(f"YAML parse error: unexpected property: {parent_path}.{yaml_name}", file=sys.stderr)
                     sys.exit(1)
 
                 # Определяем тип поля
                 field_type = class_fields[class_field_name].type
-                yaml_items[class_field_name] = _map_to_class(value, field_type, f"{parent}.{yaml_name}")
+                yaml_items[class_field_name] = _map_to_class(value, field_type, f"{parent_path}.{yaml_name}")
 
         # Проверка на отсутствие обязательных полей
         missing_fields = required_fields - yaml_items.keys()
         if missing_fields:
-            print(f"YAML parse error: missing required properties in {parent}:", file=sys.stderr)
+            print(f"YAML parse error: missing required properties in {parent_path}:", file=sys.stderr)
             for missing_field in missing_fields:
                 yaml_field_name = missing_field if missing_field != "global_" else "global"
                 print(yaml_field_name, file=sys.stderr)
@@ -89,21 +91,21 @@ def _map_to_class(data, cls, parent: str):
     # Обработка словарей
     elif get_origin(cls) is dict:
         key_type, value_type = get_args(cls)
-        if not data:
-            data = {}
+        if not data_dict:
+            data_dict = {}
         return {
-            k: _map_to_class(v, value_type, f"{parent}.{k}")
-            for k, v in data.items()
+            k: _map_to_class(v, value_type, f"{parent_path}.{k}")
+            for k, v in data_dict.items()
         }
 
     # Обработка списков
     elif get_origin(cls) is list:
         item_type = get_args(cls)[0]
-        return [_map_to_class(item, item_type, f"{parent}[{i}]") for i, item in enumerate(data)]
+        return [_map_to_class(item, item_type, f"{parent_path}[{i}]") for i, item in enumerate(data_dict)]
 
     # Базовые типы (int, str, bool и т.д.)
     else:
-        return data
+        return data_dict
 
 
 def _recursive_update(original, updates):
@@ -113,3 +115,11 @@ def _recursive_update(original, updates):
         else:
             original[key] = value
     return original
+
+
+def _merge_dicts(base_dict, extra_dict):
+    merged_dict = base_dict.copy()
+    for key, value in extra_dict.items():
+        if key not in merged_dict:
+            merged_dict[key] = value
+    return merged_dict
