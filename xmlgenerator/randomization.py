@@ -1,6 +1,5 @@
 import random
 import string
-import uuid
 from datetime import datetime, timedelta
 
 from faker import Faker
@@ -39,22 +38,3 @@ class Randomizer:
     def snils_formatted(self):
         snils = self.fake.snils()
         return f"{snils[:3]}-{snils[3:6]}-{snils[6:9]} {snils[9:]}"
-
-    def id_file(self, prefix):
-        def counterparty_id():
-            part_1 = int(self.rnd.uniform(1000000000, 9999999999))
-            part_2 = int(self.rnd.uniform(100000000, 999999999))
-            part_3 = int(self.rnd.uniform(100000000000000000000, 999999999999999999999))
-            return f"2BM-{part_1}-{part_2}-{part_3}"
-
-        # R_Т_A_О_GGGGMMDD_N, где:
-        # R_Т – префикс
-        # А – идентификатор получателя
-        receiver_id = counterparty_id()
-        # О – идентификатор отправителя
-        sender_id = counterparty_id()
-        # GGGG – год формирования передаваемого файла обмена, MM - месяц, DD - день
-        date_str = self.random_date("2010-01-01", "2025-01-01").strftime("%Y%m%d")
-        # N – 36 символьный глобально уникальный идентификатор GUID
-        n = uuid.uuid4()
-        return f"{prefix}_{receiver_id}_{sender_id}_{date_str}_{n}"

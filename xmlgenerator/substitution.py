@@ -51,7 +51,10 @@ class Substitutor:
 
     def _rand_date(self, a):
         args = str(a).split(sep=",")
-        return str(self.randomizer.random_date(args[0], args[1]))
+        date_from = args[0].strip(' ').strip("'").strip('"')
+        date_until = args[1].strip(' ').strip("'").strip('"')
+        random_date = self.randomizer.random_date(date_from, date_until)
+        return random_date.strftime('%Y%m%d') # TODO externalize pattern
 
     def reset_context(self, xsd_filename, config_local):
         self._local_context.clear()
@@ -62,48 +65,51 @@ class Substitutor:
         source_extracted = matches['extracted']
         self._local_context["source_extracted"] = source_extracted
 
-        # resolved_value = self.substitute_value()
         output_filename = config_local.output_filename
-        resolved_value = self.randomizer.id_file(source_extracted)
+        resolved_value = self._process_expression(output_filename)
         self._local_context['output_filename'] = resolved_value
 
     def get_output_filename(self):
         return self._local_context.get("output_filename")
 
     def substitute_value(self, target_name, items):
-        global_context = self._global_context
-        local_context = self._local_context
         for target_name_pattern, expression in items:
             if re.search(target_name_pattern, target_name, re.IGNORECASE):
-                result_value: str = expression
-                span_to_replacement = {}
-                matches = _pattern.finditer(expression)
-                for match in matches:
-                    func_name = match[1]
-                    func_args = match[2]
-                    func_mod = match[3]
-                    func_lambda = self.providers_dict[func_name]
-                    if not func_lambda:
-                        raise RuntimeError(f"Unknown function {func_name}")
-
-                    provider_func = lambda : func_lambda() if not func_args else func_lambda(func_args)
-
-                    match func_mod:
-                        case None:
-                            resolved_value = provider_func()
-                        case 'global':
-                            resolved_value = global_context.get(func_name) or provider_func()
-                            global_context[func_name] = resolved_value
-                        case 'local':
-                            resolved_value = local_context.get(func_name) or provider_func()
-                            local_context[func_name] = resolved_value
-                        case _:
-                            raise RuntimeError(f"Unknown modifier: {func_mod}")
-
-                    span_to_replacement[match.span()] = resolved_value
-
-                for span, replacement in reversed(list(span_to_replacement.items())):
-                    result_value = result_value[:span[0]] + replacement + result_value[span[1]:]
-
+                result_value = self._process_expression(expression)
                 return True, result_value
         return False, None
+
+    def _process_expression(self, expression):
+        global_context = self._global_context
+        local_context = self._local_context
+        result_value: str = expression
+        span_to_replacement = {}
+        matches = _pattern.finditer(expression)
+        for match in matches:
+            func_name = match[1]
+            func_args = match[2]
+            func_mod = match[3]
+            func_lambda = self.providers_dict[func_name]
+            if not func_lambda:
+                raise RuntimeError(f"Unknown function {func_name}")
+
+            provider_func = lambda: func_lambda() if not func_args else func_lambda(func_args)
+
+            match func_mod:
+                case None:
+                    resolved_value = provider_func()
+                case 'global':
+                    resolved_value = global_context.get(func_name) or provider_func()
+                    global_context[func_name] = resolved_value
+                case 'local':
+                    resolved_value = local_context.get(func_name) or provider_func()
+                    local_context[func_name] = resolved_value
+                case _:
+                    raise RuntimeError(f"Unknown modifier: {func_mod}")
+
+            span_to_replacement[match.span()] = resolved_value
+
+        for span, replacement in reversed(list(span_to_replacement.items())):
+            result_value = result_value[:span[0]] + replacement + result_value[span[1]:]
+
+        return result_value
