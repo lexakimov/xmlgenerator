@@ -1,6 +1,3 @@
-
-#  /home/akimov/desktop/wb/wb-edi/edi-doc-api/src/main/resources/schemas/fns/DP_INFSOOB_1_981_00_05_01_01.xsd
-
 # Глобальные настройки, применяемые ко всем генерируемым документам
 global:
 
@@ -81,8 +78,10 @@ global:
 # Порядок записей важен, будет выбрано первое подходящее переопределение.
 # Поиск по ключу происходит без учета регистра.
 specific:
-  "DP_INFSOOB_1_981_00_05_01_01":
-    value_override: {}
   ON_PTLSODVZD:
     value_override:
       ОдомВыезд:  # reset
+      ОдомПриемТС: # reset
+  ON_PTLSODPARK:
+    value_override:
+      ОдомЗаезд:  # reset

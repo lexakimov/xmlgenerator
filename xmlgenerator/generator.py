@@ -116,15 +116,47 @@ class XmlGenerator:
 
         if isinstance(xsd_type, XsdAtomicBuiltin):
             local_name = xsd_type.local_name
-            if local_name == 'gYear':
-                return rnd.randint(2000, 2050)
-            elif local_name == 'string':
-                return self._generate_string(xsd_type, target_name, None, None, None)
-            else:
-                # python_type = xsd_type.python_type
-                # pattern = python_type.pattern
-                # return rstr.xeger(pattern)
-                raise RuntimeError(local_name)
+            match local_name:
+                case 'string':
+                    return self._generate_string(xsd_type, target_name, None, None, None)
+                case 'boolean':
+                    return self._generate_boolean()
+                case 'float':
+                    return self._generate_float()
+                case 'double':
+                    return self._generate_double()
+                case 'decimal':
+                    return self._generate_decimal()
+                case 'duration':
+                    return self._generate_duration()
+                case 'dateTime':
+                    return self._generate_datetime()
+                case 'time':
+                    return self._generate_time()
+                case 'date':
+                    return self._generate_date()
+                case 'gYearMonth':
+                    return self._generate_gyearmonth()
+                case 'gYear':
+                    return self._generate_gyear()
+                case 'gMonthDay':
+                    return self._generate_gmonthday()
+                case 'gDay':
+                    return self._generate_gday()
+                case 'gMonth':
+                    return self._generate_gmonth()
+                case 'hexBinary':
+                    return self._generate_hex_binary()
+                case 'base64Binary':
+                    return self._generate_base64_binary()
+                case 'anyURI':
+                    return self._generate_any_uri()
+                case 'QName':
+                    return self._generate_qname()
+                case 'NOTATION':
+                    return self._generate_notation()
+                case _:
+                    raise RuntimeError()
 
         # -----------------------------------------------------------------------------------------------------------------
         # Проверяем базовый тип
@@ -239,3 +271,11 @@ class XmlGenerator:
 
         # Иначе генерируем случайную строку
         return self.randomizer.ascii_string(min_length, max_length)
+
+    def _generate_boolean(self):
+        rnd = self.randomizer.rnd
+        return rnd.choice(['true', 'false'])
+
+    def _generate_gyear(self):
+        rnd = self.randomizer.rnd
+        return rnd.randint(2000, 2050)
