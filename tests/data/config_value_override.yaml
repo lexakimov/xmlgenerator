@@ -14,8 +14,8 @@ specific:
     randomization:
       max_occurs: 4
     value_override:
-      "Имя": "first_name-2"           # переопределяет Имя: first_name-1 -> first_name-2
-      "Отчество": "middle_name-2"     # добавляет Отчество : middle_name-2
+      "Имя": "first_name-2"         # переопределяет Имя: first_name-1 -> first_name-2
+      "Отчество": "middle_name-2"   # добавляет Отчество : middle_name-2
 
   "Schema_02":
     source_filename: "from local - Schema_02 (source)"
@@ -23,9 +23,9 @@ specific:
     randomization:
       max_occurs: 4
     value_override:
-      "Имя":                          # удаляет 'Имя'
+      "Имя":                        # удаляет 'Имя'
 
-  # все как в global
   "Schema_03":
     randomization:
       max_occurs: 4
+    value_override: {}              # все унаследует из global

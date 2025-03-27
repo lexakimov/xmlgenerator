@@ -1,0 +1,10 @@
+specific:
+
+  Schema_ABC: # Pattern 1
+    output_filename: "pattern1"
+
+  Schema_.*: # Pattern 2
+    output_filename: "pattern2"
+
+  Schema_A: # Pattern 3 (matches Schema_A, but Pattern 2 matches first)
+    output_filename: "pattern3"
