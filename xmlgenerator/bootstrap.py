@@ -9,14 +9,17 @@ from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
 
 
-# TODO избавиться от Randomizer.id_file
 # TODO реализовать output_filename
-# TODO валидация по Schematron
+# TODO избавиться от Randomizer.id_file
 # TODO Generator - реализовать вероятность для optional
 # TODO Generator - реализовать вероятность для allow_empty = True
 # TODO Generator - реализовать min_occurs и max_occurs
+# TODO кастомные переменные для локального контекста
+# TODO валидация по Schematron
 # TODO debug logging
 # TODO Почистить и перевести комментарии
+# TODO Дописать тесты
+# TODO составить документацию
 
 
 def main():

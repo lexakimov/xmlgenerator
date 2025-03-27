@@ -109,10 +109,17 @@ class XmlGenerator:
         if isinstance(xsd_type, XsdComplexType):
             return None
 
+        overwordings = local_config.value_override
+        is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
+        if is_found:
+            return value_override
+
         if isinstance(xsd_type, XsdAtomicBuiltin):
             local_name = xsd_type.local_name
             if local_name == 'gYear':
                 return rnd.randint(2000, 2050)
+            elif local_name == 'string':
+                return self._generate_string(xsd_type, target_name, None, None, None)
             else:
                 # python_type = xsd_type.python_type
                 # pattern = python_type.pattern
@@ -174,31 +181,9 @@ class XmlGenerator:
         # -----------------------------------------------------------------------------------------------------------------
         target_type = base_type.local_name  # string | integer | decimal | CCРФТип | СПДУЛТип
 
-        overwordings = local_config.value_override
-        is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
-        if is_found:
-            return value_override
-
         # Генерация строки
         if target_type == 'string':
-            if isinstance(xsd_type, XsdAtomicRestriction):
-                if patterns is not None:
-                    # Генерация строки по regex
-                    random_pattern = rnd.choice(xsd_type.patterns)
-                    xeger = rstr.xeger(random_pattern.attrib['value'])
-                    xeger = re.sub(r'\s', ' ', xeger)
-                    if max_length is not None and len(xeger) > max_length:
-                        print(
-                            f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be longer than {max_length}",
-                            file=sys.stderr)
-                    if min_length is not None and len(xeger) < min_length:
-                        print(
-                            f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be shorter than {min_length}",
-                            file=sys.stderr)
-                    return xeger
-
-            # Иначе генерируем случайную строку
-            return self.randomizer.ascii_string(min_length, max_length)
+            return self._generate_string(xsd_type, target_name, patterns, min_length, max_length)
 
         if target_type == 'integer':
             # Генерация целого числа
@@ -232,3 +217,25 @@ class XmlGenerator:
 
         else:
             raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
+
+
+    def _generate_string(self, xsd_type, target_name, patterns, min_length, max_length):
+        rnd = self.randomizer.rnd
+        if isinstance(xsd_type, XsdAtomicRestriction):
+            if patterns is not None:
+                # Генерация строки по regex
+                random_pattern = rnd.choice(xsd_type.patterns)
+                xeger = rstr.xeger(random_pattern.attrib['value'])
+                xeger = re.sub(r'\s', ' ', xeger)
+                if max_length is not None and len(xeger) > max_length:
+                    print(
+                        f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be longer than {max_length}",
+                        file=sys.stderr)
+                if min_length is not None and len(xeger) < min_length:
+                    print(
+                        f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be shorter than {min_length}",
+                        file=sys.stderr)
+                return xeger
+
+        # Иначе генерируем случайную строку
+        return self.randomizer.ascii_string(min_length, max_length)

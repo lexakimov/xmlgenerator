@@ -1,0 +1,12 @@
+
+# /home/akimov/desktop/wb/wb-llm-sandbox/tests/data/existing_1.xsd
+
+global:
+  source_filename: "(?P<extracted>.*).xsd"
+  output_filename: "{{ source_extracted }}_{{ number(10, 99) }}_{{ date('2010-01-01', '2025-01-01') }}_{{ uuid }}"
+  randomization:
+    probability: 1
+    max_occurs: 5
+
+  value_override:
+    specialValue: "{{ output_filename }}"

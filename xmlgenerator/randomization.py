@@ -13,8 +13,8 @@ class Randomizer:
         self.fake.seed_instance(seed)
 
     def ascii_string(self, min_length=-1, max_length=-1):
-        min_length = min_length if min_length > -1 else 1
-        max_length = max_length if max_length >= min_length else 20
+        min_length = min_length if min_length and min_length > -1 else 1
+        max_length = max_length if max_length and max_length >= min_length else 20
         if max_length > 50:
             max_length = 50
         length = self.rnd.randint(min_length, max_length)

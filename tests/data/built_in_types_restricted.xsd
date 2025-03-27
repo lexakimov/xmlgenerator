@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <xs:attribute name="stringValue">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:length value="10"/>
+                        <xs:minLength value="1"/>
+                        <xs:maxLength value="20"/>
+                        <xs:pattern value="[a-zA-Z]*"/>
+                        <xs:enumeration value="value1"/>
+                        <xs:whiteSpace value="preserve"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="booleanValue">
+                <xs:simpleType>
+                    <xs:restriction base="xs:boolean">
+                        <xs:pattern value="true|false"/>
+                        <xs:whiteSpace value="collapse"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="floatValue">
+                <xs:simpleType>
+                    <xs:restriction base="xs:float">
+                        <xs:pattern value="[0-9]+.[0-9]+"/>
+                        <xs:enumeration value="1.5"/>
+                        <xs:maxInclusive value="100.0"/>
+                        <xs:maxExclusive value="101.0"/>
+                        <xs:minInclusive value="0.0"/>
+                        <xs:minExclusive value="-1.0"/>
+                        <xs:whiteSpace value="collapse"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="doubleValue">
+                <xs:simpleType>
+                    <xs:restriction base="xs:double">
+                        <xs:pattern value="[0-9]+.[0-9]+"/>
+                        <xs:enumeration value="1.5"/>
+                        <xs:maxInclusive value="100.0"/>
+                        <xs:maxExclusive value="101.0"/>
+                        <xs:minInclusive value="0.0"/>
+                        <xs:minExclusive value="-1.0"/>
+                        <xs:whiteSpace value="collapse"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="decimalValue">
+                <xs:simpleType>
+                    <xs:restriction base="xs:decimal">
+                        <xs:totalDigits value="5"/>
+                        <xs:fractionDigits value="2"/>
+                        <xs:pattern value="[0-9]+.[0-9]+"/>
+                        <xs:enumeration value="10.25"/>
+                        <xs:maxInclusive value="999.99"/>
+                        <xs:maxExclusive value="999.99"/>
+                        <xs:minInclusive value="0.00"/>
+                        <xs:minExclusive value="0.00"/>
+                        <xs:whiteSpace value="collapse"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="dateTimeValue">
+                <xs:simpleType>
+                    <xs:restriction base="xs:dateTime">
+                        <xs:pattern value="\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"/>
+                        <xs:enumeration value="2024-03-21T12:00:00"/>
+                        <xs:maxInclusive value="2025-12-31T23:59:59"/>
+                        <xs:minInclusive value="2020-01-01T00:00:00"/>
+                        <xs:whiteSpace value="collapse"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="base64BinaryValue">
+                <xs:simpleType>
+                    <xs:restriction base="xs:base64Binary">
+                        <xs:length value="16"/>
+                        <xs:minLength value="8"/>
+                        <xs:maxLength value="32"/>
+                        <xs:pattern value="[a-zA-Z0-9+/=]*"/>
+                        <xs:enumeration value="YWJjZGVm"/>
+                        <xs:whiteSpace value="collapse"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="anyURIValue">
+                <xs:simpleType>
+                    <xs:restriction base="xs:anyURI">
+                        <xs:length value="20"/>
+                        <xs:minLength value="10"/>
+                        <xs:maxLength value="100"/>
+                        <xs:pattern value="https?://.*"/>
+                        <xs:enumeration value="http://example.com"/>
+                        <xs:whiteSpace value="collapse"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

@@ -21,7 +21,10 @@ class GeneratorConfig:
 
 @dataclass
 class Config:
-    global_: GeneratorConfig = field(default_factory=lambda: GeneratorConfig())
+    global_: GeneratorConfig = field(default_factory=lambda: GeneratorConfig(
+        source_filename='(?P<extracted>.*).(xsd|XSD)',
+        output_filename='{{ source_filename }}_{{ uuid }}'
+    ))
     specific: Dict[str, GeneratorConfig] = field(default_factory=lambda: {})
 
     def get_for_file(self, xsd_name):

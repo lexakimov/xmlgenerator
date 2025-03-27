@@ -58,15 +58,17 @@ class Substitutor:
         self._local_context["source_filename"] = xsd_filename
 
         source_filename = config_local.source_filename
-        matches = re.findall(source_filename, xsd_filename)
-        file_id_prefix = matches[0][0]
-        self._local_context["source_extracted"] = file_id_prefix
+        matches = re.search(source_filename, xsd_filename).groupdict()
+        source_extracted = matches['extracted']
+        self._local_context["source_extracted"] = source_extracted
 
-        resolved_value = self.randomizer.id_file(file_id_prefix)
+        # resolved_value = self.substitute_value()
+        output_filename = config_local.output_filename
+        resolved_value = self.randomizer.id_file(source_extracted)
         self._local_context['output_filename'] = resolved_value
 
     def get_output_filename(self):
-        return self._local_context.get("output_filename")   # TODO
+        return self._local_context.get("output_filename")
 
     def substitute_value(self, target_name, items):
         global_context = self._global_context
