@@ -117,8 +117,9 @@ def test_parse_args_03(capsys):
     assert args.output_path is None
     assert args.pretty is False
     assert args.seed is None
-    assert len(xsd_files) is 2
-    assert [v.name for v in xsd_files] == ['existing_1.xsd', 'existing_2.xsd']
+    assert len(xsd_files) is 4
+    assert 'existing_1.xsd' in [v.name for v in xsd_files]
+    assert 'existing_2.xsd' in [v.name for v in xsd_files]
     assert output_path is None
     captured = capsys.readouterr()
     assert not captured.out

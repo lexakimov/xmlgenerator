@@ -11,6 +11,10 @@ import yaml
 class RandomizationConfig:
     max_occurs: int = field(default=None)
     probability: float = field(default=None)
+    min_length: int = field(default=None)
+    max_length: int = field(default=None)
+    min_inclusive: int = field(default=None)
+    max_inclusive: int = field(default=None)
 
 @dataclass
 class GeneratorConfig:
@@ -19,12 +23,15 @@ class GeneratorConfig:
     randomization: RandomizationConfig = field(default_factory=lambda: RandomizationConfig())
     value_override: Dict[str, str] = field(default_factory=lambda: {})
 
+
+@dataclass
+class GlobalGeneratorConfig(GeneratorConfig):
+    source_filename: str = field(default='(?P<extracted>.*).(xsd|XSD)')
+    output_filename: str = field(default='{{ source_filename }}_{{ uuid }}')
+
 @dataclass
 class Config:
-    global_: GeneratorConfig = field(default_factory=lambda: GeneratorConfig(
-        source_filename='(?P<extracted>.*).(xsd|XSD)',
-        output_filename='{{ source_filename }}_{{ uuid }}'
-    ))
+    global_: GlobalGeneratorConfig = field(default_factory=lambda: GlobalGeneratorConfig())
     specific: Dict[str, GeneratorConfig] = field(default_factory=lambda: {})
 
     def get_for_file(self, xsd_name):
