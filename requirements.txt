@@ -1,10 +1,10 @@
 lxml==5.3.1
-lxml-stubs==0.5.1
+# lxml-stubs==0.5.1
 xmlschema==3.4.3
 Faker==37.0.0
 rstr==3.2.2
 PyYAML==6.0.2
-types-PyYAML==6.0.12.20241230
-mypy==1.15.0
+# types-PyYAML==6.0.12.20241230
+# mypy==1.15.0
 pytest==8.3.5
 setuptools==77.0.3
