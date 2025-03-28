@@ -9,8 +9,8 @@ import yaml
 
 @dataclass
 class RandomizationConfig:
-    max_occurs: int = field(default=None)
     probability: float = field(default=None)
+    max_occurs: int = field(default=None)
     min_length: int = field(default=None)
     max_length: int = field(default=None)
     min_inclusive: int = field(default=None)

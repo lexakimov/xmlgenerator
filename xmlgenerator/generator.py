@@ -35,10 +35,10 @@ class XmlGenerator:
             for attr_name, attr in attributes.items():
                 use = attr.use  # optional | required
                 if use == 'optional':
-                    # TODO generate random
-                    #  if generated > self.global_config.randomization.probability:
-                    #      return
-                    pass
+                    if rnd.random() > local_config.randomization.probability:
+                        # skip optional attribute
+                        continue
+
                 attr_value = self._generate_value(attr.type, attr_name, local_config)
                 if attr_value is not None:
                     xml_element.set(attr_name, str(attr_value))
