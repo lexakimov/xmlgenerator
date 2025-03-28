@@ -124,9 +124,9 @@ class XmlGenerator:
         fraction_digits = None
         enumeration = None
 
-        patterns = getattr(xsd_type, 'patterns', None)  # None | XsdPatternFacets
+        patterns = getattr(xsd_type, 'patterns', None)
 
-        validators = getattr(xsd_type, 'validators', None)  # () | [XsdEnumerationFacets(...)]
+        validators = getattr(xsd_type, 'validators', None)
         for validator in validators:
             if isinstance(validator, XsdMinExclusiveFacet):
                 min_value = validator.value
@@ -172,7 +172,7 @@ class XmlGenerator:
             local_name = xsd_type.local_name
             match local_name:
                 case 'string':
-                    return self._generate_string(xsd_type, target_name, None, None, None)
+                    return self._generate_string(xsd_type, target_name, patterns, min_length, max_length)
                 case 'boolean':
                     return self._generate_boolean()
                 case 'float':
