@@ -85,3 +85,9 @@ specific:
   ON_PTLSODPARK:
     value_override:
       ОдомЗаезд:  # reset
+  ".*":
+    value_override:
+      ПрИспКППКр: # reset
+      ДефИННЮЛ:   # reset
+      ДефИННФЛ:   # reset
+

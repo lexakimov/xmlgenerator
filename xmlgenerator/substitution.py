@@ -78,6 +78,8 @@ class Substitutor:
                 if expression:
                     result_value = self._process_expression(expression)
                     return True, result_value
+                else:
+                    return False, None
         return False, None
 
     def _process_expression(self, expression):

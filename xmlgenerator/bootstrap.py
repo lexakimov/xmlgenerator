@@ -42,15 +42,15 @@ def main():
         print(f"Processing schema: {xsd_file.name}")
 
         # get configuration override for current schema
-        config_local = config.get_for_file(xsd_file.name)
+        local_config = config.get_for_file(xsd_file.name)
 
         # Reset context for current schema
-        substitutor.reset_context(xsd_file.name, config_local)
+        substitutor.reset_context(xsd_file.name, local_config)
 
         # Load XSD schema
         xsd_schema = XMLSchema(xsd_file)  # loglevel='DEBUG'
         # Generate XML document
-        xml_root = generator.generate_xml(xsd_schema, config_local)
+        xml_root = generator.generate_xml(xsd_schema, local_config)
 
         # Marshall to string
         xml_str = etree.tostring(xml_root, encoding=args.encoding, pretty_print=args.pretty)

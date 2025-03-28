@@ -41,7 +41,9 @@ class Config:
                 override_dict = dataclasses.asdict(conf, dict_factory=lambda x: {k: v for (k, v) in x if v is not None})
                 updated_dict = _recursive_update(base_dict, override_dict)
                 merged_config = _map_to_class(updated_dict, GeneratorConfig, "")
-                merged_config.value_override = _merge_dicts(conf.value_override, self.global_.value_override)
+                local_override = conf.value_override
+                global_override = self.global_.value_override
+                merged_config.value_override = _merge_dicts(local_override, global_override)
                 return merged_config
 
         return self.global_
@@ -118,7 +120,7 @@ def _recursive_update(original, updates):
 
 
 def _merge_dicts(base_dict, extra_dict):
-    merged_dict = base_dict.copy()
+    merged_dict = dict(base_dict)
     for key, value in extra_dict.items():
         if key not in merged_dict:
             merged_dict[key] = value

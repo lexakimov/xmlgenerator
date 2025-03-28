@@ -99,13 +99,6 @@ class XmlGenerator:
         if xsd_type is None:
             raise RuntimeError(f"xsd_type is None. Target name: {target_name}")
 
-        rnd = self.randomizer.rnd
-
-        # If there is an enumeration, select a random value from it
-        enumeration = getattr(xsd_type, 'enumeration', None)
-        if enumeration is not None:
-            return rnd.choice(enumeration)
-
         if isinstance(xsd_type, XsdComplexType):
             return None
 
@@ -113,6 +106,59 @@ class XmlGenerator:
         is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
         if is_found:
             return value_override
+
+        rnd = self.randomizer.rnd
+
+        # If there is an enumeration, select a random value from it
+        enumeration = getattr(xsd_type, 'enumeration', None)
+        if enumeration is not None:
+            return rnd.choice(enumeration)
+
+        # -------------------------------------------------------------------------------------------------------------
+        # Выясняем ограничения
+
+        # TODO
+        #  decimal  allow_empty: True
+        #  integer  allow_empty: True
+        #  string   allow_empty: False
+        #  string   allow_empty: True
+        allow_empty = getattr(xsd_type, 'allow_empty', None)  # True | False
+
+        min_length = getattr(xsd_type, 'min_length', None)  # None | int
+        max_length = getattr(xsd_type, 'max_length', None)  # None | int
+
+        min_value = getattr(xsd_type, 'min_value', None)  # None | int
+        max_value = getattr(xsd_type, 'max_value', None)  # None
+
+        total_digits = None
+        fraction_digits = None
+
+        patterns = getattr(xsd_type, 'patterns', None)  # None | XsdPatternFacets
+
+        validators = getattr(xsd_type, 'validators', None)  # () | [XsdEnumerationFacets(...)]
+        for validator in validators:
+            if isinstance(validator, XsdMinExclusiveFacet):
+                min_value = validator.value
+            elif isinstance(validator, XsdMinInclusiveFacet):
+                min_value = validator.value
+            elif isinstance(validator, XsdLengthFacet):
+                min_length = validator.value  # то же самое
+                max_length = validator.value  # то же самое
+            elif isinstance(validator, XsdMinLengthFacet):
+                min_length = validator.value  # то же самое
+            elif isinstance(validator, XsdMaxLengthFacet):
+                max_length = validator.value  # то же самое
+            elif isinstance(validator, XsdTotalDigitsFacet):
+                total_digits = validator.value
+            elif isinstance(validator, XsdFractionDigitsFacet):
+                fraction_digits = validator.value
+            else:
+                raise RuntimeError(f"Unhandled validator: {validator}")
+
+        min_length = min_length or -1
+        max_length = max_length or -1
+
+        # -------------------------------------------------------------------------------------------------------------
 
         if isinstance(xsd_type, XsdAtomicBuiltin):
             local_name = xsd_type.local_name
@@ -158,7 +204,7 @@ class XmlGenerator:
                 case _:
                     raise RuntimeError()
 
-        # -----------------------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------------------
         # Проверяем базовый тип
         base_type = getattr(xsd_type, 'base_type', None)
 
@@ -166,51 +212,7 @@ class XmlGenerator:
         if base_type is None:
             raise RuntimeError(f"base_type is None. Target name: {target_name}")
 
-        # -----------------------------------------------------------------------------------------------------------------
-        # Выясняем ограничения
-
-        # TODO
-        #  decimal  allow_empty: True
-        #  integer  allow_empty: True
-        #  string   allow_empty: False
-        #  string   allow_empty: True
-        allow_empty = getattr(xsd_type, 'allow_empty', None)  # True | False
-
-        min_length = getattr(xsd_type, 'min_length', None)  # None | int
-        max_length = getattr(xsd_type, 'max_length', None)  # None | int
-
-        min_value = getattr(xsd_type, 'min_value', None)  # None | int
-        max_value = getattr(xsd_type, 'max_value', None)  # None
-
-        total_digits = None
-        fraction_digits = None
-
-        patterns = getattr(xsd_type, 'patterns', None)  # None | XsdPatternFacets
-
-        validators = getattr(xsd_type, 'validators', None)  # () | [XsdEnumerationFacets(...)]
-        for validator in validators:
-            if isinstance(validator, XsdMinExclusiveFacet):
-                min_value = validator.value
-            elif isinstance(validator, XsdMinInclusiveFacet):
-                min_value = validator.value
-            elif isinstance(validator, XsdLengthFacet):
-                min_length = validator.value  # то же самое
-                max_length = validator.value  # то же самое
-            elif isinstance(validator, XsdMinLengthFacet):
-                min_length = validator.value  # то же самое
-            elif isinstance(validator, XsdMaxLengthFacet):
-                max_length = validator.value  # то же самое
-            elif isinstance(validator, XsdTotalDigitsFacet):
-                total_digits = validator.value
-            elif isinstance(validator, XsdFractionDigitsFacet):
-                fraction_digits = validator.value
-            else:
-                raise RuntimeError(f"Unhandled validator: {validator}")
-
-        min_length = min_length or -1
-        max_length = max_length or -1
-
-        # -----------------------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------------------
         target_type = base_type.local_name  # string | integer | decimal | CCРФТип | СПДУЛТип
 
         # Генерация строки
