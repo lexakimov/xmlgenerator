@@ -78,16 +78,12 @@ global:
 # Порядок записей важен, будет выбрано первое подходящее переопределение.
 # Поиск по ключу происходит без учета регистра.
 specific:
-  ON_PTLSODVZD:
-    value_override:
-      ОдомВыезд:  # reset
-      ОдомПриемТС: # reset
-  ON_PTLSODPARK:
-    value_override:
-      ОдомЗаезд:  # reset
   ".*":
     value_override:
-      ПрИспКППКр: # reset
-      ДефИННЮЛ:   # reset
-      ДефИННФЛ:   # reset
-
+      ОдомВыезд:   # reset
+      ОдомЗаезд:   # reset
+      ОдомПриемТС: # reset
+      ОдомСдачТС:  # reset
+      ПрИспКППКр:  # reset
+      ДефИННЮЛ:    # reset
+      ДефИННФЛ:    # reset

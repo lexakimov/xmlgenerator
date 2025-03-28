@@ -6,7 +6,7 @@ import xmlschema
 from lxml import etree
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdElement, \
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
-    XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin
+    XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin, XsdEnumerationFacets
 
 from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.randomization import Randomizer
@@ -102,17 +102,7 @@ class XmlGenerator:
         if isinstance(xsd_type, XsdComplexType):
             return None
 
-        overwordings = local_config.value_override
-        is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
-        if is_found:
-            return value_override
-
         rnd = self.randomizer.rnd
-
-        # If there is an enumeration, select a random value from it
-        enumeration = getattr(xsd_type, 'enumeration', None)
-        if enumeration is not None:
-            return rnd.choice(enumeration)
 
         # -------------------------------------------------------------------------------------------------------------
         # Выясняем ограничения
@@ -132,6 +122,7 @@ class XmlGenerator:
 
         total_digits = None
         fraction_digits = None
+        enumeration = None
 
         patterns = getattr(xsd_type, 'patterns', None)  # None | XsdPatternFacets
 
@@ -152,6 +143,8 @@ class XmlGenerator:
                 total_digits = validator.value
             elif isinstance(validator, XsdFractionDigitsFacet):
                 fraction_digits = validator.value
+            elif isinstance(validator, XsdEnumerationFacets):
+                enumeration = validator.enumeration
             else:
                 raise RuntimeError(f"Unhandled validator: {validator}")
 
@@ -159,6 +152,21 @@ class XmlGenerator:
         max_length = max_length or -1
 
         # -------------------------------------------------------------------------------------------------------------
+        # Ищем переопределение значения в конфигурации
+
+        overwordings = local_config.value_override
+        is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
+        if is_found:
+            return value_override
+
+        # -------------------------------------------------------------------------------------------------------------
+        # If there is an enumeration, select a random value from it
+
+        if enumeration is not None:
+            return rnd.choice(enumeration)
+
+        # -------------------------------------------------------------------------------------------------------------\
+        # Генерируем значения для стандартных типов
 
         if isinstance(xsd_type, XsdAtomicBuiltin):
             local_name = xsd_type.local_name
@@ -242,12 +250,10 @@ class XmlGenerator:
             rnd_int = rnd.randint(min_value, max_value)
             return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
 
-        if isinstance(base_type, XsdAtomicRestriction):
-            patterns = getattr(base_type, 'patterns', None)
-            if patterns is not None:
-                # Генерация строки по regex
-                random_pattern = rnd.choice(base_type.patterns)
-                return rstr.xeger(random_pattern.attrib['value'])
+        if isinstance(base_type, XsdAtomicRestriction) and patterns is not None:
+            # Генерация строки по regex
+            random_pattern = rnd.choice(base_type.patterns)
+            return rstr.xeger(random_pattern.attrib['value'])
 
         else:
             raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
@@ -255,21 +261,20 @@ class XmlGenerator:
 
     def _generate_string(self, xsd_type, target_name, patterns, min_length, max_length):
         rnd = self.randomizer.rnd
-        if isinstance(xsd_type, XsdAtomicRestriction):
-            if patterns is not None:
-                # Генерация строки по regex
-                random_pattern = rnd.choice(xsd_type.patterns)
-                xeger = rstr.xeger(random_pattern.attrib['value'])
-                xeger = re.sub(r'\s', ' ', xeger)
-                if max_length is not None and len(xeger) > max_length:
-                    print(
-                        f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be longer than {max_length}",
-                        file=sys.stderr)
-                if min_length is not None and len(xeger) < min_length:
-                    print(
-                        f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be shorter than {min_length}",
-                        file=sys.stderr)
-                return xeger
+        if patterns is not None:
+            # Генерация строки по regex
+            random_pattern = rnd.choice(xsd_type.patterns)
+            xeger = rstr.xeger(random_pattern.attrib['value'])
+            xeger = re.sub(r'\s', ' ', xeger)
+            if max_length is not None and len(xeger) > max_length:
+                print(
+                    f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be longer than {max_length}",
+                    file=sys.stderr)
+            if min_length is not None and len(xeger) < min_length:
+                print(
+                    f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be shorter than {min_length}",
+                    file=sys.stderr)
+            return xeger
 
         # Иначе генерируем случайную строку
         return self.randomizer.ascii_string(min_length, max_length)
