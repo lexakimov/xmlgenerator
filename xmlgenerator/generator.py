@@ -6,7 +6,7 @@ import xmlschema
 from lxml import etree
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdElement, \
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
-    XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin, XsdEnumerationFacets
+    XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin, XsdEnumerationFacets, XsdMaxExclusiveFacet, XsdMaxInclusiveFacet
 
 from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.randomization import Randomizer
@@ -115,8 +115,7 @@ class XmlGenerator:
 
         total_digits = None
         fraction_digits = None
-        enumeration = None
-
+        enumeration = getattr(xsd_type, 'enumeration', None)
         patterns = getattr(xsd_type, 'patterns', None)
 
         validators = getattr(xsd_type, 'validators', None)
@@ -125,13 +124,17 @@ class XmlGenerator:
                 min_value = validator.value
             elif isinstance(validator, XsdMinInclusiveFacet):
                 min_value = validator.value
+            elif isinstance(validator, XsdMaxExclusiveFacet):
+                max_value = validator.value
+            elif isinstance(validator, XsdMaxInclusiveFacet):
+                max_value = validator.value
             elif isinstance(validator, XsdLengthFacet):
-                min_length = validator.value  # то же самое
-                max_length = validator.value  # то же самое
+                min_length = validator.value
+                max_length = validator.value
             elif isinstance(validator, XsdMinLengthFacet):
-                min_length = validator.value  # то же самое
+                min_length = validator.value
             elif isinstance(validator, XsdMaxLengthFacet):
-                max_length = validator.value  # то же самое
+                max_length = validator.value
             elif isinstance(validator, XsdTotalDigitsFacet):
                 total_digits = validator.value
             elif isinstance(validator, XsdFractionDigitsFacet):
@@ -147,8 +150,8 @@ class XmlGenerator:
         # -------------------------------------------------------------------------------------------------------------
         # Ищем переопределение значения в конфигурации
 
-        overwordings = local_config.value_override
-        is_found, overridden_value = self.substitutor.substitute_value(target_name, overwordings.items())
+        value_override = local_config.value_override
+        is_found, overridden_value = self.substitutor.substitute_value(target_name, value_override.items())
         if is_found:
             return overridden_value
 
