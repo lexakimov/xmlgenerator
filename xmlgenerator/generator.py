@@ -68,6 +68,7 @@ class XmlGenerator:
         elif isinstance(xsd_element, XsdGroup):
             model = xsd_element.model
             if model == 'sequence':
+
                 for xsd_child_element_type in xsd_element:
                     if isinstance(xsd_child_element_type, XsdElement):
                         xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
@@ -82,6 +83,7 @@ class XmlGenerator:
                     self._add_elements(xml_child_element, xsd_child_element_type, local_config)
                 return
             elif model == 'choice':
+
                 xsd_child_element_type = rnd.choice(xsd_element)
                 xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                 self._add_elements(xml_child_element, xsd_child_element_type, local_config)

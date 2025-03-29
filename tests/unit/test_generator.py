@@ -21,9 +21,10 @@ generator = XmlGenerator(randomizer, substitutor)
 @pytest.mark.parametrize("xsd", [
     'string.xsd',
     'boolean.xsd',
+    'integer.xsd', ### not primitive
+    'decimal.xsd',
     'float.xsd',
     'double.xsd',
-    'decimal.xsd',
     'duration.xsd',
     'datetime.xsd',
     'time.xsd',

@@ -10,13 +10,7 @@ from xmlgenerator.validation import XmlValidator
 
 
 # TODO Generator - обработка стандартных xsd типов
-
-# TODO Generator - реализовать вероятность для optional
-# TODO Generator - реализовать вероятность для allow_empty = True
 # TODO Generator - реализовать min_occurs и max_occurs
-# TODO Generator - реализовать length и max_length
-# TODO Generator - реализовать min и max для чисел
-
 # TODO кастомные переменные для локального контекста
 # TODO валидация по Schematron
 # TODO debug logging
