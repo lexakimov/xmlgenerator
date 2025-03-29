@@ -2,18 +2,6 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:element name="root">
         <xs:complexType>
-            <xs:attribute name="stringValue">
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:length value="10"/>
-                        <xs:minLength value="1"/>
-                        <xs:maxLength value="20"/>
-                        <xs:pattern value="[a-zA-Z]*"/>
-                        <xs:enumeration value="value1"/>
-                        <xs:whiteSpace value="preserve"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
             <xs:attribute name="booleanValue">
                 <xs:simpleType>
                     <xs:restriction base="xs:boolean">

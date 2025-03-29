@@ -12,12 +12,13 @@ def test_load_config_no_file():
     assert configuration
     assert configuration.global_
     assert configuration.global_.randomization
+    assert configuration.global_.randomization.probability == 0.5
     assert configuration.global_.randomization.max_occurs is None
-    assert configuration.global_.randomization.probability is None
     assert configuration.global_.source_filename == '(?P<extracted>.*).(xsd|XSD)'
     assert configuration.global_.output_filename == '{{ source_filename }}_{{ uuid }}'
     assert configuration.global_.value_override is not None
     assert len(configuration.global_.value_override) == 0
+
     assert configuration.specific is not None
     assert len(configuration.specific) == 0
 
@@ -43,18 +44,21 @@ def test_load_config_non_empty():
     assert configuration.specific['Schema_01'].source_filename == 'from local - Schema_01 (source)'
     assert configuration.specific['Schema_01'].output_filename is None
     assert configuration.specific['Schema_01'].randomization is not None
+    assert configuration.specific['Schema_01'].randomization.probability == 0.25
     assert configuration.specific['Schema_01'].value_override is not None
 
     assert configuration.specific['Schema_02']
     assert configuration.specific['Schema_02'].source_filename == 'from local - Schema_02 (source)'
     assert configuration.specific['Schema_02'].output_filename == 'from local - Schema_02 (output)'
     assert configuration.specific['Schema_02'].randomization is not None
+    assert configuration.specific['Schema_02'].randomization.probability is None
     assert configuration.specific['Schema_02'].value_override is not None
 
     assert configuration.specific['Schema_03']
     assert configuration.specific['Schema_03'].source_filename is None
     assert configuration.specific['Schema_03'].output_filename is None
     assert configuration.specific['Schema_03'].randomization is not None
+    assert configuration.specific['Schema_03'].randomization.probability is None
     assert configuration.specific['Schema_03'].value_override is not None
 
 
@@ -65,6 +69,7 @@ def test_get_for_file_merge_local_and_global_1():
     assert config
     assert config.source_filename == 'from local - Schema_01 (source)'
     assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
+    assert config.randomization.probability == 0.25
     assert config.value_override is not None
     assert len(config.value_override) == 3
     assert config.value_override["Фамилия"] == "last_name-1"
@@ -79,6 +84,7 @@ def test_get_for_file_merge_local_and_global_2():
     assert config
     assert config.source_filename == 'from local - Schema_02 (source)'
     assert config.output_filename == 'from local - Schema_02 (output)'
+    assert config.randomization.probability == 1
     assert config.value_override is not None
     assert len(config.value_override) == 2
     assert config.value_override["Фамилия"] == "last_name-1"
@@ -92,6 +98,7 @@ def test_get_for_file_merge_local_and_global_3():
     assert config
     assert config.source_filename == 'pattern from global (source)'
     assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
+    assert config.randomization.probability == 1
     assert config.value_override is not None
     assert len(config.value_override) == 2
     assert config.value_override["Фамилия"] == "last_name-1"

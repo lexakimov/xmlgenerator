@@ -34,7 +34,9 @@ class XmlGenerator:
         if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
             for attr_name, attr in attributes.items():
                 use = attr.use  # optional | required
-                if use == 'optional':
+                if use == 'prohibited':
+                    continue
+                elif use == 'optional':
                     if rnd.random() > local_config.randomization.probability:
                         # skip optional attribute
                         continue
@@ -106,13 +108,7 @@ class XmlGenerator:
 
         # -------------------------------------------------------------------------------------------------------------
         # Выясняем ограничения
-
-        # TODO
-        #  decimal  allow_empty: True
-        #  integer  allow_empty: True
-        #  string   allow_empty: False
-        #  string   allow_empty: True
-        allow_empty = getattr(xsd_type, 'allow_empty', None)  # True | False
+        allow_empty = getattr(xsd_type, 'allow_empty', None)  # True | False  (use=optional|required)
 
         min_length = getattr(xsd_type, 'min_length', None)  # None | int
         max_length = getattr(xsd_type, 'max_length', None)  # None | int
@@ -167,50 +163,8 @@ class XmlGenerator:
 
         # -------------------------------------------------------------------------------------------------------------\
         # Генерируем значения для стандартных типов
-
         if isinstance(xsd_type, XsdAtomicBuiltin):
-            local_name = xsd_type.local_name
-            match local_name:
-                case 'string':
-                    return self._generate_string(xsd_type, target_name, patterns, min_length, max_length)
-                case 'boolean':
-                    return self._generate_boolean()
-                case 'float':
-                    return self._generate_float()
-                case 'double':
-                    return self._generate_double()
-                case 'decimal':
-                    return self._generate_decimal()
-                case 'duration':
-                    return self._generate_duration()
-                case 'dateTime':
-                    return self._generate_datetime()
-                case 'time':
-                    return self._generate_time()
-                case 'date':
-                    return self._generate_date()
-                case 'gYearMonth':
-                    return self._generate_gyearmonth()
-                case 'gYear':
-                    return self._generate_gyear()
-                case 'gMonthDay':
-                    return self._generate_gmonthday()
-                case 'gDay':
-                    return self._generate_gday()
-                case 'gMonth':
-                    return self._generate_gmonth()
-                case 'hexBinary':
-                    return self._generate_hex_binary()
-                case 'base64Binary':
-                    return self._generate_base64_binary()
-                case 'anyURI':
-                    return self._generate_any_uri()
-                case 'QName':
-                    return self._generate_qname()
-                case 'NOTATION':
-                    return self._generate_notation()
-                case _:
-                    raise RuntimeError()
+            return self._generate_value_by_type(xsd_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits, fraction_digits)
 
         # -------------------------------------------------------------------------------------------------------------
         # Проверяем базовый тип
@@ -221,34 +175,8 @@ class XmlGenerator:
             raise RuntimeError(f"base_type is None. Target name: {target_name}")
 
         # -------------------------------------------------------------------------------------------------------------
-        target_type = base_type.local_name  # string | integer | decimal | CCРФТип | СПДУЛТип
-
-        # Генерация строки
-        if target_type == 'string':
-            return self._generate_string(xsd_type, target_name, patterns, min_length, max_length)
-
-        if target_type == 'integer':
-            # Генерация целого числа
-            if total_digits:
-                min_value = 10 ** (total_digits - 1)
-                max_value = (10 ** total_digits) - 1
-            rnd_int = rnd.randint(min_value, max_value)
-            return str(rnd_int)
-
-        if target_type == 'decimal':
-            # Генерация десятичного числа
-            if total_digits:
-                if fraction_digits:
-                    integer_digits = total_digits - fraction_digits
-                    integer_part = rnd.randint(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
-                    fractional_part = rnd.randint(0, (10 ** fraction_digits) - 1)
-                    return f"{integer_part}.{fractional_part:0{fraction_digits}}"
-                else:
-                    min_value = 10 ** (total_digits - 1)
-                    max_value = (10 ** total_digits) - 1
-
-            rnd_int = rnd.randint(min_value, max_value)
-            return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
+        if isinstance(base_type, XsdAtomicBuiltin):
+            return self._generate_value_by_type(base_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits, fraction_digits)
 
         if isinstance(base_type, XsdAtomicRestriction) and patterns is not None:
             # Генерация строки по regex
@@ -259,11 +187,58 @@ class XmlGenerator:
             raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
 
 
-    def _generate_string(self, xsd_type, target_name, patterns, min_length, max_length):
+    def _generate_value_by_type(self, xsd_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits, fraction_digits) -> str | None:
+        local_name = xsd_type.local_name
+        match local_name:
+            case 'string':
+                return self._generate_string(target_name, patterns, min_length, max_length)
+            case 'boolean':
+                return self._generate_boolean()
+            case 'integer':
+                return self._generate_integer(total_digits, min_value, max_value)
+            case 'decimal':
+                return self._generate_decimal(total_digits, fraction_digits, min_value, max_value)
+            case 'float':
+                return self._generate_float()
+            case 'double':
+                return self._generate_double()
+            case 'duration':
+                return self._generate_duration()
+            case 'dateTime':
+                return self._generate_datetime()
+            case 'time':
+                return self._generate_time()
+            case 'date':
+                return self._generate_date()
+            case 'gYearMonth':
+                return self._generate_gyearmonth()
+            case 'gYear':
+                return self._generate_gyear()
+            case 'gMonthDay':
+                return self._generate_gmonthday()
+            case 'gDay':
+                return self._generate_gday()
+            case 'gMonth':
+                return self._generate_gmonth()
+            case 'hexBinary':
+                return self._generate_hex_binary()
+            case 'base64Binary':
+                return self._generate_base64_binary()
+            case 'anyURI':
+                return self._generate_any_uri()
+            case 'QName':
+                return self._generate_qname()
+            case 'NOTATION':
+                return self._generate_notation()
+            case _:
+                raise RuntimeError(local_name)
+
+
+    def _generate_string(self, target_name, patterns, min_length, max_length):
         rnd = self.randomizer.rnd
         if patterns is not None:
             # Генерация строки по regex
-            random_pattern = rnd.choice(xsd_type.patterns)
+            random_pattern = rnd.choice(patterns)
             xeger = rstr.xeger(random_pattern.attrib['value'])
             xeger = re.sub(r'\s', ' ', xeger)
             if max_length is not None and len(xeger) > max_length:
@@ -279,9 +254,36 @@ class XmlGenerator:
         # Иначе генерируем случайную строку
         return self.randomizer.ascii_string(min_length, max_length)
 
+
     def _generate_boolean(self):
         rnd = self.randomizer.rnd
         return rnd.choice(['true', 'false'])
+
+
+    def _generate_integer(self, total_digits, min_value, max_value):
+        rnd = self.randomizer.rnd
+        if total_digits:
+            min_value = 10 ** (total_digits - 1)
+            max_value = (10 ** total_digits) - 1
+        rnd_int = rnd.randint(min_value, max_value)
+        return str(rnd_int)
+
+
+    def _generate_decimal(self, total_digits, fraction_digits, min_value, max_value):
+        rnd = self.randomizer.rnd
+        if total_digits:
+            if fraction_digits:
+                integer_digits = total_digits - fraction_digits
+                integer_part = rnd.randint(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
+                fractional_part = rnd.randint(0, (10 ** fraction_digits) - 1)
+                return f"{integer_part}.{fractional_part:0{fraction_digits}}"
+            else:
+                min_value = 10 ** (total_digits - 1)
+                max_value = (10 ** total_digits) - 1
+
+        rnd_int = rnd.randint(min_value, max_value)
+        return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
+
 
     def _generate_gyear(self):
         rnd = self.randomizer.rnd
