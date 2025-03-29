@@ -38,8 +38,7 @@ class XmlGenerator:
                     continue
                 elif use == 'optional':
                     if rnd.random() > local_config.randomization.probability:
-                        # skip optional attribute
-                        continue
+                        continue    # skip optional attribute
 
                 attr_value = self._generate_value(attr.type, attr_name, local_config)
                 if attr_value is not None:
@@ -108,8 +107,6 @@ class XmlGenerator:
 
         # -------------------------------------------------------------------------------------------------------------
         # Выясняем ограничения
-        allow_empty = getattr(xsd_type, 'allow_empty', None)  # True | False  (use=optional|required)
-
         min_length = getattr(xsd_type, 'min_length', None)  # None | int
         max_length = getattr(xsd_type, 'max_length', None)  # None | int
 
@@ -151,9 +148,9 @@ class XmlGenerator:
         # Ищем переопределение значения в конфигурации
 
         overwordings = local_config.value_override
-        is_found, value_override = self.substitutor.substitute_value(target_name, overwordings.items())
+        is_found, overridden_value = self.substitutor.substitute_value(target_name, overwordings.items())
         if is_found:
-            return value_override
+            return overridden_value
 
         # -------------------------------------------------------------------------------------------------------------
         # If there is an enumeration, select a random value from it
@@ -164,7 +161,23 @@ class XmlGenerator:
         # -------------------------------------------------------------------------------------------------------------\
         # Генерируем значения для стандартных типов
         if isinstance(xsd_type, XsdAtomicBuiltin):
-            return self._generate_value_by_type(xsd_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits, fraction_digits)
+            return self._generate_value_by_type(
+                xsd_type, target_name,
+                patterns,
+                min_length, max_length,
+                min_value, max_value,
+                total_digits, fraction_digits
+            )
+
+        # Генерируем значения для стандартных типов с ограничениями
+        if isinstance(xsd_type, XsdAtomicRestriction):
+            return self._generate_value_by_type(
+                xsd_type.root_type, target_name,
+                patterns,
+                min_length, max_length,
+                min_value, max_value,
+                total_digits, fraction_digits
+            )
 
         # -------------------------------------------------------------------------------------------------------------
         # Проверяем базовый тип
@@ -174,20 +187,11 @@ class XmlGenerator:
         if base_type is None:
             raise RuntimeError(f"base_type is None. Target name: {target_name}")
 
-        # -------------------------------------------------------------------------------------------------------------
-        if isinstance(base_type, XsdAtomicBuiltin):
-            return self._generate_value_by_type(base_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits, fraction_digits)
-
-        if isinstance(base_type, XsdAtomicRestriction) and patterns is not None:
-            # Генерация строки по regex
-            random_pattern = rnd.choice(base_type.patterns)
-            return rstr.xeger(random_pattern.attrib['value'])
-
-        else:
-            raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
+        raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
 
 
-    def _generate_value_by_type(self, xsd_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits, fraction_digits) -> str | None:
+    def _generate_value_by_type(self, xsd_type, target_name, patterns, min_length, max_length, min_value, max_value,
+                                total_digits, fraction_digits) -> str | None:
         local_name = xsd_type.local_name
         match local_name:
             case 'string':
@@ -206,10 +210,10 @@ class XmlGenerator:
                 return self._generate_duration()
             case 'dateTime':
                 return self._generate_datetime()
-            case 'time':
-                return self._generate_time()
             case 'date':
                 return self._generate_date()
+            case 'time':
+                return self._generate_time()
             case 'gYearMonth':
                 return self._generate_gyearmonth()
             case 'gYear':
@@ -233,7 +237,6 @@ class XmlGenerator:
             case _:
                 raise RuntimeError(local_name)
 
-
     def _generate_string(self, target_name, patterns, min_length, max_length):
         rnd = self.randomizer.rnd
         if patterns is not None:
@@ -241,24 +244,20 @@ class XmlGenerator:
             random_pattern = rnd.choice(patterns)
             xeger = rstr.xeger(random_pattern.attrib['value'])
             xeger = re.sub(r'\s', ' ', xeger)
-            if max_length is not None and len(xeger) > max_length:
-                print(
-                    f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be longer than {max_length}",
-                    file=sys.stderr)
-            if min_length is not None and len(xeger) < min_length:
+            if min_length > -1 and len(xeger) < min_length:
                 print(
                     f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be shorter than {min_length}",
                     file=sys.stderr)
+            if -1 < max_length < len(xeger):
+                print(f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be longer than {max_length}", file=sys.stderr)
             return xeger
 
         # Иначе генерируем случайную строку
         return self.randomizer.ascii_string(min_length, max_length)
 
-
     def _generate_boolean(self):
         rnd = self.randomizer.rnd
         return rnd.choice(['true', 'false'])
-
 
     def _generate_integer(self, total_digits, min_value, max_value):
         rnd = self.randomizer.rnd
@@ -268,11 +267,10 @@ class XmlGenerator:
         rnd_int = rnd.randint(min_value, max_value)
         return str(rnd_int)
 
-
     def _generate_decimal(self, total_digits, fraction_digits, min_value, max_value):
         rnd = self.randomizer.rnd
         if total_digits:
-            if fraction_digits:
+            if fraction_digits and fraction_digits > 0:
                 integer_digits = total_digits - fraction_digits
                 integer_part = rnd.randint(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
                 fractional_part = rnd.randint(0, (10 ** fraction_digits) - 1)
@@ -280,11 +278,57 @@ class XmlGenerator:
             else:
                 min_value = 10 ** (total_digits - 1)
                 max_value = (10 ** total_digits) - 1
+                rnd_int = rnd.randint(min_value, max_value)
+                return str(rnd_int)
 
         rnd_int = rnd.randint(min_value, max_value)
         return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
 
+    def _generate_float(self):
+        raise RuntimeError()
+
+    def _generate_double(self):
+        raise RuntimeError()
+
+    def _generate_duration(self):
+        raise RuntimeError()
+
+    def _generate_datetime(self):
+        raise RuntimeError()
+
+    def _generate_date(self):
+        raise RuntimeError()
+
+    def _generate_time(self):
+        raise RuntimeError()
+
+    def _generate_gyearmonth(self):
+        raise RuntimeError()
 
     def _generate_gyear(self):
         rnd = self.randomizer.rnd
         return rnd.randint(2000, 2050)
+
+    def _generate_gmonthday(self):
+        raise RuntimeError()
+
+    def _generate_gday(self):
+        raise RuntimeError()
+
+    def _generate_gmonth(self):
+        raise RuntimeError()
+
+    def _generate_hex_binary(self):
+        raise RuntimeError()
+
+    def _generate_base64_binary(self):
+        raise RuntimeError()
+
+    def _generate_any_uri(self):
+        raise RuntimeError()
+
+    def _generate_qname(self):
+        raise RuntimeError()
+
+    def _generate_notation(self):
+        raise RuntimeError()
