@@ -208,9 +208,9 @@ class XmlGenerator:
             case 'decimal':
                 return self._generate_decimal(total_digits, fraction_digits, min_value, max_value)
             case 'float':
-                return self._generate_float()
+                return self._generate_float(min_value, max_value)
             case 'double':
-                return self._generate_double()
+                return self._generate_double(min_value, max_value)
             case 'duration':
                 return self._generate_duration()
             case 'dateTime':
@@ -289,11 +289,14 @@ class XmlGenerator:
         rnd_int = rnd.randint(min_value, max_value)
         return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
 
-    def _generate_float(self):
-        raise RuntimeError()
+    def _generate_float(self, min_value, max_value):
+        rnd = self.randomizer.rnd
+        rnd_int = rnd.uniform(min_value, max_value)
+        rnd_int = round(rnd_int, 2)
+        return str(rnd_int)
 
-    def _generate_double(self):
-        raise RuntimeError()
+    def _generate_double(self, min_value, max_value):
+        return self._generate_float(min_value, max_value)
 
     def _generate_duration(self):
         raise RuntimeError()

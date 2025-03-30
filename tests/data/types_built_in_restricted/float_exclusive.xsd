@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <xs:attribute name="attributeValue" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:float">
+                        <xs:maxExclusive value="101.0"/>
+                        <xs:minExclusive value="-1.0"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+</xs:schema> 

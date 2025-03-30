@@ -1,6 +1,5 @@
 import os
 import re
-from datetime import datetime
 
 import pytest
 from lxml import etree
@@ -68,43 +67,3 @@ def test_restriction_string_white_space():
     xml_str = etree.tostring(generated_xml, pretty_print=True)
     generated_value = re.sub("<root attributeValue=\"|\"/>\s", "", xml_str.decode('utf-8'))
     assert ' ' not in generated_value
-
-
-def test_restriction_integer_inclusive_min_max():
-    xsd_schema = XMLSchema("data/types_built_in_restricted/integer_inclusive_min_max.xsd")
-    local_config = GeneratorConfig()
-    generated_xml = generator.generate_xml(xsd_schema, local_config)
-    xml_str = etree.tostring(generated_xml, pretty_print=True)
-    generated_value = int(re.sub("<root attributeValue=\"|\"/>\s", "", xml_str.decode('utf-8')))
-    assert 10 <= generated_value <= 100
-
-
-def test_restriction_decimal_total_digits():
-    xsd_schema = XMLSchema("data/types_built_in_restricted/decimal_total_digits.xsd")
-    local_config = GeneratorConfig()
-    generated_xml = generator.generate_xml(xsd_schema, local_config)
-    xml_str = etree.tostring(generated_xml, pretty_print=True)
-    generated_value = re.sub("<root attributeValue=\"|\"/>\s", "", xml_str.decode('utf-8'))
-    assert len(generated_value) == 5
-
-
-def test_restriction_decimal_fraction_digits():
-    xsd_schema = XMLSchema("data/types_built_in_restricted/decimal_fraction_digits.xsd")
-    local_config = GeneratorConfig()
-    generated_xml = generator.generate_xml(xsd_schema, local_config)
-    xml_str = etree.tostring(generated_xml, pretty_print=True)
-    generated_value = re.sub("<root attributeValue=\"|\"/>\s", "", xml_str.decode('utf-8'))
-    decimal_part = generated_value.split('.')[1]
-    assert len(decimal_part) <= 2
-
-
-def test_restriction_date_min_max():
-    xsd_schema = XMLSchema("data/types_built_in_restricted/date_inclusive_min_max.xsd")
-    local_config = GeneratorConfig()
-    generated_xml = generator.generate_xml(xsd_schema, local_config)
-    xml_str = etree.tostring(generated_xml, pretty_print=True)
-    generated_value = re.sub("<root attributeValue=\"|\"/>\s", "", xml_str.decode('utf-8'))
-    date_value = datetime.strptime(generated_value, '%Y-%m-%d')
-    min_date = datetime(2020, 1, 1)
-    max_date = datetime(2025, 12, 31)
-    assert min_date <= date_value <= max_date

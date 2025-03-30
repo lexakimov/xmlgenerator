@@ -1,5 +1,7 @@
 ```
 
+тесты для simpleType а не complexType 
+
 # проверка типов mypy
 
 # mypyc
