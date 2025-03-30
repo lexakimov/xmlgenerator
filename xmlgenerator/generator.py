@@ -149,6 +149,9 @@ class XmlGenerator:
         min_length = min_length or -1
         max_length = max_length or -1
 
+        min_value = min_value or 0
+        max_value = max_value or 100000
+
         # -------------------------------------------------------------------------------------------------------------
         # Ищем переопределение значения в конфигурации
 
@@ -164,20 +167,10 @@ class XmlGenerator:
             return rnd.choice(enumeration)
 
         # -------------------------------------------------------------------------------------------------------------\
-        # Генерируем значения для стандартных типов
-        if isinstance(xsd_type, XsdAtomicBuiltin):
+        # Генерируем значения для стандартных типов и типов с ограничениями
+        if isinstance(xsd_type, XsdAtomicBuiltin) or isinstance(xsd_type, XsdAtomicRestriction):
             return self._generate_value_by_type(
                 xsd_type, target_name,
-                patterns,
-                min_length, max_length,
-                min_value, max_value,
-                total_digits, fraction_digits
-            )
-
-        # Генерируем значения для стандартных типов с ограничениями
-        if isinstance(xsd_type, XsdAtomicRestriction):
-            return self._generate_value_by_type(
-                xsd_type.root_type, target_name,
                 patterns,
                 min_length, max_length,
                 min_value, max_value,
@@ -197,8 +190,15 @@ class XmlGenerator:
 
     def _generate_value_by_type(self, xsd_type, target_name, patterns, min_length, max_length, min_value, max_value,
                                 total_digits, fraction_digits) -> str | None:
-        local_name = xsd_type.local_name
-        match local_name:
+
+        type_id = xsd_type.id
+        base_type = xsd_type.base_type
+        if not type_id:
+            type_id = base_type.id
+            if not type_id:
+                type_id = xsd_type.root_type.id
+
+        match type_id:
             case 'string':
                 return self._generate_string(target_name, patterns, min_length, max_length)
             case 'boolean':
@@ -240,7 +240,7 @@ class XmlGenerator:
             case 'NOTATION':
                 return self._generate_notation()
             case _:
-                raise RuntimeError(local_name)
+                raise RuntimeError(type_id)
 
     def _generate_string(self, target_name, patterns, min_length, max_length):
         rnd = self.randomizer.rnd
