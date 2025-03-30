@@ -143,6 +143,8 @@ class XmlGenerator:
                 fraction_digits = validator.value
             elif isinstance(validator, XsdEnumerationFacets):
                 enumeration = validator.enumeration
+            elif callable(validator):
+                pass
             else:
                 raise RuntimeError(f"Unhandled validator: {validator}")
 
