@@ -33,7 +33,7 @@ class XmlGenerator:
         attributes = getattr(xsd_element, 'attributes', dict())
         if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
             for attr_name, attr in attributes.items():
-                use = attr.use  # optional | required
+                use = attr.use  # optional | required | prohibited
                 if use == 'prohibited':
                     continue
                 elif use == 'optional':
