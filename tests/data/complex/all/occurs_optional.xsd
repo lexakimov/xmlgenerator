@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!-- вся группа элементов опциональна -->
+            <xs:all minOccurs="0">
+                <!-- элемент в группе опционален -->
+                <xs:element name="FirstName" type="xs:string" minOccurs="0"/>
+                <!-- элемент в группе обязателен -->
+                <xs:element name="LastName" type="xs:string"/>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

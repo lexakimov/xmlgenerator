@@ -62,60 +62,72 @@ def test_load_config_non_empty():
     assert configuration.specific['Schema_03'].value_override is not None
 
 
-def test_get_for_file_merge_local_and_global_1():
-    configuration = conf.load_config('data/config_value_override.yaml')
-    config = configuration.get_for_file("Schema_01")
+class TestMergeGlobalAndLocal:
 
-    assert config
-    assert config.source_filename == 'from local - Schema_01 (source)'
-    assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
-    assert config.randomization.probability == 0.25
-    assert config.value_override is not None
-    assert len(config.value_override) == 3
-    assert config.value_override["Фамилия"] == "last_name-1"
-    assert config.value_override["Имя"] == "first_name-2"
-    assert config.value_override["Отчество"] == "middle_name-2"
+    def test_get_for_file_merge_local_and_global_1(self):
+        configuration = conf.load_config('data/config_value_override.yaml')
+        config = configuration.get_for_file("Schema_01")
 
+        assert config
+        assert config.source_filename == 'from local - Schema_01 (source)'
+        assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
+        assert config.randomization.probability == 0.25
+        assert config.value_override is not None
+        assert len(config.value_override) == 3
+        assert config.value_override["Фамилия"] == "last_name-1"
+        assert config.value_override["Имя"] == "first_name-2"
+        assert config.value_override["Отчество"] == "middle_name-2"
 
-def test_get_for_file_merge_local_and_global_2():
-    configuration = conf.load_config('data/config_value_override.yaml')
-    config = configuration.get_for_file("Schema_02")
+    def test_get_for_file_merge_local_and_global_2(self):
+        configuration = conf.load_config('data/config_value_override.yaml')
+        config = configuration.get_for_file("Schema_02")
 
-    assert config
-    assert config.source_filename == 'from local - Schema_02 (source)'
-    assert config.output_filename == 'from local - Schema_02 (output)'
-    assert config.randomization.probability == 1
-    assert config.value_override is not None
-    assert len(config.value_override) == 2
-    assert config.value_override["Фамилия"] == "last_name-1"
-    assert config.value_override["Имя"] is None
+        assert config
+        assert config.source_filename == 'from local - Schema_02 (source)'
+        assert config.output_filename == 'from local - Schema_02 (output)'
+        assert config.randomization.probability == 1
+        assert config.value_override is not None
+        assert len(config.value_override) == 2
+        assert config.value_override["Фамилия"] == "last_name-1"
+        assert config.value_override["Имя"] is None
 
+    def test_get_for_file_merge_local_and_global_3(self):
+        configuration = conf.load_config('data/config_value_override.yaml')
+        config = configuration.get_for_file("Schema_03")
 
-def test_get_for_file_merge_local_and_global_3():
-    configuration = conf.load_config('data/config_value_override.yaml')
-    config = configuration.get_for_file("Schema_03")
+        assert config
+        assert config.source_filename == 'pattern from global (source)'
+        assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
+        assert config.randomization.probability == 1
+        assert config.value_override is not None
+        assert len(config.value_override) == 2
+        assert config.value_override["Фамилия"] == "last_name-1"
+        assert config.value_override["Имя"] == "first_name-1"
 
-    assert config
-    assert config.source_filename == 'pattern from global (source)'
-    assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
-    assert config.randomization.probability == 1
-    assert config.value_override is not None
-    assert len(config.value_override) == 2
-    assert config.value_override["Фамилия"] == "last_name-1"
-    assert config.value_override["Имя"] == "first_name-1"
+    def test_get_for_file_merge_local_and_global_4(self):
+        configuration = conf.load_config('data/config_value_override.yaml')
+        config = configuration.get_for_file("Schema_04")
 
+        assert config
+        assert config.source_filename == 'pattern from global (source)'
+        assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
+        assert config.value_override is not None
+        assert len(config.value_override) == 2
+        assert config.value_override["Фамилия"] == "last_name-1"
+        assert config.value_override["Имя"] == "first_name-1"
 
-def test_get_for_file_merge_local_and_global_4():
-    configuration = conf.load_config('data/config_value_override.yaml')
-    config = configuration.get_for_file("Schema_04")
+    def test_load_config_value_override_priority(self):
+        configuration = conf.load_config('data/config_value_override_priority.yaml')
 
-    assert config
-    assert config.source_filename == 'pattern from global (source)'
-    assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
-    assert config.value_override is not None
-    assert len(config.value_override) == 2
-    assert config.value_override["Фамилия"] == "last_name-1"
-    assert config.value_override["Имя"] == "first_name-1"
+        config = configuration.get_for_file("Schema_01")
+
+        value_override = list(config.value_override.items())
+
+        assert len(value_override) == 4
+        assert value_override[0] == ("specific_1", "specific 1 value")
+        assert value_override[1] == ("global_1", "specific 2 value")
+        assert value_override[2] == ("global_2", None)
+        assert value_override[3] == ("global_0", "global 0 value")
 
 
 def test_load_config_name_patterns_overlapping():
@@ -131,18 +143,3 @@ def test_load_config_name_patterns_overlapping():
     # Should use the config from the first matching pattern 'Schema_.*'
     config = configuration.get_for_file("Schema_B")
     assert config.output_filename == "pattern2"
-
-
-def test_load_config_value_override_priority():
-    configuration = conf.load_config('data/config_value_override_priority.yaml')
-
-    config = configuration.get_for_file("Schema_01")
-
-    value_override = list(config.value_override.items())
-
-    assert len(value_override) == 4
-    assert value_override[0] == ("specific_1", "specific 1 value")
-    assert value_override[1] == ("global_1", "specific 2 value")
-    assert value_override[2] == ("global_2", None)
-    assert value_override[3] == ("global_0", "global 0 value")
-
