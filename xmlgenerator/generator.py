@@ -66,17 +66,33 @@ class XmlGenerator:
 
         elif isinstance(xsd_element, XsdGroup):
             model = xsd_element.model
-            if model == 'sequence':
 
-                min_group_occurs = getattr(xsd_element, 'min_occurs', None)
-                max_group_occurs = getattr(xsd_element, 'max_occurs', None)
-                min_group_occurs = min_group_occurs if min_group_occurs is not None else 0
-                max_group_occurs = max_group_occurs if max_group_occurs is not None else 10 # TODO externalize
-                group_occurs = rnd.randint(min_group_occurs, max_group_occurs)
+            min_group_occurs = getattr(xsd_element, 'min_occurs', None)
+            max_group_occurs = getattr(xsd_element, 'max_occurs', None)
+            min_group_occurs = min_group_occurs if min_group_occurs is not None else 0
+            max_group_occurs = max_group_occurs if max_group_occurs is not None else 10 # TODO externalize
+            group_occurs = rnd.randint(min_group_occurs, max_group_occurs)
 
+            if model == 'all':
                 for _ in range(group_occurs):
+                    xsd_group_content = xsd_element.content
+                    for xsd_child_element_type in xsd_group_content:
 
-                    for xsd_child_element_type in xsd_element.content:
+                        min_element_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                        max_element_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                        min_element_occurs = min_element_occurs if min_element_occurs is not None else 0
+                        max_element_occurs = max_element_occurs if max_element_occurs is not None else 10 # TODO externalize
+                        element_occurs = rnd.randint(min_element_occurs, max_element_occurs)
+
+                        for _ in range(element_occurs):
+                            xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
+                            self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+                return
+
+            elif model == 'sequence':
+                for _ in range(group_occurs):
+                    xsd_group_content = xsd_element.content
+                    for xsd_child_element_type in xsd_group_content:
 
                         min_element_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
                         max_element_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
@@ -99,16 +115,9 @@ class XmlGenerator:
 
                         else:
                             raise RuntimeError(xsd_child_element_type)
-
                 return
+
             elif model == 'choice':
-
-                min_group_occurs = getattr(xsd_element, 'min_occurs', None)
-                max_group_occurs = getattr(xsd_element, 'max_occurs', None)
-                min_group_occurs = min_group_occurs if min_group_occurs is not None else 0
-                max_group_occurs = max_group_occurs if max_group_occurs is not None else 10 # TODO externalize
-                group_occurs = rnd.randint(min_group_occurs, max_group_occurs)
-
                 for _ in range(group_occurs):
                     xsd_child_element_type = rnd.choice(xsd_element)
 
@@ -121,32 +130,6 @@ class XmlGenerator:
                     for _ in range(element_occurs):
                         xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                         self._add_elements(xml_child_element, xsd_child_element_type, local_config)
-
-                return
-
-            elif model == 'all':
-
-                min_group_occurs = getattr(xsd_element, 'min_occurs', None)
-                max_group_occurs = getattr(xsd_element, 'max_occurs', None)
-                min_group_occurs = min_group_occurs if min_group_occurs is not None else 0
-                max_group_occurs = max_group_occurs if max_group_occurs is not None else 10 # TODO externalize
-                group_occurs = rnd.randint(min_group_occurs, max_group_occurs)
-
-                xsd_group_content = xsd_element.content
-
-                for _ in range(group_occurs):
-                    for xsd_group_child_element_type in xsd_group_content:
-
-                        min_element_occurs = getattr(xsd_group_child_element_type, 'min_occurs', None)
-                        max_element_occurs = getattr(xsd_group_child_element_type, 'max_occurs', None)
-                        min_element_occurs = min_element_occurs if min_element_occurs is not None else 0
-                        max_element_occurs = max_element_occurs if max_element_occurs is not None else 10 # TODO externalize
-                        element_occurs = rnd.randint(min_element_occurs, max_element_occurs)
-
-                        for _ in range(element_occurs):
-                            xml_child_element = etree.SubElement(xml_element, xsd_group_child_element_type.name)
-                            self._add_elements(xml_child_element, xsd_group_child_element_type, local_config)
-
                 return
 
             else:
