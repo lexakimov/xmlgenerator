@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!--
+              minOccurs = nonNegativeInteger : 1
+              maxOccurs = (nonNegativeInteger | unbounded)  : 1
+            -->
+            <!-- Эта последовательность обязательна -->
+            <xs:sequence>
+                <!-- Этот элемент может быть 0 или более раз -->
+                <xs:element name="unboundedItem" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

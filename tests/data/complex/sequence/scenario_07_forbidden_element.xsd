@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!--
+              minOccurs = nonNegativeInteger : 1
+              maxOccurs = (nonNegativeInteger | unbounded)  : 1
+            -->
+            <xs:sequence>
+                <!-- Этот элемент необязателен ВНУТРИ каждой последовательности -->
+                <xs:element name="allowedItem" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <!-- Этот элемент НИКОГДА не должен присутствовать -->
+                <xs:element name="forbiddenItem" type="xs:string" minOccurs="0" maxOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

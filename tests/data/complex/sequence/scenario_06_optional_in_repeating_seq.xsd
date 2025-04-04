@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!--
+              minOccurs = nonNegativeInteger : 1
+              maxOccurs = (nonNegativeInteger | unbounded)  : 1
+            -->
+            <!-- Эта последовательность должна быть хотя бы 1 раз (может быть много) -->
+            <xs:sequence minOccurs="1" maxOccurs="unbounded">
+                <!-- Этот элемент обязателен ВНУТРИ каждой последовательности -->
+                <xs:element name="mandatoryInSeq" type="xs:string"/>
+                <!-- Этот элемент необязателен ВНУТРИ каждой последовательности -->
+                <xs:element name="optionalInSeq" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

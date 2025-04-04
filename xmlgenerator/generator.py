@@ -45,12 +45,6 @@ class XmlGenerator:
                 if attr_value is not None:
                     xml_element.set(attr_name, str(attr_value))
 
-        # Find out the restrictions -----------------------------------------------------------------------------------
-        min_occurs = getattr(xsd_element, 'min_occurs', None)  # None | int
-        max_occurs = getattr(xsd_element, 'max_occurs', None)  # None | int
-        effective_min_occurs = getattr(xsd_element, 'effective_min_occurs', None)  # None | int
-        effective_max_occurs = getattr(xsd_element, 'effective_max_occurs', None)  # None | int
-
         # Process child elements --------------------------------------------------------------------------------------
         if isinstance(xsd_element, XsdElement):
             if isinstance(xsd_element_type, XsdAtomicRestriction):
@@ -76,56 +70,57 @@ class XmlGenerator:
 
                 min_group_occurs = getattr(xsd_element, 'min_occurs', None)
                 max_group_occurs = getattr(xsd_element, 'max_occurs', None)
-                min_group_occurs = min_group_occurs or 0
-                max_group_occurs = max_group_occurs or 10 # TODO externalize
+                min_group_occurs = min_group_occurs if min_group_occurs is not None else 0
+                max_group_occurs = max_group_occurs if max_group_occurs is not None else 10 # TODO externalize
                 group_occurs = rnd.randint(min_group_occurs, max_group_occurs)
-                # TODO for _ in group_occurs:
 
-                for xsd_child_element_type in xsd_element:
+                for _ in range(group_occurs):
 
-                    min_element_occurs = getattr(xsd_child_element_type, 'min_occurs', 0)
-                    max_element_occurs = getattr(xsd_child_element_type, 'max_occurs', 100)
-                    min_element_occurs = min_element_occurs or 0
-                    max_element_occurs = max_element_occurs or 10 # TODO externalize
-                    element_occurs = rnd.randint(min_element_occurs, max_element_occurs)
+                    for xsd_child_element_type in xsd_element.content:
 
-                    if isinstance(xsd_child_element_type, XsdElement):
-                        for _ in range(element_occurs):
-                            xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
+                        min_element_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                        max_element_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                        min_element_occurs = min_element_occurs if min_element_occurs is not None else 0
+                        max_element_occurs = max_element_occurs if max_element_occurs is not None else 10 # TODO externalize
+                        element_occurs = rnd.randint(min_element_occurs, max_element_occurs)
+
+                        if isinstance(xsd_child_element_type, XsdElement):
+                            for _ in range(element_occurs):
+                                xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
+                                self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+
+                        elif isinstance(xsd_child_element_type, XsdGroup):
+                            xml_child_element = xml_element
                             self._add_elements(xml_child_element, xsd_child_element_type, local_config)
 
-                    elif isinstance(xsd_child_element_type, XsdGroup):
-                        xml_child_element = xml_element
-                        self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+                        elif isinstance(xsd_child_element_type, XsdAnyElement):
+                            xml_child_element = etree.SubElement(xml_element, "Any")
+                            self._add_elements(xml_child_element, xsd_child_element_type, local_config)
 
-                    elif isinstance(xsd_child_element_type, XsdAnyElement):
-                        xml_child_element = etree.SubElement(xml_element, "Any")
-                        self._add_elements(xml_child_element, xsd_child_element_type, local_config)
-
-                    else:
-                        raise RuntimeError(xsd_child_element_type)
+                        else:
+                            raise RuntimeError(xsd_child_element_type)
 
                 return
             elif model == 'choice':
 
                 min_group_occurs = getattr(xsd_element, 'min_occurs', None)
                 max_group_occurs = getattr(xsd_element, 'max_occurs', None)
-                min_group_occurs = min_group_occurs or 0
-                max_group_occurs = max_group_occurs or 10 # TODO externalize
+                min_group_occurs = min_group_occurs if min_group_occurs is not None else 0
+                max_group_occurs = max_group_occurs if max_group_occurs is not None else 10 # TODO externalize
                 group_occurs = rnd.randint(min_group_occurs, max_group_occurs)
-                # TODO for _ in group_occurs:
 
-                xsd_child_element_type = rnd.choice(xsd_element)
+                for _ in range(group_occurs):
+                    xsd_child_element_type = rnd.choice(xsd_element)
 
-                min_element_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
-                max_element_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                min_element_occurs = min_element_occurs or 0
-                max_element_occurs = max_element_occurs or 10 # TODO externalize
-                element_occurs = rnd.randint(min_element_occurs, max_element_occurs)
+                    min_element_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                    max_element_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                    min_element_occurs = min_element_occurs if min_element_occurs is not None else 0
+                    max_element_occurs = max_element_occurs if max_element_occurs is not None else 10 # TODO externalize
+                    element_occurs = rnd.randint(min_element_occurs, max_element_occurs)
 
-                for _ in range(element_occurs):
-                    xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
-                    self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+                    for _ in range(element_occurs):
+                        xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
+                        self._add_elements(xml_child_element, xsd_child_element_type, local_config)
 
                 return
 
@@ -133,8 +128,8 @@ class XmlGenerator:
 
                 min_group_occurs = getattr(xsd_element, 'min_occurs', None)
                 max_group_occurs = getattr(xsd_element, 'max_occurs', None)
-                min_group_occurs = min_group_occurs or 0
-                max_group_occurs = max_group_occurs or 10 # TODO externalize
+                min_group_occurs = min_group_occurs if min_group_occurs is not None else 0
+                max_group_occurs = max_group_occurs if max_group_occurs is not None else 10 # TODO externalize
                 group_occurs = rnd.randint(min_group_occurs, max_group_occurs)
 
                 xsd_group_content = xsd_element.content
@@ -144,8 +139,8 @@ class XmlGenerator:
 
                         min_element_occurs = getattr(xsd_group_child_element_type, 'min_occurs', None)
                         max_element_occurs = getattr(xsd_group_child_element_type, 'max_occurs', None)
-                        min_element_occurs = min_element_occurs or 0
-                        max_element_occurs = max_element_occurs or 10 # TODO externalize
+                        min_element_occurs = min_element_occurs if min_element_occurs is not None else 0
+                        max_element_occurs = max_element_occurs if max_element_occurs is not None else 10 # TODO externalize
                         element_occurs = rnd.randint(min_element_occurs, max_element_occurs)
 
                         for _ in range(element_occurs):

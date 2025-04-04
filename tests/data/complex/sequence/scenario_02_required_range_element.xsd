@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!--
+              minOccurs = nonNegativeInteger : 1
+              maxOccurs = (nonNegativeInteger | unbounded)  : 1
+            -->
+            <!-- Эта последовательность обязательна -->
+            <xs:sequence>
+                <!-- Этот элемент должен быть 2, 3, 4 или 5 раз -->
+                <xs:element name="rangedItem" type="xs:string" minOccurs="2" maxOccurs="5"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
