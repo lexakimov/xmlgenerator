@@ -397,68 +397,134 @@ class TestComplex:
 
     class TestChoice:
 
-        def test_occurs_0_1_variations(self, generator, config):
-            xsd_schema = XMLSchema("data/complex/choice/occurs_0_1.xsd")
-            counts = []
+        def test_group_0_1__elements_required(self, generator, config):
+            xsd_schema = XMLSchema("data/complex/choice/scenario_01_choice_0_1_elements_required.xsd")
+            counts_by_occurs_a = {}
+            counts_by_occurs_b = {}
             for _ in range(100):
                 generated_xml = generator.generate_xml(xsd_schema, config)
-                counts.append(len(generated_xml.findall("optional")))
-            unique_counts = set(counts)
-            assert len(unique_counts) == 2, "Опциональный элемент всегда генерируется одинаково"
+                count_a = int(generated_xml.xpath("count(/root/optionA)"))
+                count_b = int(generated_xml.xpath("count(/root/optionB)"))
+                counts_by_occurs_a[count_a] = (counts_by_occurs_a.get(count_a) or 0) + 1
+                counts_by_occurs_b[count_b] = (counts_by_occurs_b.get(count_b) or 0) + 1
 
-        def test_occurs_0_3_variations(self, generator, config):
-            xsd_schema = XMLSchema("data/complex/choice/occurs_0_3.xsd")
-            counts = []
+            assert min(counts_by_occurs_a) == 0
+            assert max(counts_by_occurs_a) == 1
+            assert len(counts_by_occurs_a) == 2
+            assert counts_by_occurs_a[0] >= 10
+            assert counts_by_occurs_a[1] >= 10
+            assert counts_by_occurs_a[0] + counts_by_occurs_a[1] == 100
+
+            assert min(counts_by_occurs_b) == 0
+            assert max(counts_by_occurs_b) == 1
+            assert len(counts_by_occurs_b) == 2
+            assert counts_by_occurs_b[0] >= 10
+            assert counts_by_occurs_b[1] >= 10
+            assert counts_by_occurs_b[0] + counts_by_occurs_b[1] == 100
+
+        def test_group_1_unbounded__element_0_1(self, generator, config):
+            xsd_schema = XMLSchema("data/complex/choice/scenario_02_choice_1_unbounded.xsd")
+            counts_by_occurs_info = {}
+            counts_by_occurs_warn = {}
+            counts_by_occurs_err = {}
             for _ in range(100):
                 generated_xml = generator.generate_xml(xsd_schema, config)
-                counts.append(len(generated_xml.findall("zeroToThree")))
-            unique_counts = set(counts)
-            assert len(unique_counts) == 4, "Опциональный элемент всегда генерируется одинаково"
-            for count in unique_counts:
-                assert 0 <= count <= 3
+                count_info = int(generated_xml.xpath("count(/root/info)"))
+                count_warn = int(generated_xml.xpath("count(/root/warning)"))
+                count_err = int(generated_xml.xpath("count(/root/error)"))
+                counts_by_occurs_info[count_info] = (counts_by_occurs_info.get(count_info) or 0) + 1
+                counts_by_occurs_warn[count_warn] = (counts_by_occurs_warn.get(count_warn) or 0) + 1
+                counts_by_occurs_err[count_err] = (counts_by_occurs_err.get(count_err) or 0) + 1
 
-        def test_occurs_1_1(self, generator, config):
-            xsd_schema = XMLSchema("data/complex/choice/occurs_1_1.xsd")
-            counts = []
+            assert min(counts_by_occurs_info) == 0
+            assert max(counts_by_occurs_info) > 1
+            assert sum(counts_by_occurs_info.values()) == 100
+
+            assert min(counts_by_occurs_warn) == 0
+            assert max(counts_by_occurs_warn) > 1
+            assert sum(counts_by_occurs_warn.values()) == 100
+
+            assert min(counts_by_occurs_err) == 0
+            assert max(counts_by_occurs_err) > 1
+            assert sum(counts_by_occurs_err.values()) == 100
+
+        def test_group_3_3__min_conflict(self, generator, config):
+            xsd_schema = XMLSchema("data/complex/choice/scenario_03_choice_3_3_min_conflict.xsd")
+            counts_by_occurs_1 = {}
+            counts_by_occurs_2 = {}
+            counts_by_occurs_3 = {}
             for _ in range(100):
                 generated_xml = generator.generate_xml(xsd_schema, config)
-                counts.append(len(generated_xml.findall("required")))
-            unique_counts = set(counts)
-            assert len(unique_counts) == 1
-            assert list(unique_counts)[0] == 1
+                count_1 = int(generated_xml.xpath("count(/root/partA)"))
+                count_2 = int(generated_xml.xpath("count(/root/partB)"))
+                count_3 = int(generated_xml.xpath("count(/root/partC)"))
+                counts_by_occurs_1[count_1] = (counts_by_occurs_1.get(count_1) or 0) + 1
+                counts_by_occurs_2[count_2] = (counts_by_occurs_2.get(count_2) or 0) + 1
+                counts_by_occurs_3[count_3] = (counts_by_occurs_3.get(count_3) or 0) + 1
 
-        def test_occurs_2_5(self, generator, config):
-            xsd_schema = XMLSchema("data/complex/choice/occurs_2_5.xsd")
-            counts = []
+            assert min(counts_by_occurs_1) == 0
+            assert max(counts_by_occurs_1) > 1
+            assert sum(counts_by_occurs_1.values()) == 100
+
+            assert min(counts_by_occurs_2) == 0
+            assert max(counts_by_occurs_2) > 1
+            assert sum(counts_by_occurs_2.values()) == 100
+
+            assert min(counts_by_occurs_3) == 0
+            assert max(counts_by_occurs_3) > 1
+            assert sum(counts_by_occurs_3.values()) == 100
+
+        def test_group_1_2__element_forbidden(self, generator, config):
+            xsd_schema = XMLSchema("data/complex/choice/scenario_04_choice_1_2_element_forbidden.xsd")
+            counts_by_occurs_1 = {}
+            counts_by_occurs_2 = {}
+            counts_by_occurs_3 = {}
             for _ in range(100):
                 generated_xml = generator.generate_xml(xsd_schema, config)
-                counts.append(len(generated_xml.findall("twoToFive")))
-            unique_counts = set(counts)
-            assert len(unique_counts) == 4
-            for count in unique_counts:
-                assert 2 <= count <= 5
+                count_1 = int(generated_xml.xpath("count(/root/allowed)"))
+                count_2 = int(generated_xml.xpath("count(/root/forbidden)"))
+                count_3 = int(generated_xml.xpath("count(/root/alsoAllowed)"))
+                counts_by_occurs_1[count_1] = (counts_by_occurs_1.get(count_1) or 0) + 1
+                counts_by_occurs_2[count_2] = (counts_by_occurs_2.get(count_2) or 0) + 1
+                counts_by_occurs_3[count_3] = (counts_by_occurs_3.get(count_3) or 0) + 1
 
-        def test_occurs_unbounded_at_least_one_element(self, generator, config):
-            xsd_schema = XMLSchema("data/complex/choice/occurs_unbounded.xsd")
-            counts = []
+            assert min(counts_by_occurs_1) == 0
+            assert max(counts_by_occurs_1) > 1
+            assert sum(counts_by_occurs_1.values()) == 100
+
+            assert min(counts_by_occurs_2) == 0
+            assert max(counts_by_occurs_2) == 0
+            assert sum(counts_by_occurs_2.values()) == 100
+
+            assert min(counts_by_occurs_3) == 0
+            assert max(counts_by_occurs_3) > 1
+            assert sum(counts_by_occurs_3.values()) == 100
+
+        def test_group_1_5__element_optional(self, generator, config):
+            xsd_schema = XMLSchema("data/complex/choice/scenario_05_choice_1_5_elements_optional.xsd")
+            counts_by_occurs_1 = {}
+            counts_by_occurs_2 = {}
+            counts_by_occurs_3 = {}
             for _ in range(100):
                 generated_xml = generator.generate_xml(xsd_schema, config)
-                counts.append(len(generated_xml.findall("atLeastOne")))
+                count_1 = int(generated_xml.xpath("count(/root/opt1)"))
+                count_2 = int(generated_xml.xpath("count(/root/opt2)"))
+                count_3 = int(generated_xml.xpath("count(/root/opt3)"))
+                counts_by_occurs_1[count_1] = (counts_by_occurs_1.get(count_1) or 0) + 1
+                counts_by_occurs_2[count_2] = (counts_by_occurs_2.get(count_2) or 0) + 1
+                counts_by_occurs_3[count_3] = (counts_by_occurs_3.get(count_3) or 0) + 1
 
-            s = set(counts)
-            assert 0 not in s
-            assert 5 < len(s) <= 11, \
-                f"Элемент atLeastOne всегда генерируется с одинаковым количеством экземпляров"
+            assert min(counts_by_occurs_1) == 0
+            assert max(counts_by_occurs_1) > 1
+            assert sum(counts_by_occurs_1.values()) == 100
 
-        def test_occurs_unbounded_zero_or_more_elements(self, generator, config):
-            xsd_schema = XMLSchema("data/complex/choice/occurs_unbounded.xsd")
-            counts = []
-            for _ in range(100):
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                counts.append(len(generated_xml.findall("zeroOrMore")))
+            assert min(counts_by_occurs_2) == 0
+            assert max(counts_by_occurs_2) > 1
+            assert sum(counts_by_occurs_2.values()) == 100
 
-            assert 5 < len(set(counts)) <= 10, \
-                f"Элемент zeroOrMore всегда генерируется с одинаковым количеством экземпляров"
+            assert min(counts_by_occurs_3) == 0
+            assert max(counts_by_occurs_3) > 1
+            assert sum(counts_by_occurs_3.values()) == 100
 
     class TestSequence:
 

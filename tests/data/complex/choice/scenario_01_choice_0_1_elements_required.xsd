@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!-- Этот choice может отсутствовать целиком -->
+            <xs:choice minOccurs="0" maxOccurs="1">
+                <xs:element name="optionA" type="xs:string"/>
+                <xs:element name="optionB" type="xs:string"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
+
+<!--
+xs:choice/@minOccurs: Минимальное общее количество элементов, которые должны быть выбраны из choice.
+xs:choice/@maxOccurs: Максимальное общее количество элементов, которые могут быть выбраны из choice.
+
+xs:element/@minOccurs: Минимальное количество раз, которое данный конкретный элемент должен появиться, если он выбран в рамках choice.
+    Важно: Внутри xs:choice значение по умолчанию для minOccurs и maxOccurs у xs:element равно 1. Указание minOccurs="0" делает его необязательным, даже если он выбран.
+xs:element/@maxOccurs: Максимальное количество раз, которое данный конкретный элемент может появиться, если он выбран в рамках choice.
+-->

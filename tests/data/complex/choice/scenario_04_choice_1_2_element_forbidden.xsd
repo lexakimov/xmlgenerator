@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!-- Выбрать от 1 до 2 элементов -->
+            <xs:choice minOccurs="1" maxOccurs="2">
+                <xs:element name="allowed" type="xs:string" maxOccurs="2"/>
+                <!-- Этот элемент определен, но никогда не может быть использован -->
+                <xs:element name="forbidden" type="xs:string" minOccurs="0" maxOccurs="0"/>
+                <xs:element name="alsoAllowed" type="xs:string" maxOccurs="1"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
+<!--
+Цель: Проверить, что элемент с maxOccurs="0" действительно никогда не может быть использован, даже если choice позволяет выбор.
+-->

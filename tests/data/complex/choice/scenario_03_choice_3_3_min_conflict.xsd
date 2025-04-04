@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!-- Нужно выбрать ровно 3 элемента -->
+            <xs:choice minOccurs="3" maxOccurs="3">
+                <!-- Каждый из этих элементов может появиться максимум 2 раза -->
+                <xs:element name="partA" type="xs:string" maxOccurs="2"/>
+                <xs:element name="partB" type="xs:string" maxOccurs="2"/>
+                <xs:element name="partC" type="xs:string" maxOccurs="1"/> <!-- Этот только один раз -->
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
+<!--
+Цель: Проверить ситуацию, когда minOccurs на choice требует больше элементов,
+чем позволяет maxOccurs любого отдельного элемента внутри.
+Это заставляет использовать разные элементы.
+-->

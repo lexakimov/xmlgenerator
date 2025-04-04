@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!-- Нужно выбрать хотя бы один элемент -->
+            <xs:choice minOccurs="1" maxOccurs="5">
+                <!-- Все элементы опциональны, если выбраны, но хотя бы один должен быть выбран -->
+                <xs:element name="opt1" type="xs:string" minOccurs="0" maxOccurs="2"/>
+                <xs:element name="opt2" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="opt3" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
+<!--
+Цель: Проверить, что даже если все элементы внутри choice помечены как необязательные (minOccurs="0"),
+требование minOccurs самого choice все равно должно быть выполнено. element/@minOccurs="0" означает "необязателен,
+если выбран", но choice/@minOccurs="1" означает "нужно выбрать хотя бы один".
+-->

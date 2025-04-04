@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="root">
+        <xs:complexType>
+            <!-- Должно быть как минимум одно событие, но может быть сколько угодно -->
+            <xs:choice minOccurs="1" maxOccurs="unbounded">
+                <!-- info может повторяться много раз -->
+                <xs:element name="info" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                <!-- warning может появиться только один раз за "выбор" -->
+                <xs:element name="warning" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                <!-- error может появиться 1 или 2 раза за "выбор" -->
+                <xs:element name="error" type="xs:string" minOccurs="1" maxOccurs="2"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
+<!--
+Цель: Проверить неограниченное количество выборов из choice, но с соблюдением индивидуальных ограничений maxOccurs элементов.
+-->
