@@ -19,6 +19,7 @@ class XmlGenerator:
         self.substitutor = substitutor
 
     def generate_xml(self, xsd_schema: xmlschema.XMLSchema, local_config: GeneratorConfig) -> etree.Element:
+        # TODO many root elements
         xsd_root_element = xsd_schema.root_elements[0]
         xml_root_element = etree.Element(xsd_root_element.name)
         self._add_elements(xml_root_element, xsd_root_element, local_config)

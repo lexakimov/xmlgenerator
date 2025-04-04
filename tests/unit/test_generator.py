@@ -331,9 +331,12 @@ class TestComplex:
 
             first_name_unique_counts = set(counts['FirstName'])
             last_name_unique_counts = set(counts['LastName'])
-            # TODO
+
             assert len(first_name_unique_counts) == 2, "Опциональный элемент всегда генерируется одинаково"
             assert len(last_name_unique_counts) == 2, "Опциональный элемент всегда генерируется одинаково"
+            for i in range(100):
+                if counts['LastName'][i] == 0:
+                    assert counts['FirstName'][i] == 0
 
         def test_occurs_required(self):
             xsd_schema = XMLSchema("data/complex/all/occurs_required.xsd")
@@ -351,6 +354,7 @@ class TestComplex:
 
             assert len(first_name_unique_counts) == 2, "Опциональный элемент всегда генерируется одинаково"
             assert len(last_name_unique_counts) == 1, "Опциональный элемент всегда генерируется одинаково"
+
 
     class TestChoice:
 

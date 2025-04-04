@@ -3,7 +3,7 @@
     <xs:element name="root">
         <xs:complexType>
             <!-- вся группа элементов обязательна -->
-            <xs:all minOccurs="1">
+            <xs:all>
                 <!-- элемент в группе опционален -->
                 <xs:element name="FirstName" type="xs:string" minOccurs="0"/>
                 <!-- элемент в группе обязателен -->
