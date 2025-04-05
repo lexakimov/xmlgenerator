@@ -16,9 +16,13 @@
 ## Установка
 
 [//]: # (### Установка через pip &#40;когда будет опубликован на PyPI&#41;)
+
 [//]: # ()
+
 [//]: # (```bash)
+
 [//]: # (pip install xmlgenerator)
+
 [//]: # (```)
 
 ### Сборка из исходников
@@ -33,14 +37,14 @@
    ```bash
    python -m venv .venv
    ```
-   *   **Для Linux/macOS:**
-       ```bash
-       source .venv/bin/activate
-       ```
-   *   **Для Windows (Command Prompt/PowerShell):**
-       ```bash
-       .\.venv\Scripts\activate
-       ```
+    * **Для Linux/macOS:**
+      ```bash
+      source .venv/bin/activate
+      ```
+    * **Для Windows (Command Prompt/PowerShell):**
+      ```bash
+      .\.venv\Scripts\activate
+      ```
 
 3. **Установите зависимости:**
    ```bash
@@ -104,7 +108,6 @@ options:
   -d, --debug                    enable debug mode
   -V, --version                  shows current version
 ```
-
 
 ## Конфигурация
 
@@ -180,6 +183,7 @@ specific:
 ```
 
 Приоритет настроек:
+
 - настройки из specific
 - настройки из global
 - настройки по умолчанию
@@ -190,8 +194,10 @@ specific:
 
 - `{{ function }}` - подставит значение, предоставленное предопределенной функцией function.
 - `{{ function | modifier }}` - то же, но с модификатором `[ global | local ]`, где:
-    - `global`: Для функции будет сгенерировано и использовано *одно и то же* значение на *протяжении всей генерации* для всех документов.
-    - `local`: Для функции будет сгенерировано и использовано *одно и то же* значение в пределах *одного генерируемого документа*.
+    - `global`: Для функции будет сгенерировано и использовано *одно и то же* значение на *протяжении всей генерации*
+      для всех документов.
+    - `local`: Для функции будет сгенерировано и использовано *одно и то же* значение в пределах *одного генерируемого
+      документа*.
     - Без модификатора: Новое значение генерируется при каждом вызове функции.
 
 **Список подстановочных функций:**
@@ -255,6 +261,7 @@ specific:
 ```bash
 pytest
 ```
+
 (Ensure `pytest` is installed, e.g., via `pip install pytest` or included in `requirements-dev.txt`)
 
 ---
@@ -265,6 +272,7 @@ pytest
 
 ## Контакты
 
-По любым вопросам или проблемам обращайтесь по адресу [lex.akimov23@gmail.com](mailto:lex.akimov23@gmail.com).
+По любым вопросам или проблемам обращайтесь по адресу [lex.akimov23@gmail.com].
 
-Вы также можете создать [Issue на GitHub](https://github.com/lexakimov/xmlgenerator/issues) для сообщения об ошибках или предложений по улучшению.
+Вы также можете создать [Issue на GitHub](https://github.com/lexakimov/xmlgenerator/issues) для сообщения об ошибках или
+предложений по улучшению.

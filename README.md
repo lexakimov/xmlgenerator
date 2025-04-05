@@ -23,36 +23,36 @@ Simplifies the creation of test or demonstration XML data for complex schemas.
 
 ### Build from source
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/lexakimov/xmlgenerator.git
-    cd xmlgenerator
-    ```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/lexakimov/xmlgenerator.git
+   cd xmlgenerator
+   ```
 
-2.  **Create and activate a virtual environment (recommended):**
-    ```bash
-    python -m venv .venv
-    ```
-    *   **For Linux/macOS:**
-        ```bash
-        source .venv/bin/activate
-        ```
-    *   **For Windows (Command Prompt/PowerShell):**
-        ```bash
-        .\.venv\Scripts\activate
-        ```
+2. **Create and activate a virtual environment (recommended):**
+   ```bash
+   python -m venv .venv
+   ```
+    * **For Linux/macOS:**
+      ```bash
+      source .venv/bin/activate
+      ```
+    * **For Windows (Command Prompt/PowerShell):**
+      ```bash
+      .\.venv\Scripts\activate
+      ```
 
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4.  **Install the package:**
-    ```bash
-    pip install .
-    # or for development mode (code changes will be immediately reflected)
-    # pip install -e .
-    ```
+4. **Install the package:**
+   ```bash
+   pip install .
+   # or for development mode (code changes will be immediately reflected)
+   # pip install -e .
+   ```
 
 ## CLI Usage
 
@@ -104,7 +104,6 @@ options:
   -d, --debug                    enable debug mode
   -V, --version                  shows current version
 ```
-
 
 ## Configuration
 
@@ -180,6 +179,7 @@ specific:
 ```
 
 Configuration Priority:
+
 - specific settings
 - global settings
 - default settings
@@ -190,8 +190,10 @@ In the `value_override` sections, you can specify either a string value or speci
 
 - `{{ function }}` - Substitutes the value provided by the predefined function.
 - `{{ function | modifier }}` - Same, but with a modifier `[ global | local ]`, where:
-    - `global`: The function will generate and use *the same single value* throughout the *entire generation process* for all documents.
-    - `local`: The function will generate and use *the same single value* within the scope of *a single generated document*.
+    - `global`: The function will generate and use *the same single value* throughout the *entire generation process*
+      for all documents.
+    - `local`: The function will generate and use *the same single value* within the scope of *a single generated
+      document*.
     - No modifier: A new value is generated each time the function is called.
 
 **List of Placeholder Functions:**
@@ -255,6 +257,7 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 ```bash
 pytest
 ```
+
 (Ensure `pytest` is installed, e.g., via `pip install pytest` or included in `requirements-dev.txt`)
 
 ---
@@ -266,4 +269,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contacts
 
 For any questions or issues, please contact [lex.akimov23@gmail.com].
-You can also create an [Issue on GitHub](https://github.com/lexakimov/xmlgenerator/issues) to report bugs or suggest improvements. 
+
+You can also create an [Issue on GitHub](https://github.com/lexakimov/xmlgenerator/issues) to report bugs or suggest
+improvements.
