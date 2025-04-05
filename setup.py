@@ -10,11 +10,11 @@ setup(
         ],
     },
     install_requires=[
-        'lxml==5.3.1',
-        'xmlschema==3.4.3',
-        'Faker==37.0.0',
-        'rstr==3.2.2',
-        'PyYAML==6.0.2'
+        'lxml',
+        'xmlschema',
+        'Faker',
+        'rstr',
+        'PyYAML'
     ],
     author='Alexey Akimov',
     author_email='lex.akimov23@gmail.com',

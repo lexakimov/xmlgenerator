@@ -1,12 +1,11 @@
 from lxml import etree
-from xmlschema import XMLSchema
-
 from xmlgenerator.arguments import parse_args
 from xmlgenerator.configuration import load_config
 from xmlgenerator.generator import XmlGenerator
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
+from xmlschema import XMLSchema
 
 
 # TODO Generator - обработка стандартных xsd типов
@@ -16,6 +15,8 @@ from xmlgenerator.validation import XmlValidator
 # TODO типизировать
 # TODO Почистить и перевести комментарии
 # TODO Дописать тесты
+# TODO нативная сборка
+# TODO выкладка на github releases
 # TODO опубликовать https://pypi.org/
 
 
