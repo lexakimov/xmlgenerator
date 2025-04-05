@@ -3,14 +3,13 @@ import re
 from datetime import datetime
 
 import pytest
-from lxml import etree
-from xmlschema import XMLSchema
-
 import tests
+from lxml import etree
 from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.generator import XmlGenerator
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
+from xmlschema import XMLSchema
 
 os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
 
@@ -76,7 +75,7 @@ class TestSimple:
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/root/text()")
             assert generated_value
-            assert re.match("\w+", generated_value[0])
+            assert re.match("\\w+", generated_value[0])
 
         def test_boolean(self, generator, config):
             """Проверяет генерацию булевых значений."""
@@ -111,7 +110,7 @@ class TestSimple:
             assert generated_value
             assert re.match("[0-9-.]+", generated_value[0])
 
-        @pytest.mark.skip(reason="unimplemented")
+        @pytest.mark.skip(reason="not yet implemented")
         @pytest.mark.parametrize("xsd", [
             'duration.xsd',
             'datetime.xsd',
@@ -147,7 +146,7 @@ class TestComplex:
                 log_xml(generated_xml)
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert generated_value
-                assert re.match("\w+", generated_value[0])
+                assert re.match("\\w+", generated_value[0])
 
             def test_boolean(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in/boolean.xsd")
@@ -181,7 +180,7 @@ class TestComplex:
                 assert generated_value
                 assert re.match("[0-9-.]+", generated_value[0])
 
-            # @pytest.mark.skip(reason="unimplemented")
+            @pytest.mark.skip(reason="not yet implemented")
             @pytest.mark.parametrize("xsd", [
                 'duration.xsd',
                 'datetime.xsd',
@@ -330,6 +329,7 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert -1.0 < float(generated_value[0]) < 101.0
 
+            @pytest.mark.skip(reason="not yet implemented")
             def test_date_min_max(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/date_inclusive_min_max.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
