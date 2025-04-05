@@ -19,7 +19,6 @@ class XmlGenerator:
         self.substitutor = substitutor
 
     def generate_xml(self, xsd_schema: xmlschema.XMLSchema, local_config: GeneratorConfig) -> etree.Element:
-        # TODO many root elements
         xsd_root_element = xsd_schema.root_elements[0]
         xml_root_element = etree.Element(xsd_root_element.name)
         self._add_elements(xml_root_element, xsd_root_element, local_config)
@@ -345,44 +344,44 @@ class XmlGenerator:
         return self._generate_float(min_value, max_value)
 
     def _generate_duration(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_datetime(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_date(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_time(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_gyearmonth(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_gyear(self):
         rnd = self.randomizer.rnd
         return rnd.randint(2000, 2050)
 
     def _generate_gmonthday(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_gday(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_gmonth(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_hex_binary(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_base64_binary(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_any_uri(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_qname(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")
 
     def _generate_notation(self):
-        raise RuntimeError()
+        raise RuntimeError("not yet implemented")

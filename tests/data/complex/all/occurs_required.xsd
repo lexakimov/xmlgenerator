@@ -8,6 +8,7 @@
                 <xs:element name="FirstName" type="xs:string" minOccurs="0"/>
                 <!-- элемент в группе обязателен -->
                 <xs:element name="LastName" type="xs:string"/>
+                <xs:element name="MiddleName" type="xs:string"/>
             </xs:all>
         </xs:complexType>
     </xs:element>

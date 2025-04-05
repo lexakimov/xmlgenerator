@@ -181,7 +181,7 @@ class TestComplex:
                 assert generated_value
                 assert re.match("[0-9-.]+", generated_value[0])
 
-            @pytest.mark.skip(reason="unimplemented")
+            # @pytest.mark.skip(reason="unimplemented")
             @pytest.mark.parametrize("xsd", [
                 'duration.xsd',
                 'datetime.xsd',
@@ -214,7 +214,6 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert len(generated_value[0]) == 10
 
-            @pytest.mark.flaky(reruns=10)
             def test_string_length_min_max(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/string_length_min_max.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -222,7 +221,6 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert len(generated_value[0]) in range(10, 21)
 
-            @pytest.mark.flaky(reruns=10)
             def test_string_enumeration(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/string_enumeration.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -231,7 +229,6 @@ class TestComplex:
                 valid_values = ['red', 'green', 'blue']
                 assert generated_value[0] in valid_values
 
-            @pytest.mark.flaky(reruns=10)
             def test_string_pattern(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/string_pattern.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -268,7 +265,6 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert re.match(r'[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?', generated_value[0])
 
-            @pytest.mark.flaky(reruns=10)
             def test_float_enumeration(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/float_enumeration.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -284,7 +280,6 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert ' ' not in generated_value[0]
 
-            @pytest.mark.flaky(reruns=10)
             def test_float_inclusive(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/float_inclusive.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -292,7 +287,6 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert 0.0 <= float(generated_value[0]) <= 100.0
 
-            @pytest.mark.flaky(reruns=10)
             def test_float_exclusive(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/float_exclusive.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -307,7 +301,6 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert re.match(r'[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?', generated_value[0])
 
-            @pytest.mark.flaky(reruns=10)
             def test_double_enumeration(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/double_enumeration.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -323,7 +316,6 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert ' ' not in generated_value[0]
 
-            @pytest.mark.flaky(reruns=10)
             def test_double_inclusive(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/double_inclusive.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -331,7 +323,6 @@ class TestComplex:
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert 0.0 <= float(generated_value[0]) <= 100.0
 
-            @pytest.mark.flaky(reruns=10)
             def test_double_exclusive(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/double_exclusive.xsd")
                 generated_xml = generator.generate_xml(xsd_schema, config)
@@ -360,40 +351,50 @@ class TestComplex:
 
         def test_occurs_optional(self, generator, config):
             xsd_schema = XMLSchema("data/complex/all/occurs_optional.xsd")
-            counts = {
-                "FirstName": [],
-                "LastName": [],
-            }
+            counts_by_occurs_a = {}
+            counts_by_occurs_b = {}
+            counts_by_occurs_c = {}
+
             for _ in range(100):
                 generated_xml = generator.generate_xml(xsd_schema, config)
-                counts['FirstName'].append(len(generated_xml.xpath("/root/FirstName/text()")))
-                counts['LastName'].append(len(generated_xml.xpath("/root/LastName/text()")))
+                count_a = int(generated_xml.xpath("count(/root/FirstName)"))
+                count_b = int(generated_xml.xpath("count(/root/LastName)"))
+                count_c = int(generated_xml.xpath("count(/root/MiddleName)"))
+                counts_by_occurs_a[count_a] = (counts_by_occurs_a.get(count_a) or 0) + 1
+                counts_by_occurs_b[count_b] = (counts_by_occurs_b.get(count_b) or 0) + 1
+                counts_by_occurs_c[count_c] = (counts_by_occurs_c.get(count_c) or 0) + 1
 
-            first_name_unique_counts = set(counts['FirstName'])
-            last_name_unique_counts = set(counts['LastName'])
-
-            assert len(first_name_unique_counts) == 2, "Опциональный элемент всегда генерируется одинаково"
-            assert len(last_name_unique_counts) == 2, "Опциональный элемент всегда генерируется одинаково"
-            for i in range(100):
-                if counts['LastName'][i] == 0:
-                    assert counts['FirstName'][i] == 0
+            assert counts_by_occurs_b[0] == counts_by_occurs_c[0]
+            assert counts_by_occurs_b[1] == counts_by_occurs_c[1]
+            assert counts_by_occurs_a[0] > counts_by_occurs_b[0]
+            assert counts_by_occurs_a[0] + counts_by_occurs_a[1] == 100
+            assert counts_by_occurs_b[0] + counts_by_occurs_b[1] == 100
+            assert counts_by_occurs_c[0] + counts_by_occurs_c[1] == 100
 
         def test_occurs_required(self, generator, config):
             xsd_schema = XMLSchema("data/complex/all/occurs_required.xsd")
-            counts = {
-                "FirstName": [],
-                "LastName": [],
-            }
+            counts_by_occurs_a = {}
+            counts_by_occurs_b = {}
+            counts_by_occurs_c = {}
+
             for _ in range(100):
                 generated_xml = generator.generate_xml(xsd_schema, config)
-                counts['FirstName'].append(len(generated_xml.xpath("/root/FirstName/text()")))
-                counts['LastName'].append(len(generated_xml.xpath("/root/LastName/text()")))
+                count_a = int(generated_xml.xpath("count(/root/FirstName)"))
+                count_b = int(generated_xml.xpath("count(/root/LastName)"))
+                count_c = int(generated_xml.xpath("count(/root/MiddleName)"))
+                counts_by_occurs_a[count_a] = (counts_by_occurs_a.get(count_a) or 0) + 1
+                counts_by_occurs_b[count_b] = (counts_by_occurs_b.get(count_b) or 0) + 1
+                counts_by_occurs_c[count_c] = (counts_by_occurs_c.get(count_c) or 0) + 1
 
-            first_name_unique_counts = set(counts['FirstName'])
-            last_name_unique_counts = set(counts['LastName'])
+            assert min(counts_by_occurs_a) == 0
+            assert max(counts_by_occurs_a) == 1
+            assert counts_by_occurs_a[0] + counts_by_occurs_a[1] == 100
 
-            assert len(first_name_unique_counts) == 2, "Опциональный элемент всегда генерируется одинаково"
-            assert len(last_name_unique_counts) == 1, "Опциональный элемент всегда генерируется одинаково"
+            assert min(counts_by_occurs_b) == 1
+            assert counts_by_occurs_b[1] == 100
+
+            assert min(counts_by_occurs_c) == 1
+            assert counts_by_occurs_c[1] == 100
 
     class TestChoice:
 

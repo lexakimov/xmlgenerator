@@ -1,149 +1,244 @@
-```
-
-тесты для simpleType а не complexType 
-
-# проверка типов mypy
-
-# mypyc
-# taichi
-
-# добавить аннотации типов
-
-# cyton - преобразует в c/c++ (pyx)
-# nuitka - преобразует в оптимизированный c++ # nuitka --standalone script.py
-
-# numba (jit)
-# pypy - interpreter _ jit # pypy script.py
-
-
-
-xmlgenerator test.xsd               # генерация из одного файла, вывод в stdout (только xml)
-
-xmlgenerator *.xsd                  # генерация из n файлов, вывод в stdout (только xml)
-xmlgenerator path/
-xmlgenerator path/*.xsd
-
-xmlgenerator -o test.xml test.xsd   # генерация из одного файла, вывод в файл
-
-xmlgenerator -o out_dir/ test.xsd   # генерация из одного файла, вывод в директорию
-
-xmlgenerator -o out_dir/ *.xsd      # генерация из n файлов, вывод в директорию
-xmlgenerator -o out_dir/ path/
-xmlgenerator -o out_dir/ path/*.xsd
-
-
-# xsdxmlgen
-# xmlgen
-# genxml
-# genxmlfromxsd
-# xmlgenerator
-# xsdgenxml
-# xsdtoxml
-# xml_
-```
-
-
-### Установка
-
-```shell
-pip install .
-```
-
-### Удаление
-
-```shell
-pip uninstall xmlgenerator
-```
-
-
 # XML Generator
 
-## Обзор
-
-Этот проект генерирует XML-документы из XSD-схем. Он поддерживает различные конфигурации и опции валидации.
+Генерирует XML-документы на основе XSD-схем с возможностью кастомизации данных через конфигурационный файл YAML.
 
 ## Возможности
 
 - Генерация XML-документов на основе XSD-схем
-- Настраиваемые конфигурации через YAML-файлы
-- Поддержка пост-генерационной валидации с использованием XSD-схем
+- Кастомизация генерируемых значений через YAML-файл конфигурации
+- Валидация сгенерированных документов
 - Интерфейс командной строки для удобного использования
-
-## Требования
-
-- Python 3.x
-- `pip` для управления пакетами
 
 ## Установка
 
-1. Клонируйте репозиторий:
-    ```sh
-    git clone <repository_url>
-    cd <repository_directory>
-    ```
+[//]: # (### Установка через pip &#40;когда будет опубликован на PyPI&#41;)
+[//]: # ()
+[//]: # (```bash)
+[//]: # (pip install xmlgenerator)
+[//]: # (```)
 
-2. Установите необходимые пакеты:
-    ```sh
-    pip install -r requirements.txt
-    ```
+### Сборка из исходников
 
-## Использование
+1. **Клонируйте репозиторий:**
+   ```bash
+   git clone https://github.com/lexakimov/xmlgenerator.git
+   cd xmlgenerator
+   ```
 
-### Интерфейс командной строки
+2. **Создайте и активируйте виртуальное окружение (рекомендуется):**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Для Linux/macOS
+   # или
+   # .\.venv\Scripts\activate  # Для Windows
+   ```
 
-Для генерации XML-документа из XSD-схемы используйте следующую команду:
+3. **Установите зависимости:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```sh
-python generate_xml.py -s <source.xsd> -o <output.xml> [-c <config.yml>] [-d]
+4. **Установите пакет:**
+   ```bash
+   pip install .
+   # или для режима разработки (изменения в коде будут сразу видны)
+   # pip install -e .
+   ```
+
+## Использование CLI
+
+Основная команда для запуска генератора - `xmlgenerator`.
+
+```
+usage: xmlgenerator [-h] [-c <config.yml>] [-o <output.xml>] [-p] [-v <validation>] [-ff] [-e <encoding>]
+                    [--seed <seed>] [-d] [-V]
+                    xsd [xsd ...]
+
+Generates XML documents from XSD schemas
+
+positional arguments:
+  xsd                            paths to xsd schema(s) or directory with xsd schemas
+
+options:
+  -h, --help                     show this help message and exit
+  -c, --config <config.yml>      pass yaml configuration file
+  -o, --output <output.xml>      save output to dir or file
+  -p, --pretty                   prettify output XML
+  -v, --validation <validation>  validate generated XML document (none, schema, schematron, default is schema)
+  -ff, --fail-fast               terminate execution on validation error (default is true)
+  -e, --encoding <encoding>      output XML encoding (utf-8, windows-1251, default is utf-8)
+      --seed <seed>              set randomization seed
+  -d, --debug                    enable debug mode
+  -V, --version                  shows current version
 ```
 
-- `-s`, `--schema`: Путь к исходной XSD-схеме (обязательно)
-- `-o`, `--output`: Путь для сохранения сгенерированного XML-документа (опционально)
-- `-c`, `--config`: Путь к YAML-файлу конфигурации (опционально)
-- `-d`, `--debug`: Включить режим отладки (опционально)
+**Примеры:**
 
-### Пример
+- Сгенерировать XML из одной схемы и вывести в консоль:
+   ```bash
+   xmlgenerator path/to/your/schema.xsd
+   ```
 
-```sh
-python generate_xml.py -s schema.xsd -o output.xml -c config.yml -d
-```
+- Сгенерировать XML из всех схем в директории и сохранить в папку `output`, используя конфигурационный файл:
+   ```bash
+   xmlgenerator -c config.yml -o output/ path/to/schemas/
+   ```
+
+- Сгенерировать XML из конкретной схемы, сохранить в файл с красивым форматированием и кодировкой windows-1251:
+   ```bash
+   xmlgenerator -o output.xml -p -e windows-1251 path/to/your/schema.xsd
+   ```
+
+- Сгенерировать XML с отключенной валидацией:
+   ```bash
+   xmlgenerator -v none path/to/your/schema.xsd
+   ```
 
 ## Конфигурация
 
-Файл конфигурации (`config.yml`) позволяет настраивать различные аспекты процесса генерации XML. Вот пример конфигурации:
+Генератор можно настроить с помощью YAML-файла, передав путь к нему через опцию `-c` или `--config`.
+
+**Структура конфигурационного файла:**
 
 ```yaml
-source:
-  directory: "schemas/"
-  file_names:
-    - "schema1.xsd"
-    - "schema2.xsd"
+# Глобальные настройки (применяются ко всем схемам)
+global:
 
-output:
-  directory: "output/"
-  encoding: "utf-8"
-  pretty: true
-  log_result: true
-  post_validate: "schema"
-  fail_fast: true
+  # Регулярное выражение для извлечения подстроки из имени файла исходной xsd схемы.
+  # Извлеченная подстрока может быть использована через функцию `source_extracted`.
+  # Регулярное выражение обязательно должно содержать группу `extracted`.
+  # Значение по умолчанию: `(?P<extracted>.*).(xsd|XSD)` (означает извлечение имени файла без расширения).
+  source_filename: ...
 
+  # Шаблон имени файла для сохранения сгенерированного документа.
+  # Значение по умолчанию: `{{ source_filename }}_{{ uuid }}` (означает имя файла xsd схемы + случайный UUID)
+  output_filename: ...
+
+  # Настройки генератора случайных значений
+  randomization:
+    # Вероятность добавления опциональных элементов (0.0-1.0)
+    # Значение по умолчанию: 0.5
+    probability: 1
+    # Ограничение максимального количества элементов
+    max_occurs: 5
+    # Минимальная длина строк
+    min_length: 5
+    # Максимальная длина строк
+    max_length: 20
+    # Минимальное числовое значение
+    min_inclusive: 10
+    # Максимальное числовое значение
+    max_inclusive: 1000000
+
+  # Переопределение генерируемых значений тегов и атрибутов.
+  # Ключ - строка или регулярное выражение для сопоставления с именем тега/атрибута.
+  # Значение - строка с опциональным использованием плейсхолдеров:
+  # `{{ function }}` - подставит значение, предоставленное предопределенной функцией function.
+  # `{{ function | modifier }}` - то же, но с модификатором [ global | local ], где:
+  # - `global` - будет использовано одно значение на всю генерацию.
+  # - `local` - будет использовано одно значение в контексте одного документа.
+  #
+  # Список доступных функций указан ниже.
+  # Порядок записей важен, будет выбрано первое подходящее переопределение.
+  # Поиск по ключу происходит без учета регистра.
+  value_override:
+    name_regexp_1: "static value"
+    name_regexp_2: "{{ function_call }}"
+    "name_regexp_\d": "static-text-and-{{ function_call }}"
+    name: "static-text-and-{{ function_call }}-{{ another_function_call }}"
+
+# Расширение/переопределение глобальных настроек для определенных файлов.
+# Ключ - строка или регулярное выражение для сопоставления с именем xsd файла(ов).
+# Порядок записей важен, будет выбрано первое подходящее переопределение.
+# Поиск по ключу происходит без учета регистра.
 specific:
-  ".*schema1.*":
-    some_specific_setting: "value"
+  # Каждое значение может иметь тот же набор параметров, что и секция global
+  "SCHEM.*":
+    # для схем с именем "SCHEM.*" имена xml документов будут содержать только UUIDv4 + '.xml'
+    output_filename: "{{ uuid }}"
+    # Настройки генератора случайных значений для схем с именем "SCHEM.*"
+    randomization:
+      # для схем с именем "SCHEM.*" вероятность добавления опциональных элементов будет равна 30%
+      probability: 0.3
+    value_override:
+      # переопределение значения, установленного глобальной конфигурацией
+      name_regexp_1: "static value"
+      # сброс переопределений для тегов/атрибутов, содержащих name, установленных глобальной конфигурацией
+      name:
 ```
+
+Приоритет настроек:
+- настройки из specific
+- настройки из global
+- настройки по умолчанию
+
+**Список подстановочных функций:**
+
+| Функция                            | Описание                                                                                                   |
+|------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `source_filename`                  | Имя файла исходной xsd схемы с расширением (например `schema.xsd`)                                         |
+| `source_extracted`                 | Строка, извлеченная из имени файла исходной xsd схемы регулярным выражением, указанным в `source_filename` |
+| `output_filename`                  | Строка, описываемая параметром конфигурации `output_filename`                                              |
+| `uuid`                             | Случайный UUIDv4                                                                                           |
+| `regex("pattern")`                 | Случайное строковое значение по указанному регулярному выражению                                           |
+| `number(A, B)`                     | Случайное число от A до B                                                                                  |
+| `date("2010-01-01", "2025-01-01")` | Случайная дата в указанном диапазоне                                                                       |
+| `last_name`                        | Фамилия                                                                                                    |
+| `first_name`                       | Имя                                                                                                        |
+| `middle_name`                      | Отчество                                                                                                   |
+| `address_text`                     | Адрес                                                                                                      |
+| `administrative_unit`              | Район                                                                                                      |
+| `house_number`                     | Номер дома                                                                                                 |
+| `city_name`                        | Город                                                                                                      |
+| `postcode`                         | Почтовый индекс                                                                                            |
+| `company_name`                     | Наименование компании                                                                                      |
+| `bank_name`                        | Наименование банка                                                                                         |
+| `phone_number`                     | Номер телефона                                                                                             |
+| `inn_fl`                           | ИНН физического лица                                                                                       |
+| `inn_ul`                           | ИНН юридического лица                                                                                      |
+| `ogrn_ip`                          | ОГРН индивидуального предпринимателя                                                                       |
+| `ogrn_fl`                          | ОГРН физического лица                                                                                      |
+| `kpp`                              | КПП                                                                                                        |
+| `snils_formatted`                  | СНИЛС в формате `123-456-789 90`                                                                           |
+
+**Примеры конфигураций:**
+
+```yaml
+# TODO
+```
+
+---
 
 ## Валидация
 
-Сгенерированные XML-документы могут быть проверены на соответствие XSD-схеме, использованной для генерации. Если в конфигурации указано `post_validate: schema`, скрипт выполнит эту проверку автоматически.
+Сгенерированные XML-документы проверяются на соответствие схеме, использованной для генерации.
+По умолчанию используется валидация через исходную XSD-схему.
 
-## Лицензия
+При несоответствии документа схеме, выполнение прекращается незамедлительно.
+Это поведение можно отключить через флаг `-ff false` или `--fail-fast false`.
 
-Этот проект лицензирован под лицензией MIT. Подробности см. в файле `LICENSE`.
+Чтобы отключить валидацию, укажите флаг `-v none` или `--validation none`.
 
 ## Вклад
 
 Приветствуются любые вклады! Пожалуйста, откройте issue или отправьте pull request на GitHub.
 
+### Структура проекта
+
+- `xmlgenerator/` - основной код проекта
+- `tests/` - тесты
+- `config_fns.yml` - пример конфигурационного файла для донастройки генерации документов по схемам ФНС.
+
+### Запуск тестов
+
+```bash
+pytest
+```
+
+## Лицензия
+
+Этот проект лицензирован под лицензией MIT. Подробности см. в файле `LICENSE`.
+
 ## Контакты
 
-По любым вопросам или проблемам обращайтесь по адресу [your_email@example.com].
+По любым вопросам или проблемам обращайтесь по адресу [lex.akimov23@gmail.com].

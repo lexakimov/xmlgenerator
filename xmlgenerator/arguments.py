@@ -56,7 +56,7 @@ def parse_args():
         "-ff", "--fail-fast",
         action="store_true",
         default="true",
-        help="terminate execution on validation error"
+        help="terminate execution on validation error (default is true)"
     )
     parser.add_argument(
         "-e", "--encoding",

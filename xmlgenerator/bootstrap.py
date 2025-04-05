@@ -10,14 +10,13 @@ from xmlgenerator.validation import XmlValidator
 
 
 # TODO Generator - обработка стандартных xsd типов
-# TODO Generator - реализовать min_occurs и max_occurs
 # TODO кастомные переменные для локального контекста
 # TODO валидация по Schematron
 # TODO debug logging
 # TODO типизировать
 # TODO Почистить и перевести комментарии
 # TODO Дописать тесты
-# TODO составить документацию
+# TODO опубликовать https://pypi.org/
 
 
 def main():
