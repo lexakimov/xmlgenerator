@@ -47,11 +47,16 @@ pip install xmlgenerator
    pip install -r requirements.txt
    ```
 
-4. **Установите пакет:**
+4.1. **Установите пакет:**
    ```bash
    pip install .
    # или для режима разработки (изменения в коде будут сразу видны)
    # pip install -e .
+   ```
+
+4.2. **Или соберите единый исполняемый файл:**
+   ```bash
+   python build_native.py
    ```
 
 ## Использование CLI
@@ -257,8 +262,6 @@ specific:
 ```bash
 pytest
 ```
-
-(Ensure `pytest` is installed, e.g., via `pip install pytest` or included in `requirements-dev.txt`)
 
 ---
 
