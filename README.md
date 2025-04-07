@@ -15,11 +15,11 @@ Simplifies the creation of test or demonstration XML data for complex schemas.
 
 ## Installation
 
-[//]: # (### Installation via pip &#40;once published on PyPI&#41;)
-[//]: # ()
-[//]: # (```bash)
-[//]: # (pip install xmlgenerator)
-[//]: # (```)
+### Installation via pip
+
+```bash
+pip install xmlgenerator
+```
 
 ### Build from source
 
