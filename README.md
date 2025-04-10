@@ -85,6 +85,13 @@ The main command to run the generator is `xmlgenerator`.
   xmlgenerator -v none path/to/your/schema.xsd
   ```
 
+**Install shell completions:**
+
+```shell
+# also available: zsh, tcsh
+xmlgenerator -C bash | sudo tee /etc/bash_completion.d/xmlgenerator
+```
+
 **Detailed CLI Usage:**
 
 ```
@@ -108,6 +115,7 @@ options:
       --seed <seed>              set randomization seed
   -d, --debug                    enable debug mode
   -V, --version                  shows current version
+  -C, --completion <shell>       print shell completion script (bash, zsh, tcsh)
 ```
 
 ## Configuration

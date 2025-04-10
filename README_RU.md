@@ -85,6 +85,13 @@ pip install xmlgenerator
    xmlgenerator -v none path/to/your/schema.xsd
    ```
 
+**Установить автодополнения:**
+
+```shell
+# также доступны: zsh, tcsh
+xmlgenerator -C bash | sudo tee /etc/bash_completion.d/xmlgenerator
+```
+
 **Детальное описание использования CLI:**
 
 ```
@@ -108,6 +115,7 @@ options:
       --seed <seed>              set randomization seed
   -d, --debug                    enable debug mode
   -V, --version                  shows current version
+  -C, --completion <shell>       print shell completion script (bash, zsh, tcsh)
 ```
 
 ## Конфигурация

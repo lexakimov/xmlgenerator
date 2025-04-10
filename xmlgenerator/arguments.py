@@ -2,6 +2,8 @@ import sys
 from argparse import ArgumentParser, HelpFormatter
 from pathlib import Path
 
+import shtab
+
 
 class MyParser(ArgumentParser):
     def error(self, message):
@@ -15,14 +17,14 @@ class CustomHelpFormatter(HelpFormatter):
         super().__init__(prog, max_help_position=36, width=120)
 
 
-def parse_args():
+def _get_parser():
     parser = MyParser(
         prog='xmlgenerator',
         description='Generates XML documents from XSD schemas',
         formatter_class=CustomHelpFormatter
     )
 
-    parser.add_argument(
+    source_arg = parser.add_argument(
         nargs='+',
         metavar="xsd",
         dest="source_paths",
@@ -34,7 +36,7 @@ def parse_args():
         dest="config_yaml",
         help="pass yaml configuration file"
     )
-    parser.add_argument(
+    output_arg = parser.add_argument(
         "-o", "--output",
         metavar="<output.xml>",
         dest="output_path",
@@ -82,6 +84,19 @@ def parse_args():
         help="shows current version"
     )
 
+    # add shell completions
+    source_arg.complete = shtab.FILE
+    output_arg.complete = shtab.FILE
+    shtab.add_argument_to(parser, ["-C", "--completion"], "print shell completion script (bash, zsh, tcsh)")
+    completion_act = [a for a in parser._actions if a.dest == 'completion']
+    if completion_act:
+        completion_act[0].metavar = '<shell>'
+
+    return parser
+
+
+def parse_args():
+    parser = _get_parser()
     args = parser.parse_args()
 
     if args.config_yaml:
