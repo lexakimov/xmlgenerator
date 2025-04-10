@@ -15,11 +15,11 @@ Simplifies the creation of test or demonstration XML data for complex schemas.
 
 ## Installation
 
-[//]: # (### Installation via pip &#40;once published on PyPI&#41;)
-[//]: # ()
-[//]: # (```bash)
-[//]: # (pip install xmlgenerator)
-[//]: # (```)
+### Installation via pip
+
+```bash
+pip install xmlgenerator
+```
 
 ### Build from source
 
@@ -47,11 +47,16 @@ Simplifies the creation of test or demonstration XML data for complex schemas.
    pip install -r requirements.txt
    ```
 
-4. **Install the package:**
+4.1. **Install the package:**
    ```bash
    pip install .
    # or for development mode (code changes will be immediately reflected)
    # pip install -e .
+   ```
+
+4.2. **Otherwise, build single executable:**
+   ```bash
+   python build_native.py
    ```
 
 ## CLI Usage
@@ -80,6 +85,13 @@ The main command to run the generator is `xmlgenerator`.
   xmlgenerator -v none path/to/your/schema.xsd
   ```
 
+**Install shell completions:**
+
+```shell
+# also available: zsh, tcsh
+xmlgenerator -C bash | sudo tee /etc/bash_completion.d/xmlgenerator
+```
+
 **Detailed CLI Usage:**
 
 ```
@@ -103,6 +115,7 @@ options:
       --seed <seed>              set randomization seed
   -d, --debug                    enable debug mode
   -V, --version                  shows current version
+  -C, --completion <shell>       print shell completion script (bash, zsh, tcsh)
 ```
 
 ## Configuration
@@ -257,8 +270,6 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 ```bash
 pytest
 ```
-
-(Ensure `pytest` is installed, e.g., via `pip install pytest` or included in `requirements-dev.txt`)
 
 ---
 

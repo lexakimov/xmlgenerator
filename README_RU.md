@@ -15,15 +15,11 @@
 
 ## Установка
 
-[//]: # (### Установка через pip &#40;когда будет опубликован на PyPI&#41;)
+### Установка через pip
 
-[//]: # ()
-
-[//]: # (```bash)
-
-[//]: # (pip install xmlgenerator)
-
-[//]: # (```)
+```bash
+pip install xmlgenerator
+```
 
 ### Сборка из исходников
 
@@ -51,11 +47,16 @@
    pip install -r requirements.txt
    ```
 
-4. **Установите пакет:**
+4.1. **Установите пакет:**
    ```bash
    pip install .
    # или для режима разработки (изменения в коде будут сразу видны)
    # pip install -e .
+   ```
+
+4.2. **Или соберите единый исполняемый файл:**
+   ```bash
+   python build_native.py
    ```
 
 ## Использование CLI
@@ -84,6 +85,13 @@
    xmlgenerator -v none path/to/your/schema.xsd
    ```
 
+**Установить автодополнения:**
+
+```shell
+# также доступны: zsh, tcsh
+xmlgenerator -C bash | sudo tee /etc/bash_completion.d/xmlgenerator
+```
+
 **Детальное описание использования CLI:**
 
 ```
@@ -107,6 +115,7 @@ options:
       --seed <seed>              set randomization seed
   -d, --debug                    enable debug mode
   -V, --version                  shows current version
+  -C, --completion <shell>       print shell completion script (bash, zsh, tcsh)
 ```
 
 ## Конфигурация
@@ -261,8 +270,6 @@ specific:
 ```bash
 pytest
 ```
-
-(Ensure `pytest` is installed, e.g., via `pip install pytest` or included in `requirements-dev.txt`)
 
 ---
 
