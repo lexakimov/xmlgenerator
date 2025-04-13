@@ -1,10 +1,13 @@
 import dataclasses
+import logging
 import re
 import sys
 from dataclasses import dataclass, field, Field
 from typing import Dict, get_args, get_origin, Any
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -45,6 +48,7 @@ class Config:
     def get_for_file(self, xsd_name):
         for pattern, conf in self.specific.items():
             if re.match(pattern, xsd_name):
+                logger.debug("resolved configration with pattern '%s'", pattern)
                 base_dict = dataclasses.asdict(self.global_)
                 override_dict = dataclasses.asdict(conf, dict_factory=lambda x: {k: v for (k, v) in x if v is not None})
                 updated_dict = _recursive_update(base_dict, override_dict)
@@ -52,17 +56,23 @@ class Config:
                 local_override = conf.value_override
                 global_override = self.global_.value_override
                 merged_config.value_override = _merge_dicts(local_override, global_override)
+                _log_configration('using specific configuration:', merged_config)
                 return merged_config
 
+        _log_configration('using global configration:', self.global_)
         return self.global_
 
 
 def load_config(file_path: str | None) -> "Config":
     if not file_path:
-        return Config()
+        config = Config()
+        _log_configration("created default configuration:", config)
+        return config
     with open(file_path, 'r') as file:
         config_data: dict[str, str] = yaml.safe_load(file) or {}
-        return _map_to_class(config_data, Config, "")
+        config = _map_to_class(config_data, Config, "")
+        _log_configration(f"configuration loaded from {file_path}:", config)
+        return config
 
 
 def _map_to_class(data_dict: dict, cls, parent_path: str):
@@ -80,7 +90,7 @@ def _map_to_class(data_dict: dict, cls, parent_path: str):
             for yaml_name, value in data_dict.items():
                 class_field_name = yaml_name if yaml_name != "global" else "global_"
                 if class_field_name not in class_fields:
-                    print(f"YAML parse error: unexpected property: {parent_path}.{yaml_name}", file=sys.stderr)
+                    logger.error('YAML parse error: unexpected property: %s.%s', parent_path, yaml_name)
                     sys.exit(1)
 
                 # Определяем тип поля
@@ -90,10 +100,10 @@ def _map_to_class(data_dict: dict, cls, parent_path: str):
         # Проверка на отсутствие обязательных полей
         missing_fields = required_fields - yaml_items.keys()
         if missing_fields:
-            print(f"YAML parse error: missing required properties in {parent_path}:", file=sys.stderr)
+            logger.error('YAML parse error: missing required properties in %s:', parent_path)
             for missing_field in missing_fields:
                 yaml_field_name = missing_field if missing_field != "global_" else "global"
-                print(yaml_field_name, file=sys.stderr)
+                logger.error(yaml_field_name)
             sys.exit(1)
 
         return cls(**yaml_items)
@@ -133,3 +143,12 @@ def _merge_dicts(base_dict, extra_dict):
         if key not in merged_dict:
             merged_dict[key] = value
     return merged_dict
+
+
+def _log_configration(message, config):
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(message)
+        as_dict = dataclasses.asdict(config)
+        dumped = yaml.safe_dump(as_dict, allow_unicode=True, width=float("inf"), sort_keys=False, indent=4)
+        for line in dumped.splitlines():
+            logger.debug('|\t%s', line)

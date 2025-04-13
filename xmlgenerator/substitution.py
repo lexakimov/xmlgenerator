@@ -1,3 +1,4 @@
+import logging
 import re
 import uuid
 
@@ -8,6 +9,8 @@ from xmlgenerator.randomization import Randomizer
 __all__ = ['Substitutor']
 
 _pattern = re.compile(pattern=r'\{\{\s*(?:(?P<function>\S*?)(?:\(\s*(?P<argument>[^)]*)\s*\))?\s*(?:\|\s*(?P<modifier>.*?))?)?\s*}}')
+
+logger = logging.getLogger(__name__)
 
 class Substitutor:
     def __init__(self, randomizer: Randomizer):
@@ -69,6 +72,11 @@ class Substitutor:
         resolved_value = self._process_expression(output_filename)
         self._local_context['output_filename'] = resolved_value
 
+        logger.debug('local_context reset')
+        logger.debug('local_context["source_filename"]  = %s', xsd_filename)
+        logger.debug('local_context["source_extracted"] = %s (extracted with regexp %s)', source_extracted, source_filename)
+        logger.debug('local_context["output_filename"]  = %s', resolved_value)
+
     def get_output_filename(self):
         return self._local_context.get("output_filename")
 
@@ -83,6 +91,7 @@ class Substitutor:
         return False, None
 
     def _process_expression(self, expression):
+        logger.debug('processing expression: %s', expression)
         global_context = self._global_context
         local_context = self._local_context
         result_value: str = expression
@@ -115,4 +124,5 @@ class Substitutor:
         for span, replacement in reversed(list(span_to_replacement.items())):
             result_value = result_value[:span[0]] + replacement + result_value[span[1]:]
 
+        logger.debug('expression resolved to value: %s', result_value)
         return result_value

@@ -1,6 +1,9 @@
+import logging
 import sys
 
 from xmlschema import XMLSchemaValidationError
+
+logger = logging.getLogger(__name__)
 
 
 class XmlValidator:
@@ -11,11 +14,13 @@ class XmlValidator:
                 self.validation_func = self._validate_with_schema
             case 'schematron':
                 self.validation_func = self._validate_with_schematron
+        logger.debug("post validation: %s, fail fast: %s", post_validate, fail_fast)
 
     def validate(self, xsd_schema, document):
         self.validation_func(xsd_schema, document)
 
     def _validate_with_schema(self, xsd_schema, document):
+        logger.debug("validate generated xml with xsd schema")
         try:
             xsd_schema.validate(document)
         except XMLSchemaValidationError as err:
@@ -24,6 +29,7 @@ class XmlValidator:
                 sys.exit(1)
 
     def _validate_with_schematron(self, xsd_schema, document):
+        logger.debug("validate generated xml with xsd schematron")
         raise RuntimeError("not yet implemented")
 
 # TODO
