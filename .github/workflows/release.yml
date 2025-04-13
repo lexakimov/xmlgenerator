@@ -168,6 +168,16 @@ jobs:
     if: needs.check-branch.outputs.on_master == 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install twine
+
       - name: Download Python packages
         uses: actions/download-artifact@v4
         with:
