@@ -1,8 +1,11 @@
+import logging
 import sys
 from argparse import ArgumentParser, HelpFormatter
 from pathlib import Path
 
 import shtab
+
+logger = logging.getLogger(__name__)
 
 
 class MyParser(ArgumentParser):
@@ -98,6 +101,10 @@ def _get_parser():
 def parse_args():
     parser = _get_parser()
     args = parser.parse_args()
+
+    # setup logger
+    log_level = logging.DEBUG if args.debug else logging.INFO
+    logger.setLevel(log_level)
 
     if args.config_yaml:
         config_path = Path(args.config_yaml)

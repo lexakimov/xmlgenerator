@@ -1,5 +1,5 @@
+import logging
 import re
-import sys
 
 import rstr
 import xmlschema
@@ -11,6 +11,8 @@ from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalD
 from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
+
+logger = logging.getLogger(__name__)
 
 
 class XmlGenerator:
@@ -28,21 +30,27 @@ class XmlGenerator:
         rnd = self.randomizer.rnd
 
         xsd_element_type = getattr(xsd_element, 'type', None)
+        logger.debug('fill down element "%s" with type %s', xsd_element.name, type(xsd_element_type).__name__)
 
         # Add attributes if they are
         attributes = getattr(xsd_element, 'attributes', dict())
         if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
+            logger.debug('add attributes to element %s', xsd_element.name)
             for attr_name, attr in attributes.items():
+                logger.debug('attribute: %s', attr_name)
                 use = attr.use  # optional | required | prohibited
                 if use == 'prohibited':
+                    logger.debug('skipped')
                     continue
                 elif use == 'optional':
                     if rnd.random() > local_config.randomization.probability:
-                        continue    # skip optional attribute
+                        logger.debug('skipped')
+                        continue  # skip optional attribute
 
                 attr_value = self._generate_value(attr.type, attr_name, local_config)
                 if attr_value is not None:
                     xml_element.set(attr_name, str(attr_value))
+                    logger.debug(f'attribute %s set with value %s', attr_name, attr_value)
 
         # Process child elements --------------------------------------------------------------------------------------
         if isinstance(xsd_element, XsdElement):
@@ -69,7 +77,7 @@ class XmlGenerator:
             group_min_occurs = getattr(xsd_element, 'min_occurs', None)
             group_max_occurs = getattr(xsd_element, 'max_occurs', None)
             group_min_occurs = group_min_occurs if group_min_occurs is not None else 0
-            group_max_occurs = group_max_occurs if group_max_occurs is not None else 10 # TODO externalize
+            group_max_occurs = group_max_occurs if group_max_occurs is not None else 10  # TODO externalize
             group_occurs = rnd.randint(group_min_occurs, group_max_occurs)
 
             if model == 'all':
@@ -80,7 +88,7 @@ class XmlGenerator:
                         element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
                         element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
                         element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
-                        element_max_occurs = element_max_occurs if element_max_occurs is not None else 10 # TODO externalize
+                        element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
                         element_occurs = rnd.randint(element_min_occurs, element_max_occurs)
 
                         for _ in range(element_occurs):
@@ -96,7 +104,7 @@ class XmlGenerator:
                         element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
                         element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
                         element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
-                        element_max_occurs = element_max_occurs if element_max_occurs is not None else 10 # TODO externalize
+                        element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
                         element_occurs = rnd.randint(element_min_occurs, element_max_occurs)
 
                         if isinstance(xsd_child_element_type, XsdElement):
@@ -123,7 +131,7 @@ class XmlGenerator:
                     element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
                     element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
                     element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
-                    element_max_occurs = element_max_occurs if element_max_occurs is not None else 10 # TODO externalize
+                    element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
                     element_occurs = rnd.randint(element_min_occurs, element_max_occurs)
 
                     for _ in range(element_occurs):
@@ -232,7 +240,6 @@ class XmlGenerator:
 
         raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
 
-
     def _generate_value_by_type(self, xsd_type, target_name, patterns, min_length, max_length, min_value, max_value,
                                 total_digits, fraction_digits) -> str | None:
 
@@ -295,11 +302,15 @@ class XmlGenerator:
             xeger = rstr.xeger(random_pattern.attrib['value'])
             xeger = re.sub(r'\s', ' ', xeger)
             if min_length > -1 and len(xeger) < min_length:
-                print(
-                    f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be shorter than {min_length}",
-                    file=sys.stderr)
+                logger.warning(
+                    "Possible mistake in schema: %s generated value '%s' can't be shorter than %s",
+                    target_name, xeger, min_length
+                )
             if -1 < max_length < len(xeger):
-                print(f"Possible mistake in schema: {target_name} generated value '{xeger}' can't be longer than {max_length}", file=sys.stderr)
+                logger.warning(
+                    "Possible mistake in schema: %s generated value '%s' can't be longer than %s",
+                    target_name, xeger, max_length
+                )
             return xeger
 
         # Иначе генерируем случайную строку

@@ -1,12 +1,22 @@
+import logging
 import random
 import string
+import sys
 from datetime import datetime, timedelta
 
 from faker import Faker
 
+logger = logging.getLogger(__name__)
+
 
 class Randomizer:
     def __init__(self, seed=None):
+        if not seed:
+            seed = random.randrange(sys.maxsize)
+            logger.debug('initialize with random seed: %s', seed)
+        else:
+            logger.debug('initialize with provided seed: %s', seed)
+
         self.rnd = random.Random(seed)
         self.fake = Faker(locale='ru_RU')
         self.fake.seed_instance(seed)
