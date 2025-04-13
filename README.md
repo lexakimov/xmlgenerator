@@ -218,6 +218,7 @@ In the `value_override` sections, you can specify either a string value or speci
 | `output_filename`                  | String described by the `output_filename_template` configuration parameter                                 |
 | `uuid`                             | Random UUIDv4                                                                                              |
 | `regex("pattern")`                 | Random string value matching the specified regular expression                                              |
+| `any('A', "B", C)`                 | Random value from enumeration                                                                              |
 | `number(A, B)`                     | Random number between A and B                                                                              |
 | `date("2010-01-01", "2025-01-01")` | Random date within the specified range                                                                     |
 | `last_name`                        | Last Name                                                                                                  |

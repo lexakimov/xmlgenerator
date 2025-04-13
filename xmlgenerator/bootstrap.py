@@ -49,7 +49,7 @@ def _main():
 
     logger.debug('found %s schemas', len(xsd_files))
     for xsd_file in xsd_files:
-        logger.debug('processing schema: %s', xsd_file.name)
+        logger.info('processing schema: %s', xsd_file.name)
 
         # get configuration override for current schema
         local_config = config.get_for_file(xsd_file.name)

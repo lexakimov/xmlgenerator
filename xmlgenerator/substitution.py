@@ -20,18 +20,19 @@ class Substitutor:
         self._global_context = {}
         self.providers_dict = {
             # Функции локального контекста
-            "source_filename": lambda: self._local_context["source_filename"],
-            "source_extracted": lambda: self._local_context["source_extracted"],
-            "output_filename": lambda: self.get_output_filename(),
+            'source_filename': lambda: self._local_context["source_filename"],
+            'source_extracted': lambda: self._local_context["source_extracted"],
+            'output_filename': lambda: self.get_output_filename(),
 
             'uuid': lambda: str(uuid.uuid4()),
-            "regex": lambda a: rstr.xeger(a),
-            "number": self._rand_int,
-            "date": self._rand_date,
+            'regex': lambda a: rstr.xeger(a),
+            'any': self._rand_any,
+            'number': self._rand_int,
+            'date': self._rand_date,
 
-            "last_name": fake.last_name_male,
-            "first_name": fake.first_name_male,
-            "middle_name": fake.middle_name_male,
+            'last_name': fake.last_name_male,
+            'first_name': fake.first_name_male,
+            'middle_name': fake.middle_name_male,
             'address_text': fake.address,
             'administrative_unit': fake.administrative_unit,
             'house_number': fake.building_number,
@@ -47,6 +48,12 @@ class Substitutor:
             'kpp': fake.kpp,
             'snils_formatted': randomizer.snils_formatted,
         }
+
+    def _rand_any(self, a):
+        args = str(a).split(sep=",")
+        value = self.randomizer.rnd.choice(args)
+        value = value.strip(' ').strip("'").strip('"')
+        return value
 
     def _rand_int(self, a):
         args = str(a).split(sep=",")
