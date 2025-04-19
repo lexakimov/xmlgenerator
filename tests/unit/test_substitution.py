@@ -65,12 +65,6 @@ def test_parse_expression_extract_groups():
 
 
 def test_parse_expression_extract_groups_01():
-    """
-    regex("pattern") - сгенерирует значение по указанному регулярному выражению
-    number(A, B) - случайное число от A до B
-    date("2010-01-01", "2025-01-01") - случайная дата в указанном диапазоне.
-    """
-
     match = _pattern.match("{{ regex(\"pattern\") }}     ")
     assert match.group("function") == "regex"
     assert match.group("argument") == "\"pattern\""
