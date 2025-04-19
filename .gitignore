@@ -6,3 +6,4 @@
 /build/
 /xmlgenerator.egg-info/
 /_schemas/
+/dist_native/
