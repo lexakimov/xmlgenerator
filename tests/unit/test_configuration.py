@@ -1,9 +1,11 @@
+import logging
 import os
 
 import tests
 import xmlgenerator.configuration as conf
 
 os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
+conf.logger.setLevel(logging.DEBUG)
 
 
 def test_load_config_no_file():

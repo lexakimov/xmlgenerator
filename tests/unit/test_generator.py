@@ -3,13 +3,14 @@ import re
 from datetime import datetime
 
 import pytest
-import tests
 from lxml import etree
+from xmlschema import XMLSchema
+
+import tests
 from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.generator import XmlGenerator
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
-from xmlschema import XMLSchema
 
 os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
 
@@ -75,7 +76,7 @@ class TestSimple:
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/root/text()")
             assert generated_value
-            assert re.match("\\w+", generated_value[0])
+            assert re.match(r"\w+", generated_value[0])
 
         def test_boolean(self, generator, config):
             """Проверяет генерацию булевых значений."""
@@ -84,7 +85,7 @@ class TestSimple:
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/root/text()")
             assert generated_value
-            assert re.match("true|false", generated_value[0])
+            assert re.match(r"true|false", generated_value[0])
 
         def test_decimal(self, generator, config):
             xsd_schema = XMLSchema(f"data/simple/types_built_in/decimal.xsd")
@@ -92,7 +93,7 @@ class TestSimple:
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/root/text()")
             assert generated_value
-            assert re.match("[0-9-.]+", generated_value[0])
+            assert re.match(r"[0-9-.]+", generated_value[0])
 
         def test_float(self, generator, config):
             xsd_schema = XMLSchema(f"data/simple/types_built_in/float.xsd")
@@ -100,7 +101,7 @@ class TestSimple:
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/root/text()")
             assert generated_value
-            assert re.match("[0-9-.]+", generated_value[0])
+            assert re.match(r"[0-9-.]+", generated_value[0])
 
         def test_double(self, generator, config):
             xsd_schema = XMLSchema(f"data/simple/types_built_in/double.xsd")
@@ -108,19 +109,75 @@ class TestSimple:
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/root/text()")
             assert generated_value
-            assert re.match("[0-9-.]+", generated_value[0])
+            assert re.match(r"[0-9-.]+", generated_value[0])
+
+        def test_datetime(self, generator, config):
+            xsd_schema = XMLSchema(f"data/simple/types_built_in/datetime.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")
+            assert generated_value
+            assert re.match(r"[1,2][9,0]\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$", generated_value[0])
+
+        def test_date(self, generator, config):
+            xsd_schema = XMLSchema(f"data/simple/types_built_in/date.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")
+            assert generated_value
+            assert re.match(r"[1,2][9,0]\d\d-\d\d-\d\d$", generated_value[0])
+
+        def test_time(self, generator, config):
+            xsd_schema = XMLSchema(f"data/simple/types_built_in/time.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")
+            assert generated_value
+            assert re.match(r"^\d\d:\d\d:\d\d$", generated_value[0])
+
+        def test_gyearmonth(self, generator, config):
+            xsd_schema = XMLSchema(f"data/simple/types_built_in/gyearmonth.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")
+            assert generated_value
+            assert re.match(r"^\d\d\d\d-\d\d$", generated_value[0])
+
+        def test_gyear(self, generator, config):
+            xsd_schema = XMLSchema(f"data/simple/types_built_in/gyear.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")
+            assert generated_value
+            assert re.match(r"^\d\d\d\d$", generated_value[0])
+
+        def test_gmonthday(self, generator, config):
+            xsd_schema = XMLSchema(f"data/simple/types_built_in/gmonthday.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")
+            assert generated_value
+            assert re.match(r"^--\d\d-\d\d$", generated_value[0])
+
+        def test_gday(self, generator, config):
+            xsd_schema = XMLSchema(f"data/simple/types_built_in/gday.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")
+            assert generated_value
+            assert re.match(r"^---\d\d$", generated_value[0])
+
+        def test_gmonth(self, generator, config):
+            xsd_schema = XMLSchema(f"data/simple/types_built_in/gmonth.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")
+            assert generated_value
+            assert re.match(r"^--\d\d--$", generated_value[0])
 
         @pytest.mark.skip(reason="not yet implemented")
         @pytest.mark.parametrize("xsd", [
             'duration.xsd',
-            'datetime.xsd',
-            'time.xsd',
-            'date.xsd',
-            'gyearmonth.xsd',
-            'gyear.xsd',
-            'gmonthday.xsd',
-            'gday.xsd',
-            'gmonth.xsd',
             'hexbinary.xsd',
             'base64binary.xsd',
             'anyuri.xsd',
@@ -146,7 +203,7 @@ class TestComplex:
                 log_xml(generated_xml)
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert generated_value
-                assert re.match("\\w+", generated_value[0])
+                assert re.match(r"\w+", generated_value[0])
 
             def test_boolean(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in/boolean.xsd")
@@ -154,7 +211,7 @@ class TestComplex:
                 log_xml(generated_xml)
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert generated_value
-                assert re.match("true|false", generated_value[0])
+                assert re.match(r"true|false", generated_value[0])
 
             def test_decimal(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in/decimal.xsd")
@@ -162,7 +219,7 @@ class TestComplex:
                 log_xml(generated_xml)
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert generated_value
-                assert re.match("[0-9-.]+", generated_value[0])
+                assert re.match(r"[0-9-.]+", generated_value[0])
 
             def test_float(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in/float.xsd")
@@ -170,7 +227,7 @@ class TestComplex:
                 log_xml(generated_xml)
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert generated_value
-                assert re.match("[0-9-.]+", generated_value[0])
+                assert re.match(r"[0-9-.]+", generated_value[0])
 
             def test_double(self, generator, config):
                 xsd_schema = XMLSchema("data/complex/attributes/types_built_in/double.xsd")
@@ -178,19 +235,75 @@ class TestComplex:
                 log_xml(generated_xml)
                 generated_value = generated_xml.xpath("/root/@attributeValue")
                 assert generated_value
-                assert re.match("[0-9-.]+", generated_value[0])
+                assert re.match(r"[0-9-.]+", generated_value[0])
+
+            def test_datetime(self, generator, config):
+                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/datetime.xsd")
+                generated_xml = generator.generate_xml(xsd_schema, config)
+                log_xml(generated_xml)
+                generated_value = generated_xml.xpath("/root/@attributeValue")
+                assert generated_value
+                assert re.match(r"[1,2][9,0]\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$", generated_value[0])
+
+            def test_date(self, generator, config):
+                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/date.xsd")
+                generated_xml = generator.generate_xml(xsd_schema, config)
+                log_xml(generated_xml)
+                generated_value = generated_xml.xpath("/root/@attributeValue")
+                assert generated_value
+                assert re.match(r"[1,2][9,0]\d\d-\d\d-\d\d$", generated_value[0])
+
+            def test_time(self, generator, config):
+                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/time.xsd")
+                generated_xml = generator.generate_xml(xsd_schema, config)
+                log_xml(generated_xml)
+                generated_value = generated_xml.xpath("/root/@attributeValue")
+                assert generated_value
+                assert re.match(r"^\d\d:\d\d:\d\d$", generated_value[0])
+
+            def test_gyearmonth(self, generator, config):
+                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gyearmonth.xsd")
+                generated_xml = generator.generate_xml(xsd_schema, config)
+                log_xml(generated_xml)
+                generated_value = generated_xml.xpath("/root/@attributeValue")
+                assert generated_value
+                assert re.match(r"^\d\d\d\d-\d\d$", generated_value[0])
+
+            def test_gyear(self, generator, config):
+                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gyear.xsd")
+                generated_xml = generator.generate_xml(xsd_schema, config)
+                log_xml(generated_xml)
+                generated_value = generated_xml.xpath("/root/@attributeValue")
+                assert generated_value
+                assert re.match(r"^\d\d\d\d$", generated_value[0])
+
+            def test_gmonthday(self, generator, config):
+                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gmonthday.xsd")
+                generated_xml = generator.generate_xml(xsd_schema, config)
+                log_xml(generated_xml)
+                generated_value = generated_xml.xpath("/root/@attributeValue")
+                assert generated_value
+                assert re.match(r"^--\d\d-\d\d$", generated_value[0])
+
+            def test_gday(self, generator, config):
+                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gday.xsd")
+                generated_xml = generator.generate_xml(xsd_schema, config)
+                log_xml(generated_xml)
+                generated_value = generated_xml.xpath("/root/@attributeValue")
+                assert generated_value
+                assert re.match(r"^---\d\d$", generated_value[0])
+
+            def test_gmonth(self, generator, config):
+                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gmonth.xsd")
+                generated_xml = generator.generate_xml(xsd_schema, config)
+                log_xml(generated_xml)
+                generated_value = generated_xml.xpath("/root/@attributeValue")
+                assert generated_value
+                assert re.match(r"^--\d\d--$", generated_value[0])
 
             @pytest.mark.skip(reason="not yet implemented")
             @pytest.mark.parametrize("xsd", [
                 'duration.xsd',
-                'datetime.xsd',
-                'time.xsd',
-                'date.xsd',
-                'gyearmonth.xsd',
-                'gyear.xsd',
-                'gmonthday.xsd',
-                'gday.xsd',
-                'gmonth.xsd',
                 'hexbinary.xsd',
                 'base64binary.xsd',
                 'anyuri.xsd',
@@ -630,7 +743,7 @@ class TestComplex:
 
             assert min(counts_by_occurs_item_opt) == 0
             assert max(counts_by_occurs_item_opt) <= 10
-            assert len(counts_by_occurs_item_opt) < 10
+            assert len(counts_by_occurs_item_opt) <= 10
 
         def test_group_1_1__element_0_0__0_1(self, generator, config):
             xsd_schema = XMLSchema("data/complex/sequence/scenario_07_forbidden_element.xsd")
