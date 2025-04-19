@@ -63,7 +63,7 @@ class Substitutor:
         args = str(a).split(sep=",")
         date_from = args[0].strip(' ').strip("'").strip('"')
         date_until = args[1].strip(' ').strip("'").strip('"')
-        random_date = self.randomizer.random_date(date_from, date_until)
+        random_date = self.randomizer.random_datetime(date_from, date_until)
         return random_date.strftime('%Y%m%d') # TODO externalize pattern
 
     def reset_context(self, xsd_filename, config_local):

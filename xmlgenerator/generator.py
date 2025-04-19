@@ -358,29 +358,43 @@ class XmlGenerator:
         raise RuntimeError("not yet implemented")
 
     def _generate_datetime(self):
-        raise RuntimeError("not yet implemented")
+        random_datetime = self.randomizer.random_datetime()
+        formatted = random_datetime.isoformat()
+        return formatted
 
     def _generate_date(self):
-        raise RuntimeError("not yet implemented")
+        random_date = self.randomizer.random_date()
+        formatted = random_date.isoformat()
+        return formatted
 
     def _generate_time(self):
-        raise RuntimeError("not yet implemented")
+        random_time = self.randomizer.random_time()
+        formatted = random_time.isoformat()
+        return formatted
 
     def _generate_gyearmonth(self):
-        raise RuntimeError("not yet implemented")
+        random_date = self.randomizer.random_date()
+        formatted = random_date.strftime('%Y-%m')
+        return formatted
 
     def _generate_gyear(self):
         rnd = self.randomizer.rnd
-        return rnd.randint(2000, 2050)
+        return str(rnd.randint(2000, 2050))
 
     def _generate_gmonthday(self):
-        raise RuntimeError("not yet implemented")
+        random_date = self.randomizer.random_date()
+        formatted = random_date.strftime('--%m-%d')
+        return formatted
 
     def _generate_gday(self):
-        raise RuntimeError("not yet implemented")
+        random_date = self.randomizer.random_date()
+        formatted = random_date.strftime('---%d')
+        return formatted
 
     def _generate_gmonth(self):
-        raise RuntimeError("not yet implemented")
+        random_date = self.randomizer.random_date()
+        formatted = random_date.strftime('--%m--')
+        return formatted
 
     def _generate_hex_binary(self):
         raise RuntimeError("not yet implemented")
