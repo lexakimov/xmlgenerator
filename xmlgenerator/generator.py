@@ -1,7 +1,6 @@
 import logging
 import re
 
-import rstr
 import xmlschema
 from lxml import etree
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdElement, \
@@ -296,10 +295,11 @@ class XmlGenerator:
 
     def _generate_string(self, target_name, patterns, min_length, max_length):
         rnd = self.randomizer.rnd
+        re_gen = self.randomizer.re_gen
         if patterns is not None:
             # Генерация строки по regex
             random_pattern = rnd.choice(patterns)
-            xeger = rstr.xeger(random_pattern.attrib['value'])
+            xeger = re_gen.xeger(random_pattern.attrib['value'])
             xeger = re.sub(r'\s', ' ', xeger)
             if min_length > -1 and len(xeger) < min_length:
                 logger.warning(
