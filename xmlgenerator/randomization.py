@@ -4,6 +4,7 @@ import string
 import sys
 from datetime import datetime, date, time, timedelta
 
+import rstr
 from faker import Faker
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class Randomizer:
         self.rnd = random.Random(seed)
         self.fake = Faker(locale='ru_RU')
         self.fake.seed_instance(seed)
+        self.re_gen = rstr.Rstr(self.rnd)
 
     def ascii_string(self, min_length=-1, max_length=-1):
         min_length = min_length if min_length and min_length > -1 else 1

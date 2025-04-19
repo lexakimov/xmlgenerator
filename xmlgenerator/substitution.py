@@ -1,16 +1,15 @@
 import logging
 import re
-import uuid
-
-import rstr
 
 from xmlgenerator.randomization import Randomizer
 
 __all__ = ['Substitutor']
 
-_pattern = re.compile(pattern=r'\{\{\s*(?:(?P<function>\S*?)(?:\(\s*(?P<argument>[^)]*)\s*\))?\s*(?:\|\s*(?P<modifier>.*?))?)?\s*}}')
+_pattern = re.compile(
+    r'\{\{\s*(?:(?P<function>\S*?)(?:\(\s*(?P<argument>[^)]*)\s*\))?\s*(?:\|\s*(?P<modifier>.*?))?)?\s*}}')
 
 logger = logging.getLogger(__name__)
+
 
 class Substitutor:
     def __init__(self, randomizer: Randomizer):
@@ -24,8 +23,8 @@ class Substitutor:
             'source_extracted': lambda: self._local_context["source_extracted"],
             'output_filename': lambda: self.get_output_filename(),
 
-            'uuid': lambda: str(uuid.uuid4()),
-            'regex': lambda a: rstr.xeger(a),
+            'uuid': lambda: fake.uuid4(),
+            'regex': self._rand_regex,
             'any': self._rand_any,
             'number': self._rand_int,
             'date': self._rand_date,
@@ -49,6 +48,10 @@ class Substitutor:
             'snils_formatted': randomizer.snils_formatted,
         }
 
+    def _rand_regex(self, a):
+        pattern = a.strip("'").strip('"')
+        return self.randomizer.re_gen.xeger(pattern)
+
     def _rand_any(self, a):
         args = str(a).split(sep=",")
         value = self.randomizer.rnd.choice(args)
@@ -64,7 +67,7 @@ class Substitutor:
         date_from = args[0].strip(' ').strip("'").strip('"')
         date_until = args[1].strip(' ').strip("'").strip('"')
         random_date = self.randomizer.random_datetime(date_from, date_until)
-        return random_date.strftime('%Y%m%d') # TODO externalize pattern
+        return random_date.strftime('%Y%m%d')  # TODO externalize pattern
 
     def reset_context(self, xsd_filename, config_local):
         self._local_context.clear()

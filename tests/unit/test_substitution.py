@@ -1,6 +1,7 @@
 import pytest
 
-from xmlgenerator.substitution import _pattern
+from xmlgenerator.randomization import Randomizer
+from xmlgenerator.substitution import _pattern, Substitutor
 
 
 @pytest.mark.parametrize("expression, expected_groups_count", [
@@ -81,3 +82,45 @@ def test_parse_expression_few_expressions_in_one():
     assert findall[1][0] == "func2"
     assert findall[1][1] == "\'f2arg\'"
     assert findall[1][2] == "kek#lol"
+
+class TestFunctions:
+
+    @pytest.mark.parametrize(
+        "function, expected", [
+            ('source_filename', 'filename-123'),
+            ('source_extracted', 'extracted-123'),
+            ('output_filename', 'output-123'),
+            ('uuid', 'ebd05eb7-3677-44a5-b2df-6035d3c17334'),
+            ("regex('[0-9]{7,10}')", '57366923'),
+            ('regex("[0-9]{7,10}")', '57366923'),
+            ("any('A', \"B\", C)", 'A'),
+            ["number(0, 10)", "3"],
+            ('date("2010-01-01", "2025-01-01")', '20141009'),
+            ('last_name', 'Шарапов'),
+            ('first_name', 'Еремей'),
+            ('middle_name', 'Гордеевич'),
+            ('address_text', 'с. Калязин, пр. Краснодарский, д. 96 к. 82, 646357'),
+            ('administrative_unit', 'Магаданская обл.'),
+            ('house_number', '85'),
+            ('city_name', 'Катав-Ивановск'),
+            ('postcode', '573669'),
+            ('company_name', 'ИП «Кузнецова Колесников»'),
+            ('bank_name', 'ЕАТП Банк'),
+            ('phone_number', '+7 (573) 669-2368'),
+            ('inn_fl', '284151791372'),
+            ('inn_ul', '2841647400'),
+            ('ogrn_ip', '307415303422588'),
+            ('ogrn_fl', '1116432582848'),
+            ('kpp', '284145199'),
+            ('snils_formatted', '888-167-630 78'),
+        ]
+    )
+    def test_functions(self, function, expected):
+        substitutor = Substitutor(Randomizer(seed=111))
+        substitutor._local_context["source_filename"] = 'filename-123'
+        substitutor._local_context["source_extracted"] = 'extracted-123'
+        substitutor._local_context['output_filename'] = 'output-123'
+
+        is_found, value = substitutor.substitute_value("test", {"test": "{{" + function + "}}"}.items())
+        assert is_found
+        assert value == expected
