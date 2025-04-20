@@ -30,32 +30,37 @@ class XmlGenerator:
         # Process child elements --------------------------------------------------------------------------------------
         if isinstance(xsd_element, XsdElement):
             xsd_element_type = getattr(xsd_element, 'type', None)
-
-            logger.debug('fill down element "%s" with type %s', xsd_element.name, type(xsd_element_type).__name__)
+            element_xpath = xsd_element.get_path()
+            logger.debug('add element: "%s"', element_xpath)
 
             # Add attributes if they are
             attributes = getattr(xsd_element, 'attributes', dict())
             if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
-                logger.debug('add attributes to element %s', xsd_element.name)
+                logger.debug('add attributes to element: "%s"', element_xpath)
                 for attr_name, attr in attributes.items():
-                    logger.debug('attribute: %s', attr_name)
                     use = attr.use  # optional | required | prohibited
                     if use == 'prohibited':
-                        logger.debug('skipped')
+                        logger.debug('attribute: "%s" - skipped', attr_name)
                         continue
                     elif use == 'optional':
                         if rnd.random() > local_config.randomization.probability:
-                            logger.debug('skipped')
-                            continue  # skip optional attribute
+                            logger.debug('attribute: "%s" - skipped', attr_name)
+                            continue
 
                     attr_value = self._generate_value(attr.type, attr_name, local_config)
                     if attr_value is not None:
                         xml_element.set(attr_name, str(attr_value))
-                        logger.debug(f'attribute %s set with value %s', attr_name, attr_value)
+                        logger.debug('attribute "%s" = "%s"', attr_name, attr_value)
 
-            if isinstance(xsd_element_type, XsdAtomicRestriction):
+            if isinstance(xsd_element_type, XsdAtomicBuiltin):
                 text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
                 xml_element.text = text
+                logger.debug('element "%s" = "%s"', element_xpath, text)
+                return
+            elif isinstance(xsd_element_type, XsdAtomicRestriction):
+                text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
+                xml_element.text = text
+                logger.debug('element "%s" = "%s"', element_xpath, text)
                 return
             elif isinstance(xsd_element_type, XsdComplexType):
                 xsd_element_type_content = xsd_element_type.content
@@ -63,10 +68,6 @@ class XmlGenerator:
                     self._add_elements(xml_element, xsd_element_type_content, local_config)
                 else:
                     raise RuntimeError()
-            elif isinstance(xsd_element_type, XsdAtomicBuiltin):
-                text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
-                xml_element.text = text
-                return
             else:
                 raise RuntimeError()
 
@@ -156,76 +157,75 @@ class XmlGenerator:
             return None
 
         # -------------------------------------------------------------------------------------------------------------
-        # Выясняем ограничения
-        min_length = getattr(xsd_type, 'min_length', None)  # None | int
-        max_length = getattr(xsd_type, 'max_length', None)  # None | int
-
-        min_value = getattr(xsd_type, 'min_value', None)  # None | int
-        max_value = getattr(xsd_type, 'max_value', None)  # None
-
-        total_digits = None
-        fraction_digits = None
-        enumeration = getattr(xsd_type, 'enumeration', None)
-        patterns = getattr(xsd_type, 'patterns', None)
-
-        validators = getattr(xsd_type, 'validators', None)
-        for validator in validators:
-            if isinstance(validator, XsdMinExclusiveFacet):
-                min_value = validator.value
-            elif isinstance(validator, XsdMinInclusiveFacet):
-                min_value = validator.value
-            elif isinstance(validator, XsdMaxExclusiveFacet):
-                max_value = validator.value
-            elif isinstance(validator, XsdMaxInclusiveFacet):
-                max_value = validator.value
-            elif isinstance(validator, XsdLengthFacet):
-                min_length = validator.value
-                max_length = validator.value
-            elif isinstance(validator, XsdMinLengthFacet):
-                min_length = validator.value
-            elif isinstance(validator, XsdMaxLengthFacet):
-                max_length = validator.value
-            elif isinstance(validator, XsdTotalDigitsFacet):
-                total_digits = validator.value
-            elif isinstance(validator, XsdFractionDigitsFacet):
-                fraction_digits = validator.value
-            elif isinstance(validator, XsdEnumerationFacets):
-                enumeration = validator.enumeration
-            elif callable(validator):
-                pass
-            else:
-                raise RuntimeError(f"Unhandled validator: {validator}")
-
-        min_length = min_length or -1
-        max_length = max_length or -1
-
-        min_value = min_value or 0
-        max_value = max_value or 100000
-
-        # -------------------------------------------------------------------------------------------------------------
         # Ищем переопределение значения в конфигурации
-
         value_override = local_config.value_override
         is_found, overridden_value = self.substitutor.substitute_value(target_name, value_override.items())
         if is_found:
+            logger.debug('use overridden value: "%s"', overridden_value)
             return overridden_value
 
         # -------------------------------------------------------------------------------------------------------------
         # If there is an enumeration, select a random value from it
-
+        enumeration = getattr(xsd_type, 'enumeration', None)
         if enumeration is not None:
-            return self.randomizer.any(enumeration)
+            random_enum = self.randomizer.any(enumeration)
+            logger.debug('use random value from enumeration: "%s" %s', random_enum, enumeration)
+            return random_enum
 
-        # -------------------------------------------------------------------------------------------------------------\
+        # -------------------------------------------------------------------------------------------------------------
         # Генерируем значения для стандартных типов и типов с ограничениями
         if isinstance(xsd_type, XsdAtomicBuiltin) or isinstance(xsd_type, XsdAtomicRestriction):
-            return self._generate_value_by_type(
-                xsd_type, target_name,
-                patterns,
-                min_length, max_length,
-                min_value, max_value,
-                total_digits, fraction_digits
+            # Выясняем ограничения
+            min_length = getattr(xsd_type, 'min_length', None)  # None | int
+            max_length = getattr(xsd_type, 'max_length', None)  # None | int
+
+            min_value = getattr(xsd_type, 'min_value', None)  # None | int
+            max_value = getattr(xsd_type, 'max_value', None)  # None
+
+            total_digits = None
+            fraction_digits = None
+            patterns = getattr(xsd_type, 'patterns', None)
+
+            validators = getattr(xsd_type, 'validators', None)
+            for validator in validators:
+                if isinstance(validator, XsdMinExclusiveFacet):
+                    min_value = validator.value
+                elif isinstance(validator, XsdMinInclusiveFacet):
+                    min_value = validator.value
+                elif isinstance(validator, XsdMaxExclusiveFacet):
+                    max_value = validator.value
+                elif isinstance(validator, XsdMaxInclusiveFacet):
+                    max_value = validator.value
+                elif isinstance(validator, XsdLengthFacet):
+                    min_length = validator.value
+                    max_length = validator.value
+                elif isinstance(validator, XsdMinLengthFacet):
+                    min_length = validator.value
+                elif isinstance(validator, XsdMaxLengthFacet):
+                    max_length = validator.value
+                elif isinstance(validator, XsdTotalDigitsFacet):
+                    total_digits = validator.value
+                elif isinstance(validator, XsdFractionDigitsFacet):
+                    fraction_digits = validator.value
+                elif isinstance(validator, XsdEnumerationFacets):
+                    pass
+                elif callable(validator):
+                    pass
+                else:
+                    raise RuntimeError(f"Unhandled validator: {validator}")
+
+            min_length = min_length or -1
+            max_length = max_length or -1
+
+            min_value = min_value or 0
+            max_value = max_value or 100000
+
+            generated_value = self._generate_value_by_type(
+                xsd_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits,
+                fraction_digits
             )
+            logger.debug('use generated value: "%s"', generated_value)
+            return generated_value
 
         # -------------------------------------------------------------------------------------------------------------
         # Проверяем базовый тип
