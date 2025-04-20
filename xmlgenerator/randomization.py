@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 import string
 import sys
 from datetime import datetime, date, time, timedelta
@@ -11,66 +12,117 @@ logger = logging.getLogger(__name__)
 
 
 class Randomizer:
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, locale='ru_RU'):
         if not seed:
             seed = random.randrange(sys.maxsize)
             logger.debug('initialize with random seed: %s', seed)
         else:
             logger.debug('initialize with provided seed: %s', seed)
 
-        self.rnd = random.Random(seed)
-        self.fake = Faker(locale='ru_RU')
-        self.fake.seed_instance(seed)
-        self.re_gen = rstr.Rstr(self.rnd)
+        self._rnd = random.Random(seed)
+        self._fake = Faker(locale=locale)
+        self._fake.seed_instance(seed)
+        self._rstr = rstr.Rstr(self._rnd)
+
+    def any(self, options):
+        return self._rnd.choice(options)
+
+    def regex(self, pattern):
+        xeger = self._rstr.xeger(pattern)
+        return re.sub(r'\s', ' ', xeger)
+
+    def uuid(self):
+        return self._fake.uuid4()
+
+    def integer(self, min_value, max_value):
+        return self._rnd.randint(min_value, max_value)
+
+    def float(self, min_value, max_value):
+        return self._rnd.uniform(min_value, max_value)
 
     def ascii_string(self, min_length=-1, max_length=-1):
         min_length = min_length if min_length and min_length > -1 else 1
         max_length = max_length if max_length and max_length >= min_length else 20
         if max_length > 50:
             max_length = 50
-        length = self.rnd.randint(min_length, max_length)
-        # Генерация случайной строки из букв латиницы
-        letters = string.ascii_letters  # Все буквы латиницы (a-z, A-Z)
-        return ''.join(self.rnd.choice(letters) for _ in range(length))
+        length = self._rnd.randint(min_length, max_length)
+        letters = string.ascii_lowercase
+        return ''.join(self._rnd.choice(letters) for _ in range(length)).capitalize()
 
     def random_date(self, start_date: str = '1990-01-01', end_date: str = '2025-12-31') -> date:
-        # Преобразуем строки в объекты datetime
         start = date.fromisoformat(start_date)
         end = date.fromisoformat(end_date)
 
-        # Вычисляем разницу в днях между начальной и конечной датой
         delta = (end - start).days
-
-        # Генерируем случайное количество дней в пределах delta
-        random_days = self.rnd.randint(0, delta)
-
-        # Добавляем случайное количество дней к начальной дате
+        random_days = self._rnd.randint(0, delta)
         return start + timedelta(days=random_days)
 
     def random_time(self, start_time: str = '00:00:00', end_time: str = '23:59:59') -> time:
         start = time.fromisoformat(start_time)
         end = time.fromisoformat(end_time)
 
-        random_h = self.rnd.randint(start.hour, end.hour)
-        random_m = self.rnd.randint(start.minute, end.minute)
-        random_s = self.rnd.randint(start.second, end.second)
+        random_h = self._rnd.randint(start.hour, end.hour)
+        random_m = self._rnd.randint(start.minute, end.minute)
+        random_s = self._rnd.randint(start.second, end.second)
 
         return time(hour=random_h, minute=random_m, second=random_s)
 
     def random_datetime(self, start_date: str = '1990-01-01', end_date: str = '2025-12-31') -> datetime:
-        # Преобразуем строки в объекты datetime
         start = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d")
 
-        # Вычисляем разницу в днях между начальной и конечной датой
         delta = (end - start).days
-
-        # Генерируем случайное количество дней в пределах delta
-        random_days = self.rnd.randint(0, delta)
-
-        # Добавляем случайное количество дней к начальной дате
+        random_days = self._rnd.randint(0, delta)
         return start + timedelta(days=random_days)
 
+    def last_name(self):
+        return self._fake.last_name_male()
+    
+    def first_name(self):
+        return self._fake.first_name_male()
+    
+    def middle_name(self):
+        return self._fake.middle_name_male()
+    
+    def address_text(self):
+        return self._fake.address()
+    
+    def administrative_unit(self):
+        return self._fake.administrative_unit()
+    
+    def house_number(self):
+        return self._fake.building_number()
+    
+    def city_name(self):
+        return self._fake.city_name()
+    
+    def postcode(self):
+        return self._fake.postcode()
+    
+    def company_name(self):
+        return self._fake.company()
+    
+    def bank_name(self):
+        return self._fake.bank()
+    
+    def phone_number(self):
+        return self._fake.phone_number()
+    
+    def inn_fl(self):
+        return self._fake.individuals_inn()
+    
+    def inn_ul(self):
+        return self._fake.businesses_inn()
+    
+    def ogrn_ip(self):
+        return self._fake.individuals_ogrn()
+    
+    def ogrn_fl(self):
+        return self._fake.businesses_ogrn()
+    
+    def kpp(self):
+        return self._fake.kpp()
+
     def snils_formatted(self):
-        snils = self.fake.snils()
+        snils = self._fake.snils()
         return f"{snils[:3]}-{snils[3:6]}-{snils[6:9]} {snils[9:]}"

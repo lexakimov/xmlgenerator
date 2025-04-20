@@ -1,5 +1,4 @@
 import logging
-import re
 
 import xmlschema
 from lxml import etree
@@ -26,7 +25,7 @@ class XmlGenerator:
         return xml_root_element
 
     def _add_elements(self, xml_element: etree.Element, xsd_element, local_config: GeneratorConfig) -> None:
-        rnd = self.randomizer.rnd
+        rnd = self.randomizer._rnd # TODO replace
 
         xsd_element_type = getattr(xsd_element, 'type', None)
         logger.debug('fill down element "%s" with type %s', xsd_element.name, type(xsd_element_type).__name__)
@@ -77,7 +76,7 @@ class XmlGenerator:
             group_max_occurs = getattr(xsd_element, 'max_occurs', None)
             group_min_occurs = group_min_occurs if group_min_occurs is not None else 0
             group_max_occurs = group_max_occurs if group_max_occurs is not None else 10  # TODO externalize
-            group_occurs = rnd.randint(group_min_occurs, group_max_occurs)
+            group_occurs = self.randomizer.integer(group_min_occurs, group_max_occurs)
 
             if model == 'all':
                 for _ in range(group_occurs):
@@ -88,7 +87,7 @@ class XmlGenerator:
                         element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
                         element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
                         element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                        element_occurs = rnd.randint(element_min_occurs, element_max_occurs)
+                        element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
 
                         for _ in range(element_occurs):
                             xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
@@ -104,7 +103,7 @@ class XmlGenerator:
                         element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
                         element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
                         element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                        element_occurs = rnd.randint(element_min_occurs, element_max_occurs)
+                        element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
 
                         if isinstance(xsd_child_element_type, XsdElement):
                             for _ in range(element_occurs):
@@ -125,13 +124,13 @@ class XmlGenerator:
 
             elif model == 'choice':
                 for _ in range(group_occurs):
-                    xsd_child_element_type = rnd.choice(xsd_element)
+                    xsd_child_element_type = self.randomizer.any(xsd_element)
 
                     element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
                     element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
                     element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
                     element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                    element_occurs = rnd.randint(element_min_occurs, element_max_occurs)
+                    element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
 
                     for _ in range(element_occurs):
                         xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
@@ -154,8 +153,6 @@ class XmlGenerator:
 
         if isinstance(xsd_type, XsdComplexType):
             return None
-
-        rnd = self.randomizer.rnd
 
         # -------------------------------------------------------------------------------------------------------------
         # Выясняем ограничения
@@ -216,7 +213,7 @@ class XmlGenerator:
         # If there is an enumeration, select a random value from it
 
         if enumeration is not None:
-            return rnd.choice(enumeration)
+            return self.randomizer.any(enumeration)
 
         # -------------------------------------------------------------------------------------------------------------\
         # Генерируем значения для стандартных типов и типов с ограничениями
@@ -294,13 +291,11 @@ class XmlGenerator:
                 raise RuntimeError(type_id)
 
     def _generate_string(self, target_name, patterns, min_length, max_length):
-        rnd = self.randomizer.rnd
-        re_gen = self.randomizer.re_gen
         if patterns is not None:
             # Генерация строки по regex
-            random_pattern = rnd.choice(patterns)
-            xeger = re_gen.xeger(random_pattern.attrib['value'])
-            xeger = re.sub(r'\s', ' ', xeger)
+            random_enum = self.randomizer.any(patterns)
+            random_pattern = random_enum.attrib['value']
+            xeger = self.randomizer.regex(random_pattern)
             if min_length > -1 and len(xeger) < min_length:
                 logger.warning(
                     "Possible mistake in schema: %s generated value '%s' can't be shorter than %s",
@@ -317,39 +312,35 @@ class XmlGenerator:
         return self.randomizer.ascii_string(min_length, max_length)
 
     def _generate_boolean(self):
-        rnd = self.randomizer.rnd
-        return rnd.choice(['true', 'false'])
+        return self.randomizer.any(['true', 'false'])
 
     def _generate_integer(self, total_digits, min_value, max_value):
-        rnd = self.randomizer.rnd
         if total_digits:
             min_value = 10 ** (total_digits - 1)
             max_value = (10 ** total_digits) - 1
-        rnd_int = rnd.randint(min_value, max_value)
+        rnd_int = self.randomizer.integer(min_value, max_value)
         return str(rnd_int)
 
     def _generate_decimal(self, total_digits, fraction_digits, min_value, max_value):
-        rnd = self.randomizer.rnd
         if total_digits:
             if fraction_digits and fraction_digits > 0:
                 integer_digits = total_digits - fraction_digits
-                integer_part = rnd.randint(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
-                fractional_part = rnd.randint(0, (10 ** fraction_digits) - 1)
+                integer_part = self.randomizer.integer(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
+                fractional_part = self.randomizer.integer(0, (10 ** fraction_digits) - 1)
                 return f"{integer_part}.{fractional_part:0{fraction_digits}}"
             else:
                 min_value = 10 ** (total_digits - 1)
                 max_value = (10 ** total_digits) - 1
-                rnd_int = rnd.randint(min_value, max_value)
+                rnd_int = self.randomizer.integer(min_value, max_value)
                 return str(rnd_int)
 
-        rnd_int = rnd.randint(min_value, max_value)
+        rnd_int = self.randomizer.integer(min_value, max_value)
         return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
 
     def _generate_float(self, min_value, max_value):
-        rnd = self.randomizer.rnd
-        rnd_int = rnd.uniform(min_value, max_value)
-        rnd_int = round(rnd_int, 2)
-        return str(rnd_int)
+        number = self.randomizer.float(min_value, max_value)
+        number = round(number, 2)
+        return str(number)
 
     def _generate_double(self, min_value, max_value):
         return self._generate_float(min_value, max_value)
@@ -378,8 +369,7 @@ class XmlGenerator:
         return formatted
 
     def _generate_gyear(self):
-        rnd = self.randomizer.rnd
-        return str(rnd.randint(2000, 2050))
+        return str(self.randomizer.integer(2000, 2050))
 
     def _generate_gmonthday(self):
         random_date = self.randomizer.random_date()
