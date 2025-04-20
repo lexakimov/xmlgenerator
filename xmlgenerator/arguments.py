@@ -71,7 +71,7 @@ def _get_parser():
         help="output XML encoding (utf-8, windows-1251, default is utf-8)"
     )
     parser.add_argument(
-        "--seed",
+        "-s", "--seed",
         metavar="<seed>",
         help="set randomization seed"
     )

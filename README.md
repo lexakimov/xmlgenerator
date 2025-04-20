@@ -112,7 +112,7 @@ options:
   -v, --validation <validation>  validate generated XML document (none, schema, schematron, default is schema)
   -ff, --fail-fast               terminate execution on validation error (default is true)
   -e, --encoding <encoding>      output XML encoding (utf-8, windows-1251, default is utf-8)
-      --seed <seed>              set randomization seed
+  -s, --seed <seed>              set randomization seed
   -d, --debug                    enable debug mode
   -V, --version                  shows current version
   -C, --completion <shell>       print shell completion script (bash, zsh, tcsh)
