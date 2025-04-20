@@ -27,31 +27,32 @@ class XmlGenerator:
     def _add_elements(self, xml_element: etree.Element, xsd_element, local_config: GeneratorConfig) -> None:
         rnd = self.randomizer._rnd # TODO replace
 
-        xsd_element_type = getattr(xsd_element, 'type', None)
-        logger.debug('fill down element "%s" with type %s', xsd_element.name, type(xsd_element_type).__name__)
-
-        # Add attributes if they are
-        attributes = getattr(xsd_element, 'attributes', dict())
-        if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
-            logger.debug('add attributes to element %s', xsd_element.name)
-            for attr_name, attr in attributes.items():
-                logger.debug('attribute: %s', attr_name)
-                use = attr.use  # optional | required | prohibited
-                if use == 'prohibited':
-                    logger.debug('skipped')
-                    continue
-                elif use == 'optional':
-                    if rnd.random() > local_config.randomization.probability:
-                        logger.debug('skipped')
-                        continue  # skip optional attribute
-
-                attr_value = self._generate_value(attr.type, attr_name, local_config)
-                if attr_value is not None:
-                    xml_element.set(attr_name, str(attr_value))
-                    logger.debug(f'attribute %s set with value %s', attr_name, attr_value)
-
         # Process child elements --------------------------------------------------------------------------------------
         if isinstance(xsd_element, XsdElement):
+            xsd_element_type = getattr(xsd_element, 'type', None)
+
+            logger.debug('fill down element "%s" with type %s', xsd_element.name, type(xsd_element_type).__name__)
+
+            # Add attributes if they are
+            attributes = getattr(xsd_element, 'attributes', dict())
+            if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
+                logger.debug('add attributes to element %s', xsd_element.name)
+                for attr_name, attr in attributes.items():
+                    logger.debug('attribute: %s', attr_name)
+                    use = attr.use  # optional | required | prohibited
+                    if use == 'prohibited':
+                        logger.debug('skipped')
+                        continue
+                    elif use == 'optional':
+                        if rnd.random() > local_config.randomization.probability:
+                            logger.debug('skipped')
+                            continue  # skip optional attribute
+
+                    attr_value = self._generate_value(attr.type, attr_name, local_config)
+                    if attr_value is not None:
+                        xml_element.set(attr_name, str(attr_value))
+                        logger.debug(f'attribute %s set with value %s', attr_name, attr_value)
+
             if isinstance(xsd_element_type, XsdAtomicRestriction):
                 text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
                 xml_element.text = text
