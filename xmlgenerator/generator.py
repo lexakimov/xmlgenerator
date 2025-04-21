@@ -21,51 +21,53 @@ class XmlGenerator:
     def generate_xml(self, xsd_schema: xmlschema.XMLSchema, local_config: GeneratorConfig) -> etree.Element:
         xsd_root_element = xsd_schema.root_elements[0]
         xml_root_element = etree.Element(xsd_root_element.name)
-        self._add_elements(xml_root_element, xsd_root_element, local_config)
+        xml_tree = etree.ElementTree(xml_root_element)
+        self._add_elements(xml_tree, xml_root_element, xsd_root_element, local_config)
         return xml_root_element
 
-    def _add_elements(self, xml_element: etree.Element, xsd_element, local_config: GeneratorConfig) -> None:
+    def _add_elements(self, xml_tree, xml_element: etree.Element, xsd_element, local_config: GeneratorConfig) -> None:
         rnd = self.randomizer._rnd # TODO replace
 
         # Process child elements --------------------------------------------------------------------------------------
         if isinstance(xsd_element, XsdElement):
+            element_xpath = xml_tree.getpath(xml_element)
+            logger.debug('element: %s [created]', element_xpath)
+
             xsd_element_type = getattr(xsd_element, 'type', None)
-            element_xpath = xsd_element.get_path()
-            logger.debug('add element: "%s"', element_xpath)
 
             # Add attributes if they are
             attributes = getattr(xsd_element, 'attributes', dict())
             if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
-                logger.debug('add attributes to element: "%s"', element_xpath)
                 for attr_name, attr in attributes.items():
+                    logger.debug('element: %s; attribute "%s" [processing]', element_xpath, attr_name)
                     use = attr.use  # optional | required | prohibited
                     if use == 'prohibited':
-                        logger.debug('attribute: "%s" - skipped', attr_name)
+                        logger.debug('element: %s; attribute: "%s" [skipped]', element_xpath, attr_name)
                         continue
                     elif use == 'optional':
                         if rnd.random() > local_config.randomization.probability:
-                            logger.debug('attribute: "%s" - skipped', attr_name)
+                            logger.debug('element: %s; attribute: "%s" [skipped]', element_xpath, attr_name)
                             continue
 
                     attr_value = self._generate_value(attr.type, attr_name, local_config)
                     if attr_value is not None:
                         xml_element.set(attr_name, str(attr_value))
-                        logger.debug('attribute "%s" = "%s"', attr_name, attr_value)
+                        logger.debug('element: %s; attribute: "%s" = "%s"', element_xpath, attr_name, attr_value)
 
             if isinstance(xsd_element_type, XsdAtomicBuiltin):
                 text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
                 xml_element.text = text
-                logger.debug('element "%s" = "%s"', element_xpath, text)
+                logger.debug('element: %s = "%s"', element_xpath, text)
                 return
             elif isinstance(xsd_element_type, XsdAtomicRestriction):
                 text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
                 xml_element.text = text
-                logger.debug('element "%s" = "%s"', element_xpath, text)
+                logger.debug('element: %s = "%s"', element_xpath, text)
                 return
             elif isinstance(xsd_element_type, XsdComplexType):
                 xsd_element_type_content = xsd_element_type.content
                 if isinstance(xsd_element_type_content, XsdGroup):
-                    self._add_elements(xml_element, xsd_element_type_content, local_config)
+                    self._add_elements(xml_tree, xml_element, xsd_element_type_content, local_config)
                 else:
                     raise RuntimeError()
             else:
@@ -93,7 +95,7 @@ class XmlGenerator:
 
                         for _ in range(element_occurs):
                             xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
-                            self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+                            self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
                 return
 
             elif model == 'sequence':
@@ -110,15 +112,15 @@ class XmlGenerator:
                         if isinstance(xsd_child_element_type, XsdElement):
                             for _ in range(element_occurs):
                                 xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
-                                self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+                                self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
 
                         elif isinstance(xsd_child_element_type, XsdGroup):
                             xml_child_element = xml_element
-                            self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+                            self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
 
                         elif isinstance(xsd_child_element_type, XsdAnyElement):
                             xml_child_element = etree.SubElement(xml_element, "Any")
-                            self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+                            self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
 
                         else:
                             raise RuntimeError(xsd_child_element_type)
@@ -136,7 +138,7 @@ class XmlGenerator:
 
                     for _ in range(element_occurs):
                         xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
-                        self._add_elements(xml_child_element, xsd_child_element_type, local_config)
+                        self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
                 return
 
             else:
