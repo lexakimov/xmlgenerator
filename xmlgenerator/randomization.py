@@ -24,6 +24,9 @@ class Randomizer:
         self._fake.seed_instance(seed)
         self._rstr = rstr.Rstr(self._rnd)
 
+    def random(self):
+        return self._rnd.random()
+
     def any(self, options):
         return self._rnd.choice(options)
 

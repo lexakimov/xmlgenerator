@@ -26,8 +26,6 @@ class XmlGenerator:
         return xml_root_element
 
     def _add_elements(self, xml_tree, xml_element: etree.Element, xsd_element, local_config: GeneratorConfig) -> None:
-        rnd = self.randomizer._rnd # TODO replace
-
         # Process child elements --------------------------------------------------------------------------------------
         if isinstance(xsd_element, XsdElement):
             element_xpath = xml_tree.getpath(xml_element)
@@ -45,7 +43,7 @@ class XmlGenerator:
                         logger.debug('element: %s; attribute: "%s" [skipped]', element_xpath, attr_name)
                         continue
                     elif use == 'optional':
-                        if rnd.random() > local_config.randomization.probability:
+                        if self.randomizer.random() > local_config.randomization.probability:
                             logger.debug('element: %s; attribute: "%s" [skipped]', element_xpath, attr_name)
                             continue
 
