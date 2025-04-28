@@ -161,7 +161,7 @@ class XmlGenerator:
         value_override = local_config.value_override
         is_found, overridden_value = self.substitutor.substitute_value(target_name, value_override.items())
         if is_found:
-            logger.debug('use overridden value: "%s"', overridden_value)
+            logger.debug('value resolved: "%s"', overridden_value)
             return overridden_value
 
         # -------------------------------------------------------------------------------------------------------------
@@ -215,18 +215,30 @@ class XmlGenerator:
                     raise RuntimeError(f"Unhandled validator: {validator}")
 
             rand_config = local_config.randomization
-            min_length, max_length = resolve_length_restrictions(
-                min_length, max_length, rand_config.min_length, rand_config.max_length
+
+            logger.debug(
+                'restrictions before override: min_length: %4s; max_length: %4s; min_value: %4s; max_value: %4s',
+                min_length, max_length, min_value, max_value
             )
 
-            min_value = min_value or 0
-            max_value = max_value or 100000
+            min_length, max_length = calculate_numeric_bounds(
+                min_length, max_length, rand_config.min_length, rand_config.max_length, 0, 100
+            )
+
+            min_value, max_value = calculate_numeric_bounds(
+                min_value, max_value, rand_config.min_inclusive, rand_config.max_inclusive, 0, 10000000
+            )
+
+            logger.debug(
+                'restrictions after  override: min_length: %4s; max_length: %4s; min_value: %4s; max_value: %4s',
+                min_length, max_length, min_value, max_value
+            )
 
             generated_value = self._generate_value_by_type(
                 xsd_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits,
                 fraction_digits
             )
-            logger.debug('use generated value: "%s"', generated_value)
+            logger.debug('value generated: "%s"', generated_value)
             return generated_value
 
         # -------------------------------------------------------------------------------------------------------------
@@ -248,6 +260,8 @@ class XmlGenerator:
             type_id = base_type.id
             if not type_id:
                 type_id = xsd_type.root_type.id
+
+        logger.debug('generate value for type: "%s"', type_id)
 
         match type_id:
             case 'string':
@@ -405,32 +419,24 @@ class XmlGenerator:
         raise RuntimeError("not yet implemented")
 
 
-def resolve_length_restrictions(fact_min_length, fact_max_length, config_min_length, config_max_length):
-    logger.debug('restrictions before override:')
-    logger.debug('  min_length: %s', fact_min_length)
-    logger.debug('  max_length: %s', fact_max_length)
+def calculate_numeric_bounds(fact_min, fact_max, config_min, config_max, default_min, default_max):
+    if fact_min is None:
+        fact_min = default_min
 
-    if fact_min_length is None:
-        fact_min_length = 0
+    if fact_max is None:
+        fact_max = default_max
 
-    if fact_max_length is None:
-        fact_max_length = 100
+    if config_min:
+        new_min = max(fact_min, config_min)
+        if new_min <= fact_max:
+            fact_min = new_min
 
-    if config_min_length:
-        new_min_length = max(fact_min_length, config_min_length)
-        if new_min_length <= fact_max_length:
-            fact_min_length = new_min_length
+    if config_max:
+        new_max = min(fact_max, config_max)
+        if new_max >= fact_min:
+            fact_max = new_max
 
-    if config_max_length:
-        new_max_length = min(fact_max_length, config_max_length)
-        if new_max_length >= fact_min_length:
-            fact_max_length = new_max_length
+    if fact_max < fact_min:
+        fact_max = fact_min
 
-    if fact_max_length < fact_min_length:
-        fact_max_length = fact_min_length
-
-    logger.debug('restrictions after override:')
-    logger.debug('  min_length: %s', fact_min_length)
-    logger.debug('  max_length: %s', fact_max_length)
-
-    return fact_min_length, fact_max_length
+    return fact_min, fact_max

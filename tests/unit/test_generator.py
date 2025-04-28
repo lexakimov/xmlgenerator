@@ -8,7 +8,7 @@ from xmlschema import XMLSchema
 
 import tests
 from xmlgenerator.configuration import GeneratorConfig
-from xmlgenerator.generator import XmlGenerator, resolve_length_restrictions
+from xmlgenerator.generator import XmlGenerator, calculate_numeric_bounds
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 
@@ -767,44 +767,40 @@ class TestComplex:
             assert counts_by_occurs_item_forb[0] == 100
 
 
-class TestLengthRestriction:
+class TestCalculateNumericBounds:
 
-    def test_no_restrictions(self):
-        min_length, max_length = resolve_length_restrictions(None, None, None, None)
-        assert min_length == 0
-        assert max_length == 100
+    def test_no_overrides(self):
+        result = calculate_numeric_bounds(None, None, None, None, 0, 100)
+        assert result == (0, 100)
 
-    def test_min_length_override(self):
-        min_length, max_length = resolve_length_restrictions(5, 50, 10, None)
-        assert min_length == 10
-        assert max_length == 50
+    def test_fact_min_and_max(self):
+        result = calculate_numeric_bounds(10, 50, None, None, 0, 100)
+        assert result == (10, 50)
 
-    def test_max_length_override(self):
-        min_length, max_length = resolve_length_restrictions(5, 50, None, 40)
-        assert min_length == 5
-        assert max_length == 40
+    def test_config_min_override(self):
+        result = calculate_numeric_bounds(10, 50, 20, None, 0, 100)
+        assert result == (20, 50)
 
-    def test_min_and_max_length_override(self):
-        min_length, max_length = resolve_length_restrictions(5, 50, 10, 40)
-        assert min_length == 10
-        assert max_length == 40
+    def test_config_max_override(self):
+        result = calculate_numeric_bounds(10, 50, None, 40, 0, 100)
+        assert result == (10, 40)
 
-    def test_min_greater_than_max(self):
-        min_length, max_length = resolve_length_restrictions(50, 10, None, None)
-        assert min_length == 50
-        assert max_length == 50
+    def test_config_min_and_max_override(self):
+        result = calculate_numeric_bounds(10, 50, 20, 40, 0, 100)
+        assert result == (20, 40)
 
-    def test_no_config_min_length(self):
-        min_length, max_length = resolve_length_restrictions(5, 50, None, None)
-        assert min_length == 5
-        assert max_length == 50
+    def test_default_min_and_max(self):
+        result = calculate_numeric_bounds(None, None, None, None, 5, 15)
+        assert result == (5, 15)
 
-    def test_no_config_max_length(self):
-        min_length, max_length = resolve_length_restrictions(None, None, None, 30)
-        assert min_length == 0
-        assert max_length == 30
+    def test_fact_min_greater_than_fact_max(self):
+        result = calculate_numeric_bounds(50, 10, None, None, 0, 100)
+        assert result == (50, 50)
 
-    def test_config_min_and_max_length(self):
-        min_length, max_length = resolve_length_restrictions(None, None, 10, 20)
-        assert min_length == 10
-        assert max_length == 20
+    def test_config_min_greater_than_fact_max(self):
+        result = calculate_numeric_bounds(10, 50, 60, None, 0, 100)
+        assert result == (10, 50)
+
+    def test_config_max_less_than_fact_min(self):
+        result = calculate_numeric_bounds(10, 50, None, 5, 0, 100)
+        assert result == (10, 50)
