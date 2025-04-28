@@ -76,7 +76,7 @@ class XmlGenerator:
 
             group_min_occurs = getattr(xsd_element, 'min_occurs', None)
             group_max_occurs = getattr(xsd_element, 'max_occurs', None)
-            group_min_occurs = group_min_occurs if group_min_occurs is not None else 0
+            group_min_occurs = group_min_occurs if group_min_occurs is not None else 0  # TODO externalize
             group_max_occurs = group_max_occurs if group_max_occurs is not None else 10  # TODO externalize
             group_occurs = self.randomizer.integer(group_min_occurs, group_max_occurs)
 
@@ -87,7 +87,7 @@ class XmlGenerator:
 
                         element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
                         element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                        element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
+                        element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
                         element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
                         element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
 
@@ -103,7 +103,7 @@ class XmlGenerator:
 
                         element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
                         element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                        element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
+                        element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
                         element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
                         element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
 
@@ -130,7 +130,7 @@ class XmlGenerator:
 
                     element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
                     element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                    element_min_occurs = element_min_occurs if element_min_occurs is not None else 0
+                    element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
                     element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
                     element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
 
@@ -214,8 +214,10 @@ class XmlGenerator:
                 else:
                     raise RuntimeError(f"Unhandled validator: {validator}")
 
-            min_length = min_length or -1
-            max_length = max_length or -1
+            rand_config = local_config.randomization
+            min_length, max_length = resolve_length_restrictions(
+                min_length, max_length, rand_config.min_length, rand_config.max_length
+            )
 
             min_value = min_value or 0
             max_value = max_value or 100000
@@ -401,3 +403,34 @@ class XmlGenerator:
 
     def _generate_notation(self):
         raise RuntimeError("not yet implemented")
+
+
+def resolve_length_restrictions(fact_min_length, fact_max_length, config_min_length, config_max_length):
+    logger.debug('restrictions before override:')
+    logger.debug('  min_length: %s', fact_min_length)
+    logger.debug('  max_length: %s', fact_max_length)
+
+    if fact_min_length is None:
+        fact_min_length = 0
+
+    if fact_max_length is None:
+        fact_max_length = 100
+
+    if config_min_length:
+        new_min_length = max(fact_min_length, config_min_length)
+        if new_min_length <= fact_max_length:
+            fact_min_length = new_min_length
+
+    if config_max_length:
+        new_max_length = min(fact_max_length, config_max_length)
+        if new_max_length >= fact_min_length:
+            fact_max_length = new_max_length
+
+    if fact_max_length < fact_min_length:
+        fact_max_length = fact_min_length
+
+    logger.debug('restrictions after override:')
+    logger.debug('  min_length: %s', fact_min_length)
+    logger.debug('  max_length: %s', fact_max_length)
+
+    return fact_min_length, fact_max_length

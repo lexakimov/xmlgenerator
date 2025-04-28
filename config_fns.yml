@@ -6,6 +6,8 @@ global:
   randomization:
     probability: 1
     max_occurs: 5
+    min_length: 5
+    max_length: 10
 
   value_override:
     "^(ИдФайл|FileID)$": "{{ output_filename }}"

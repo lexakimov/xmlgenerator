@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RandomizationConfig:
     probability: float = field(default=None)
+    min_occurs: int = field(default=None)
     max_occurs: int = field(default=None)
     min_length: int = field(default=None)
     max_length: int = field(default=None)

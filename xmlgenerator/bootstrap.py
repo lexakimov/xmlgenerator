@@ -12,6 +12,8 @@ from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
 
+# TODO конфигурация ограничений - occurs
+# TODO конфигурация ограничений - min max
 # TODO Generator - обработка стандартных xsd типов
 # TODO кастомные переменные для локального контекста
 # TODO валидация по Schematron
