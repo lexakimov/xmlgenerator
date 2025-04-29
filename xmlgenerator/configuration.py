@@ -37,7 +37,7 @@ class GeneratorConfig:
 @dataclass
 class GlobalGeneratorConfig(GeneratorConfig):
     source_filename: str = field(default='(?P<extracted>.*).(xsd|XSD)')
-    output_filename: str = field(default='{{ source_filename }}_{{ uuid }}')
+    output_filename: str = field(default='{{ source_extracted }}_{{ uuid }}')
     randomization: GlobalRandomizationConfig = field(default_factory=lambda: GlobalRandomizationConfig())
 
 

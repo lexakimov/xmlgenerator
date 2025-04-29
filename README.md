@@ -135,7 +135,7 @@ global:
   source_filename: ...
 
   # Filename template for saving the generated document.
-  # Default value: `{{ source_filename }}_{{ uuid }}` (xsd schema filename + random UUID)
+  # Default value: `{{ source_extracted }}_{{ uuid }}` (xsd schema filename + random UUID)
   output_filename: ...
 
   # Random value generator settings
