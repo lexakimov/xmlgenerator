@@ -19,8 +19,9 @@ class XmlGenerator:
         self.substitutor = substitutor
 
     def generate_xml(self, xsd_schema: xmlschema.XMLSchema, local_config: GeneratorConfig) -> etree.Element:
+        ns_map = {None if k == '' else k: v for k, v in xsd_schema.namespaces.items() if v != ''}
         xsd_root_element = xsd_schema.root_elements[0]
-        xml_root_element = etree.Element(xsd_root_element.name)
+        xml_root_element = etree.Element(xsd_root_element.name, nsmap=ns_map)
         xml_tree = etree.ElementTree(xml_root_element)
         self._add_elements(xml_tree, xml_root_element, xsd_root_element, local_config)
         return xml_root_element
