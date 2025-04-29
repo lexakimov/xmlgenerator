@@ -93,7 +93,7 @@ class Randomizer:
         return self._fake.building_number()
     
     def city_name(self):
-        return self._fake.city_name()
+        return self._fake.city_name() if hasattr(self._fake, 'city_name') else self._fake.city()
 
     def country(self):
         return self._fake.country()

@@ -39,6 +39,12 @@ def _get_parser():
         dest="config_yaml",
         help="pass yaml configuration file"
     )
+    parser.add_argument(
+        "-l", "--locale",
+        metavar="<locale>",
+        default="en_US",
+        help="randomizer locale (default: %(default)s)"
+    )
     output_arg = parser.add_argument(
         "-o", "--output",
         metavar="<output.xml>",

@@ -107,6 +107,7 @@ positional arguments:
 options:
   -h, --help                     show this help message and exit
   -c, --config <config.yml>      pass yaml configuration file
+  -l, --locale <locale>          randomizer locale (default: en_US)
   -o, --output <output.xml>      save output to dir or file
   -p, --pretty                   prettify output XML
   -v, --validation <validation>  validate generated XML document (none, schema, schematron, default is schema)

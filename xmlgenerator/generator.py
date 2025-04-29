@@ -236,8 +236,11 @@ class XmlGenerator:
             )
 
             generated_value = self._generate_value_by_type(
-                xsd_type, target_name, patterns, min_length, max_length, min_value, max_value, total_digits,
-                fraction_digits
+                xsd_type, target_name,
+                patterns,
+                min_length, max_length,
+                min_value, max_value,
+                total_digits, fraction_digits
             )
             logger.debug('value generated: "%s"', generated_value)
             return generated_value
@@ -266,7 +269,7 @@ class XmlGenerator:
 
         match type_id:
             case 'string':
-                return self._generate_string(target_name, patterns, min_length, max_length)
+                return self._generate_string(patterns, min_length, max_length)
             case 'boolean':
                 return self._generate_boolean()
             case 'integer':
@@ -308,23 +311,12 @@ class XmlGenerator:
             case _:
                 raise RuntimeError(type_id)
 
-    def _generate_string(self, target_name, patterns, min_length, max_length):
+    def _generate_string(self, patterns, min_length, max_length):
         if patterns is not None:
             # Генерация строки по regex
             random_enum = self.randomizer.any(patterns)
             random_pattern = random_enum.attrib['value']
-            xeger = self.randomizer.regex(random_pattern)
-            if min_length > -1 and len(xeger) < min_length:
-                logger.warning(
-                    "Possible mistake in schema: %s generated value '%s' can't be shorter than %s",
-                    target_name, xeger, min_length
-                )
-            if -1 < max_length < len(xeger):
-                logger.warning(
-                    "Possible mistake in schema: %s generated value '%s' can't be longer than %s",
-                    target_name, xeger, max_length
-                )
-            return xeger
+            return self.randomizer.regex(random_pattern)
 
         # Иначе генерируем случайную строку
         return self.randomizer.ascii_string(min_length, max_length)
