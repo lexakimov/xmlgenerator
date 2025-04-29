@@ -94,6 +94,9 @@ class Randomizer:
     
     def city_name(self):
         return self._fake.city_name()
+
+    def country(self):
+        return self._fake.country()
     
     def postcode(self):
         return self._fake.postcode()

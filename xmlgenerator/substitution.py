@@ -35,6 +35,7 @@ class Substitutor:
             'administrative_unit': lambda args: self.randomizer.administrative_unit(),
             'house_number': lambda args: self.randomizer.house_number(),
             'city_name': lambda args: self.randomizer.city_name(),
+            'country': lambda args: self.randomizer.country(),
             'postcode': lambda args: self.randomizer.postcode(),
             'company_name': lambda args: self.randomizer.company_name(),
             'bank_name': lambda args: self.randomizer.bank_name(),
