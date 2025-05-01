@@ -4,6 +4,7 @@ import re
 import string
 import sys
 from datetime import datetime, date, time, timedelta
+from decimal import Decimal
 
 import rstr
 from faker import Faker
@@ -41,9 +42,18 @@ class Randomizer:
         return self._rnd.randint(min_value, max_value)
 
     def float(self, min_value, max_value):
+        if isinstance(min_value, Decimal):
+            min_value = float(min_value)
+        if isinstance(max_value, Decimal):
+            max_value = float(max_value)
         return self._rnd.uniform(min_value, max_value)
 
     def ascii_string(self, min_length, max_length):
+        if min_length is None:
+            min_length = 1
+        if max_length is None:
+            max_length = 20
+
         length = self._rnd.randint(min_length, max_length)
         letters = string.ascii_lowercase
         return ''.join(self._rnd.choice(letters) for _ in range(length)).capitalize()

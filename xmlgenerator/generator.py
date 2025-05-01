@@ -171,7 +171,7 @@ class XmlGenerator:
         if enumeration is not None:
             random_enum = self.randomizer.any(enumeration)
             logger.debug('use random value from enumeration: "%s" %s', random_enum, enumeration)
-            return random_enum
+            return str(random_enum)
 
         # -------------------------------------------------------------------------------------------------------------
         # Генерируем значения для стандартных типов и типов с ограничениями
@@ -222,12 +222,12 @@ class XmlGenerator:
                 min_length, max_length, min_value, max_value
             )
 
-            min_length, max_length = calculate_numeric_bounds(
-                min_length, max_length, rand_config.min_length, rand_config.max_length, 0, 100
+            min_length, max_length = calculate_bounds_1(
+                min_length, max_length, rand_config.min_length, rand_config.max_length
             )
 
-            min_value, max_value = calculate_numeric_bounds(
-                min_value, max_value, rand_config.min_inclusive, rand_config.max_inclusive, 0, 10000000
+            min_value, max_value = calculate_bounds_1(
+                min_value, max_value, rand_config.min_inclusive, rand_config.max_inclusive
             )
 
             logger.debug(
@@ -236,8 +236,7 @@ class XmlGenerator:
             )
 
             generated_value = self._generate_value_by_type(
-                xsd_type, target_name,
-                patterns,
+                xsd_type, patterns,
                 min_length, max_length,
                 min_value, max_value,
                 total_digits, fraction_digits
@@ -255,7 +254,7 @@ class XmlGenerator:
 
         raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
 
-    def _generate_value_by_type(self, xsd_type, target_name, patterns, min_length, max_length, min_value, max_value,
+    def _generate_value_by_type(self, xsd_type, patterns, min_length, max_length, min_value, max_value,
                                 total_digits, fraction_digits) -> str | None:
 
         type_id = xsd_type.id
@@ -332,28 +331,36 @@ class XmlGenerator:
         return str(rnd_int)
 
     def _generate_decimal(self, total_digits, fraction_digits, min_value, max_value):
-        if total_digits:
-            if fraction_digits and fraction_digits > 0:
-                integer_digits = total_digits - fraction_digits
-                integer_part = self.randomizer.integer(10 ** (integer_digits - 1), (10 ** integer_digits) - 1)
-                fractional_part = self.randomizer.integer(0, (10 ** fraction_digits) - 1)
-                return f"{integer_part}.{fractional_part:0{fraction_digits}}"
-            else:
-                min_value = 10 ** (total_digits - 1)
-                max_value = (10 ** total_digits) - 1
-                rnd_int = self.randomizer.integer(min_value, max_value)
-                return str(rnd_int)
+        if fraction_digits is None:
+            fraction_digits = self.randomizer.integer(1, 3)
 
-        rnd_int = self.randomizer.integer(min_value, max_value)
-        return f"{int(rnd_int / 100)}.{rnd_int % 100:02}"
+        if fraction_digits > 4:
+            fraction_digits = self.randomizer.integer(1, 4)
+
+        if total_digits is None:
+            total_digits = 10 + fraction_digits
+
+        if total_digits > 10:
+            total_digits = self.randomizer.integer(6, total_digits - 2)
+
+        integer_digits = total_digits - fraction_digits
+
+        # negative
+        min_value_fact = -(10 ** integer_digits - 1)
+
+        # positive
+        max_value_fact = 10 ** integer_digits - 1
+
+        min_value_fact, max_value_fact = calculate_bounds_2(min_value_fact, max_value_fact, min_value, max_value)
+
+        random_float = self.randomizer.float(min_value_fact, max_value_fact)
+        return f"{random_float:.{fraction_digits}f}"
 
     def _generate_float(self, min_value, max_value):
-        number = self.randomizer.float(min_value, max_value)
-        number = round(number, 2)
-        return str(number)
+        return self._generate_double(min_value, max_value)
 
     def _generate_double(self, min_value, max_value):
-        return self._generate_float(min_value, max_value)
+        return self._generate_decimal(None, 2, min_value, max_value)
 
     def _generate_duration(self):
         raise RuntimeError("not yet implemented")
@@ -412,24 +419,38 @@ class XmlGenerator:
         raise RuntimeError("not yet implemented")
 
 
-def calculate_numeric_bounds(fact_min, fact_max, config_min, config_max, default_min, default_max):
-    if fact_min is None:
-        fact_min = default_min
-
-    if fact_max is None:
-        fact_max = default_max
-
+def calculate_bounds_1(fact_min, fact_max, config_min, config_max):
     if config_min:
-        new_min = max(fact_min, config_min)
-        if new_min <= fact_max:
-            fact_min = new_min
+        if fact_min is None:
+            fact_min = config_min
+        else:
+            new_min = max(fact_min, config_min)
+            if fact_max and new_min <= fact_max:
+                fact_min = new_min
 
     if config_max:
+        if fact_max is None:
+            fact_max = config_max
+        else:
+            new_max = min(fact_max, config_max)
+            if new_max >= fact_min:
+                fact_max = new_max
+
+    if fact_max and fact_min and fact_max < fact_min:
+        fact_max = fact_min = min(fact_max, fact_min)
+
+    return fact_min, fact_max
+
+
+def calculate_bounds_2(fact_min, fact_max, config_min, config_max):
+    if config_min is not None:
+        new_min = max(fact_min, config_min)
+        if fact_max and new_min <= fact_max:
+            fact_min = new_min
+
+    if config_max is not None:
         new_max = min(fact_max, config_max)
         if new_max >= fact_min:
             fact_max = new_max
-
-    if fact_max < fact_min:
-        fact_max = fact_min
 
     return fact_min, fact_max
