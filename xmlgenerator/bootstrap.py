@@ -12,6 +12,7 @@ from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
 
+# TODO конфигурация ограничений - occurs
 # TODO Generator - обработка стандартных xsd типов
 # TODO кастомные переменные для локального контекста
 # TODO валидация по Schematron
@@ -42,14 +43,15 @@ def _main():
 
     config = load_config(args.config_yaml)
 
-    randomizer = Randomizer(args.seed)
+    randomizer = Randomizer(args.seed, args.locale)
     substitutor = Substitutor(randomizer)
     generator = XmlGenerator(randomizer, substitutor)
     validator = XmlValidator(args.validation, args.fail_fast)
 
-    logger.debug('found %s schemas', len(xsd_files))
-    for xsd_file in xsd_files:
-        logger.info('processing schema: %s', xsd_file.name)
+    total_count = len(xsd_files)
+    logger.debug('found %s schemas', total_count)
+    for index, xsd_file in enumerate(xsd_files):
+        logger.info('processing schema %s of %s: %s', index + 1, total_count, xsd_file.name)
 
         # get configuration override for current schema
         local_config = config.get_for_file(xsd_file.name)

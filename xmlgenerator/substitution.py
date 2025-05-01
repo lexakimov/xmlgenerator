@@ -13,61 +13,40 @@ logger = logging.getLogger(__name__)
 
 class Substitutor:
     def __init__(self, randomizer: Randomizer):
-        fake = randomizer.fake
         self.randomizer = randomizer
         self._local_context = {}
         self._global_context = {}
         self.providers_dict = {
-            # Функции локального контекста
-            'source_filename': lambda: self._local_context["source_filename"],
-            'source_extracted': lambda: self._local_context["source_extracted"],
-            'output_filename': lambda: self.get_output_filename(),
+            # local scope functions
+            'source_filename': lambda args: self._local_context["source_filename"],
+            'source_extracted': lambda args: self._local_context["source_extracted"],
+            'output_filename': lambda args: self.get_output_filename(),
 
-            'uuid': lambda: fake.uuid4(),
-            'regex': self._rand_regex,
-            'any': self._rand_any,
-            'number': self._rand_int,
-            'date': self._rand_date,
+            'any': lambda args: self._any(args),
+            'regex': lambda args: self._regex(args),
+            'uuid': lambda args: self.randomizer.uuid(),
+            'number': lambda args: self._number(args),
+            'date': lambda args: self._date_formatted(args),
 
-            'last_name': fake.last_name_male,
-            'first_name': fake.first_name_male,
-            'middle_name': fake.middle_name_male,
-            'address_text': fake.address,
-            'administrative_unit': fake.administrative_unit,
-            'house_number': fake.building_number,
-            'city_name': fake.city_name,
-            'postcode': fake.postcode,
-            'company_name': fake.company,
-            'bank_name': fake.bank,
-            'phone_number': fake.phone_number,
-            'inn_fl': fake.individuals_inn,
-            'inn_ul': fake.businesses_inn,
-            'ogrn_ip': fake.individuals_ogrn,
-            'ogrn_fl': fake.businesses_ogrn,
-            'kpp': fake.kpp,
-            'snils_formatted': randomizer.snils_formatted,
+            'last_name': lambda args: self.randomizer.last_name(),
+            'first_name': lambda args: self.randomizer.first_name(),
+            'middle_name': lambda args: self.randomizer.middle_name(),
+            'address_text': lambda args: self.randomizer.address_text(),
+            'administrative_unit': lambda args: self.randomizer.administrative_unit(),
+            'house_number': lambda args: self.randomizer.house_number(),
+            'city_name': lambda args: self.randomizer.city_name(),
+            'country': lambda args: self.randomizer.country(),
+            'postcode': lambda args: self.randomizer.postcode(),
+            'company_name': lambda args: self.randomizer.company_name(),
+            'bank_name': lambda args: self.randomizer.bank_name(),
+            'phone_number': lambda args: self.randomizer.phone_number(),
+            'inn_fl': lambda args: self.randomizer.inn_fl(),
+            'inn_ul': lambda args: self.randomizer.inn_ul(),
+            'ogrn_ip': lambda args: self.randomizer.ogrn_ip(),
+            'ogrn_fl': lambda args: self.randomizer.ogrn_fl(),
+            'kpp': lambda args: self.randomizer.kpp(),
+            'snils_formatted': lambda args: self.randomizer.snils_formatted(),
         }
-
-    def _rand_regex(self, a):
-        pattern = a.strip("'").strip('"')
-        return self.randomizer.re_gen.xeger(pattern)
-
-    def _rand_any(self, a):
-        args = str(a).split(sep=",")
-        value = self.randomizer.rnd.choice(args)
-        value = value.strip(' ').strip("'").strip('"')
-        return value
-
-    def _rand_int(self, a):
-        args = str(a).split(sep=",")
-        return str(self.randomizer.rnd.randint(int(args[0]), int(args[1])))
-
-    def _rand_date(self, a):
-        args = str(a).split(sep=",")
-        date_from = args[0].strip(' ').strip("'").strip('"')
-        date_until = args[1].strip(' ').strip("'").strip('"')
-        random_date = self.randomizer.random_datetime(date_from, date_until)
-        return random_date.strftime('%Y%m%d')  # TODO externalize pattern
 
     def reset_context(self, xsd_filename, config_local):
         self._local_context.clear()
@@ -115,7 +94,7 @@ class Substitutor:
             if not func_lambda:
                 raise RuntimeError(f"Unknown function {func_name}")
 
-            provider_func = lambda: func_lambda() if not func_args else func_lambda(func_args)
+            provider_func = lambda: func_lambda(func_args)
 
             match func_mod:
                 case None:
@@ -136,3 +115,21 @@ class Substitutor:
 
         logger.debug('expression resolved to value: %s', result_value)
         return result_value
+
+    def _any(self, args):
+        separated_args = str(args).split(sep=",")
+        options = [i.strip(' ').strip("'").strip('"') for i in separated_args]
+        return self.randomizer.any(options)
+
+    def _regex(self, args):
+        pattern = args.strip("'").strip('"')
+        return self.randomizer.regex(pattern)
+
+    def _number(self, args):
+        left_bound, right_bound = (int(i) for i in str(args).split(sep=","))
+        return str(self.randomizer.integer(left_bound, right_bound))
+
+    def _date_formatted(self, args):
+        date_from, date_until = (i.strip(' ').strip("'").strip('"') for i in str(args).split(sep=","))
+        random_date = self.randomizer.random_datetime(date_from, date_until)
+        return random_date.strftime("%Y%m%d")

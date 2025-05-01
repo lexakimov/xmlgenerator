@@ -17,7 +17,7 @@ def test_load_config_no_file():
     assert configuration.global_.randomization.probability == 0.5
     assert configuration.global_.randomization.max_occurs is None
     assert configuration.global_.source_filename == '(?P<extracted>.*).(xsd|XSD)'
-    assert configuration.global_.output_filename == '{{ source_filename }}_{{ uuid }}'
+    assert configuration.global_.output_filename == '{{ source_extracted }}_{{ uuid }}'
     assert configuration.global_.value_override is not None
     assert len(configuration.global_.value_override) == 0
 
@@ -31,7 +31,7 @@ def test_load_config_empty_file():
     assert configuration
     assert configuration.global_
     assert configuration.global_.source_filename == '(?P<extracted>.*).(xsd|XSD)'
-    assert configuration.global_.output_filename == '{{ source_filename }}_{{ uuid }}'
+    assert configuration.global_.output_filename == '{{ source_extracted }}_{{ uuid }}'
     assert configuration.specific is not None
     assert len(configuration.specific) == 0
 
@@ -72,7 +72,7 @@ class TestMergeGlobalAndLocal:
 
         assert config
         assert config.source_filename == 'from local - Schema_01 (source)'
-        assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
+        assert config.output_filename == '{{ source_extracted }}_{{ uuid }}'
         assert config.randomization.probability == 0.25
         assert config.value_override is not None
         assert len(config.value_override) == 3
@@ -99,7 +99,7 @@ class TestMergeGlobalAndLocal:
 
         assert config
         assert config.source_filename == 'pattern from global (source)'
-        assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
+        assert config.output_filename == '{{ source_extracted }}_{{ uuid }}'
         assert config.randomization.probability == 1
         assert config.value_override is not None
         assert len(config.value_override) == 2
@@ -112,7 +112,7 @@ class TestMergeGlobalAndLocal:
 
         assert config
         assert config.source_filename == 'pattern from global (source)'
-        assert config.output_filename == '{{ source_filename }}_{{ uuid }}'
+        assert config.output_filename == '{{ source_extracted }}_{{ uuid }}'
         assert config.value_override is not None
         assert len(config.value_override) == 2
         assert config.value_override["Фамилия"] == "last_name-1"

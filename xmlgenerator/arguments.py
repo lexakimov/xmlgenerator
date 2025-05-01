@@ -39,6 +39,12 @@ def _get_parser():
         dest="config_yaml",
         help="pass yaml configuration file"
     )
+    parser.add_argument(
+        "-l", "--locale",
+        metavar="<locale>",
+        default="en_US",
+        help="randomizer locale (default: %(default)s)"
+    )
     output_arg = parser.add_argument(
         "-o", "--output",
         metavar="<output.xml>",
@@ -71,7 +77,7 @@ def _get_parser():
         help="output XML encoding (utf-8, windows-1251, default is utf-8)"
     )
     parser.add_argument(
-        "--seed",
+        "-s", "--seed",
         metavar="<seed>",
         help="set randomization seed"
     )

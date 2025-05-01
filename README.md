@@ -107,12 +107,13 @@ positional arguments:
 options:
   -h, --help                     show this help message and exit
   -c, --config <config.yml>      pass yaml configuration file
+  -l, --locale <locale>          randomizer locale (default: en_US)
   -o, --output <output.xml>      save output to dir or file
   -p, --pretty                   prettify output XML
   -v, --validation <validation>  validate generated XML document (none, schema, schematron, default is schema)
   -ff, --fail-fast               terminate execution on validation error (default is true)
   -e, --encoding <encoding>      output XML encoding (utf-8, windows-1251, default is utf-8)
-      --seed <seed>              set randomization seed
+  -s, --seed <seed>              set randomization seed
   -d, --debug                    enable debug mode
   -V, --version                  shows current version
   -C, --completion <shell>       print shell completion script (bash, zsh, tcsh)
@@ -135,7 +136,7 @@ global:
   source_filename: ...
 
   # Filename template for saving the generated document.
-  # Default value: `{{ source_filename }}_{{ uuid }}` (xsd schema filename + random UUID)
+  # Default value: `{{ source_extracted }}_{{ uuid }}` (xsd schema filename + random UUID)
   output_filename: ...
 
   # Random value generator settings
