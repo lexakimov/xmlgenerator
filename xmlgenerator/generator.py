@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 import xmlschema
 from lxml import etree
@@ -214,6 +215,11 @@ class XmlGenerator:
                     pass
                 else:
                     raise RuntimeError(f"Unhandled validator: {validator}")
+
+            if isinstance(min_value, Decimal):
+                min_value = float(min_value)
+            if isinstance(max_value, Decimal):
+                max_value = float(max_value)
 
             rand_config = local_config.randomization
 
