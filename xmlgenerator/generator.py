@@ -28,6 +28,7 @@ class XmlGenerator:
         return xml_root_element
 
     def _add_elements(self, xml_tree, xml_element: etree.Element, xsd_element, local_config: GeneratorConfig) -> None:
+        rand_config = local_config.randomization
         # Process child elements --------------------------------------------------------------------------------------
         if isinstance(xsd_element, XsdElement):
             element_xpath = xml_tree.getpath(xml_element)
@@ -45,7 +46,7 @@ class XmlGenerator:
                         logger.debug('element: %s; attribute: "%s" [skipped]', element_xpath, attr_name)
                         continue
                     elif use == 'optional':
-                        if self.randomizer.random() > local_config.randomization.probability:
+                        if self.randomizer.random() > rand_config.probability:
                             logger.debug('element: %s; attribute: "%s" [skipped]', element_xpath, attr_name)
                             continue
 
@@ -58,18 +59,19 @@ class XmlGenerator:
                 text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
                 xml_element.text = text
                 logger.debug('element: %s = "%s"', element_xpath, text)
-                return
+
             elif isinstance(xsd_element_type, XsdAtomicRestriction):
                 text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
                 xml_element.text = text
                 logger.debug('element: %s = "%s"', element_xpath, text)
-                return
+
             elif isinstance(xsd_element_type, XsdComplexType):
                 xsd_element_type_content = xsd_element_type.content
                 if isinstance(xsd_element_type_content, XsdGroup):
                     self._add_elements(xml_tree, xml_element, xsd_element_type_content, local_config)
                 else:
                     raise RuntimeError()
+
             else:
                 raise RuntimeError()
 
@@ -96,7 +98,6 @@ class XmlGenerator:
                         for _ in range(element_occurs):
                             xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                             self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
-                return
 
             elif model == 'sequence':
                 for _ in range(group_occurs):
@@ -124,7 +125,6 @@ class XmlGenerator:
 
                         else:
                             raise RuntimeError(xsd_child_element_type)
-                return
 
             elif model == 'choice':
                 for _ in range(group_occurs):
@@ -139,7 +139,6 @@ class XmlGenerator:
                     for _ in range(element_occurs):
                         xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                         self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
-                return
 
             else:
                 raise RuntimeError()
@@ -353,7 +352,6 @@ class XmlGenerator:
 
         # negative
         min_value_fact = -(10 ** integer_digits - 1)
-
         # positive
         max_value_fact = 10 ** integer_digits - 1
 
