@@ -9,7 +9,7 @@ from xmlschema import XMLSchema
 
 import tests
 from xmlgenerator.configuration import GeneratorConfig
-from xmlgenerator.generator import XmlGenerator, calculate_bounds_1, calculate_bounds_2
+from xmlgenerator.generator import XmlGenerator, calculate_bounds
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 
@@ -935,47 +935,7 @@ class TestComplex:
 
 
 @pytest.mark.repeat(10)
-class TestCalculateBounds1:
-
-    def test_no_overrides(self):
-        result = calculate_bounds_1(None, None, None, None)
-        assert result == (None, None)
-
-    def test_fact_min_and_max(self):
-        result = calculate_bounds_1(10, 50, None, None)
-        assert result == (10, 50)
-
-    def test_config_min_override(self):
-        result = calculate_bounds_1(10, 50, 20, None)
-        assert result == (20, 50)
-
-    def test_config_max_override(self):
-        result = calculate_bounds_1(10, 50, None, 40)
-        assert result == (10, 40)
-
-    def test_config_min_and_max_override(self):
-        result = calculate_bounds_1(10, 50, 20, 40)
-        assert result == (20, 40)
-
-    def test_default_min_and_max(self):
-        result = calculate_bounds_1(None, None, None, None)
-        assert result == (None, None)
-
-    def test_fact_min_greater_than_fact_max(self):
-        result = calculate_bounds_1(50, 10, None, None)
-        assert result == (10, 10)
-
-    def test_config_min_greater_than_fact_max(self):
-        result = calculate_bounds_1(10, 50, 60, None)
-        assert result == (10, 50)
-
-    def test_config_max_less_than_fact_min(self):
-        result = calculate_bounds_1(10, 50, None, 5)
-        assert result == (10, 50)
-
-
-@pytest.mark.repeat(10)
-class TestCalculateBounds2:
+class TestCalculateBounds:
 
     @pytest.mark.parametrize("left, right, expected_left, expected_right", [
         # (-100, -100, ),
@@ -999,4 +959,44 @@ class TestCalculateBounds2:
         # (100, 100  ,),
     ])
     def test_bounds(self, left, right, expected_left, expected_right):
-        assert calculate_bounds_2(-99, 99, left, right) == (expected_left, expected_right)
+        assert calculate_bounds(-99, 99, left, right) == (expected_left, expected_right)
+
+    def test_bounds_2(self):
+        result = calculate_bounds(-999, 999, 1000, 10000)
+        assert result == (10, 50)
+
+    def test_no_overrides(self):
+        result = calculate_bounds(None, None, None, None)
+        assert result == (None, None)
+
+    def test_fact_min_and_max(self):
+        result = calculate_bounds(10, 50, None, None)
+        assert result == (10, 50)
+
+    def test_config_min_override(self):
+        result = calculate_bounds(10, 50, 20, None)
+        assert result == (20, 50)
+
+    def test_config_max_override(self):
+        result = calculate_bounds(10, 50, None, 40)
+        assert result == (10, 40)
+
+    def test_config_min_and_max_override(self):
+        result = calculate_bounds(10, 50, 20, 40)
+        assert result == (20, 40)
+
+    def test_default_min_and_max(self):
+        result = calculate_bounds(None, None, None, None)
+        assert result == (None, None)
+
+    def test_fact_min_greater_than_fact_max(self):
+        result = calculate_bounds(50, 10, None, None)
+        assert result == (10, 10)
+
+    def test_config_min_greater_than_fact_max(self):
+        result = calculate_bounds(10, 50, 60, None)
+        assert result == (10, 50)
+
+    def test_config_max_less_than_fact_min(self):
+        result = calculate_bounds(10, 50, None, 5)
+        assert result == (10, 50)

@@ -78,22 +78,24 @@ class XmlGenerator:
         elif isinstance(xsd_element, XsdGroup):
             model = xsd_element.model
 
-            group_min_occurs = getattr(xsd_element, 'min_occurs', None)
-            group_max_occurs = getattr(xsd_element, 'max_occurs', None)
-            group_min_occurs = group_min_occurs if group_min_occurs is not None else 0  # TODO externalize
-            group_max_occurs = group_max_occurs if group_max_occurs is not None else 10  # TODO externalize
-            group_occurs = self.randomizer.integer(group_min_occurs, group_max_occurs)
+            min_occurs = getattr(xsd_element, 'min_occurs', None)
+            max_occurs = getattr(xsd_element, 'max_occurs', None)
+            min_occurs, max_occurs = calculate_bounds(min_occurs, max_occurs, 0, rand_config.max_occurs)
+            if max_occurs is None:
+                max_occurs = 10
+            group_occurs = self.randomizer.integer(min_occurs, max_occurs)
 
             if model == 'all':
                 for _ in range(group_occurs):
                     xsd_group_content = xsd_element.content
                     for xsd_child_element_type in xsd_group_content:
 
-                        element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
-                        element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                        element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
-                        element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                        element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
+                        min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                        max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                        min_occurs, max_occurs = calculate_bounds(min_occurs, max_occurs, 0, rand_config.max_occurs)
+                        if max_occurs is None:
+                            max_occurs = 10
+                        element_occurs = self.randomizer.integer(min_occurs, max_occurs)
 
                         for _ in range(element_occurs):
                             xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
@@ -103,14 +105,15 @@ class XmlGenerator:
                 for _ in range(group_occurs):
                     xsd_group_content = xsd_element.content
                     for xsd_child_element_type in xsd_group_content:
-
-                        element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
-                        element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                        element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
-                        element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                        element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
-
                         if isinstance(xsd_child_element_type, XsdElement):
+
+                            min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                            max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                            min_occurs, max_occurs = calculate_bounds(min_occurs, max_occurs, 0, rand_config.max_occurs)
+                            if max_occurs is None:
+                                max_occurs = 10
+                            element_occurs = self.randomizer.integer(min_occurs, max_occurs)
+
                             for _ in range(element_occurs):
                                 xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                                 self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
@@ -130,11 +133,12 @@ class XmlGenerator:
                 for _ in range(group_occurs):
                     xsd_child_element_type = self.randomizer.any(xsd_element)
 
-                    element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
-                    element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                    element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
-                    element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                    element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
+                    min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                    max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                    min_occurs, max_occurs = calculate_bounds(min_occurs, max_occurs, 0, rand_config.max_occurs)
+                    if max_occurs is None:
+                        max_occurs = 10
+                    element_occurs = self.randomizer.integer(min_occurs, max_occurs)
 
                     for _ in range(element_occurs):
                         xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
@@ -227,11 +231,11 @@ class XmlGenerator:
                 min_length, max_length, min_value, max_value
             )
 
-            min_length, max_length = calculate_bounds_1(
+            min_length, max_length = calculate_bounds(
                 min_length, max_length, rand_config.min_length, rand_config.max_length
             )
 
-            min_value, max_value = calculate_bounds_1(
+            min_value, max_value = calculate_bounds(
                 min_value, max_value, rand_config.min_inclusive, rand_config.max_inclusive
             )
 
@@ -423,38 +427,24 @@ class XmlGenerator:
         raise RuntimeError("not yet implemented")
 
 
-def calculate_bounds_1(fact_min, fact_max, config_min, config_max):
-    if config_min:
+def calculate_bounds(fact_min, fact_max, config_min, config_max):
+    if config_min is not None:
         if fact_min is None:
             fact_min = config_min
         else:
             new_min = max(fact_min, config_min)
-            if fact_max and new_min <= fact_max:
+            if fact_max is None or (fact_max is not None and new_min < fact_max):
                 fact_min = new_min
 
-    if config_max:
+    if config_max is not None:
         if fact_max is None:
             fact_max = config_max
         else:
             new_max = min(fact_max, config_max)
-            if new_max >= fact_min:
+            if new_max > fact_min:
                 fact_max = new_max
 
-    if fact_max and fact_min and fact_max < fact_min:
+    if fact_max is not None and fact_min is not None and fact_max < fact_min:
         fact_max = fact_min = min(fact_max, fact_min)
-
-    return fact_min, fact_max
-
-
-def calculate_bounds_2(fact_min, fact_max, config_min, config_max):
-    if config_min is not None:
-        new_min = max(fact_min, config_min)
-        if fact_max and new_min <= fact_max:
-            fact_min = new_min
-
-    if config_max is not None:
-        new_max = min(fact_max, config_max)
-        if new_max >= fact_min:
-            fact_max = new_max
 
     return fact_min, fact_max
