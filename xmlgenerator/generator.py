@@ -1,6 +1,6 @@
 import logging
+from decimal import Decimal
 
-import xmlschema
 from lxml import etree
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdElement, \
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
@@ -18,7 +18,8 @@ class XmlGenerator:
         self.randomizer = randomizer
         self.substitutor = substitutor
 
-    def generate_xml(self, xsd_schema: xmlschema.XMLSchema, local_config: GeneratorConfig) -> etree.Element:
+    def generate_xml(self, xsd_schema, local_config: GeneratorConfig) -> etree.Element:
+        logger.debug('generate xml document...')
         ns_map = {None if k == '' else k: v for k, v in xsd_schema.namespaces.items() if v != ''}
         xsd_root_element = xsd_schema.root_elements[0]
         xml_root_element = etree.Element(xsd_root_element.name, nsmap=ns_map)
@@ -26,7 +27,11 @@ class XmlGenerator:
         self._add_elements(xml_tree, xml_root_element, xsd_root_element, local_config)
         return xml_root_element
 
-    def _add_elements(self, xml_tree, xml_element: etree.Element, xsd_element, local_config: GeneratorConfig) -> None:
+    def _add_elements(self, xml_tree, xml_element, xsd_element, local_config: GeneratorConfig) -> None:
+        rand_config = local_config.randomization
+        min_occurs_conf = rand_config.min_occurs
+        max_occurs_conf = rand_config.max_occurs
+
         # Process child elements --------------------------------------------------------------------------------------
         if isinstance(xsd_element, XsdElement):
             element_xpath = xml_tree.getpath(xml_element)
@@ -38,14 +43,14 @@ class XmlGenerator:
             attributes = getattr(xsd_element, 'attributes', dict())
             if len(attributes) > 0 and xsd_element_type.local_name != 'anyType':
                 for attr_name, attr in attributes.items():
-                    logger.debug('element: %s; attribute "%s" [processing]', element_xpath, attr_name)
+                    logger.debug('element: %s; attribute: "%s" - [processing]', element_xpath, attr_name)
                     use = attr.use  # optional | required | prohibited
                     if use == 'prohibited':
-                        logger.debug('element: %s; attribute: "%s" [skipped]', element_xpath, attr_name)
+                        logger.debug('element: %s; attribute: "%s" - [skipped]', element_xpath, attr_name)
                         continue
                     elif use == 'optional':
-                        if self.randomizer.random() > local_config.randomization.probability:
-                            logger.debug('element: %s; attribute: "%s" [skipped]', element_xpath, attr_name)
+                        if self.randomizer.random() > rand_config.probability:
+                            logger.debug('element: %s; attribute: "%s" - [skipped]', element_xpath, attr_name)
                             continue
 
                     attr_value = self._generate_value(attr.type, attr_name, local_config)
@@ -57,58 +62,82 @@ class XmlGenerator:
                 text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
                 xml_element.text = text
                 logger.debug('element: %s = "%s"', element_xpath, text)
-                return
+
             elif isinstance(xsd_element_type, XsdAtomicRestriction):
                 text = self._generate_value(xsd_element_type, xsd_element.name, local_config)
                 xml_element.text = text
                 logger.debug('element: %s = "%s"', element_xpath, text)
-                return
+
             elif isinstance(xsd_element_type, XsdComplexType):
                 xsd_element_type_content = xsd_element_type.content
                 if isinstance(xsd_element_type_content, XsdGroup):
                     self._add_elements(xml_tree, xml_element, xsd_element_type_content, local_config)
                 else:
                     raise RuntimeError()
+
             else:
                 raise RuntimeError()
 
         elif isinstance(xsd_element, XsdGroup):
             model = xsd_element.model
 
-            group_min_occurs = getattr(xsd_element, 'min_occurs', None)
-            group_max_occurs = getattr(xsd_element, 'max_occurs', None)
-            group_min_occurs = group_min_occurs if group_min_occurs is not None else 0  # TODO externalize
-            group_max_occurs = group_max_occurs if group_max_occurs is not None else 10  # TODO externalize
-            group_occurs = self.randomizer.integer(group_min_occurs, group_max_occurs)
+            min_occurs = getattr(xsd_element, 'min_occurs', None)
+            max_occurs = getattr(xsd_element, 'max_occurs', None)
+            min_occurs, max_occurs = merge_constraints(
+                schema_min=min_occurs,
+                schema_max=max_occurs,
+                config_min=min_occurs_conf,
+                config_max=max_occurs_conf
+            )
+            if max_occurs is None:
+                max_occurs = 10
+            group_occurs = self.randomizer.integer(min_occurs, max_occurs)
+            logger.debug('add %s (random between %s and %s) groups of type "%s"',
+                         group_occurs, min_occurs, max_occurs, model)
 
             if model == 'all':
                 for _ in range(group_occurs):
                     xsd_group_content = xsd_element.content
                     for xsd_child_element_type in xsd_group_content:
 
-                        element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
-                        element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                        element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
-                        element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                        element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
+                        min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                        max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                        min_occurs, max_occurs = merge_constraints(
+                            schema_min=min_occurs,
+                            schema_max=max_occurs,
+                            config_min=min_occurs_conf,
+                            config_max=max_occurs_conf
+                        )
+                        if max_occurs is None:
+                            max_occurs = 10
+                        element_occurs = self.randomizer.integer(min_occurs, max_occurs)
+                        logger.debug('element_occurs: %s (random between %s and %s)', element_occurs, min_occurs,
+                                     max_occurs)
 
                         for _ in range(element_occurs):
                             xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                             self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
-                return
 
             elif model == 'sequence':
                 for _ in range(group_occurs):
                     xsd_group_content = xsd_element.content
                     for xsd_child_element_type in xsd_group_content:
-
-                        element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
-                        element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                        element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
-                        element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                        element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
-
                         if isinstance(xsd_child_element_type, XsdElement):
+
+                            min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                            max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                            min_occurs, max_occurs = merge_constraints(
+                                schema_min=min_occurs,
+                                schema_max=max_occurs,
+                                config_min=min_occurs_conf,
+                                config_max=max_occurs_conf
+                            )
+                            if max_occurs is None:
+                                max_occurs = 10
+                            element_occurs = self.randomizer.integer(min_occurs, max_occurs)
+                            logger.debug('element_occurs: %s (random between %s and %s)', element_occurs, min_occurs,
+                                         max_occurs)
+
                             for _ in range(element_occurs):
                                 xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                                 self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
@@ -123,22 +152,28 @@ class XmlGenerator:
 
                         else:
                             raise RuntimeError(xsd_child_element_type)
-                return
 
             elif model == 'choice':
                 for _ in range(group_occurs):
                     xsd_child_element_type = self.randomizer.any(xsd_element)
 
-                    element_min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
-                    element_max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
-                    element_min_occurs = element_min_occurs if element_min_occurs is not None else 0  # TODO externalize
-                    element_max_occurs = element_max_occurs if element_max_occurs is not None else 10  # TODO externalize
-                    element_occurs = self.randomizer.integer(element_min_occurs, element_max_occurs)
+                    min_occurs = getattr(xsd_child_element_type, 'min_occurs', None)
+                    max_occurs = getattr(xsd_child_element_type, 'max_occurs', None)
+                    min_occurs, max_occurs = merge_constraints(
+                        schema_min=min_occurs,
+                        schema_max=max_occurs,
+                        config_min=min_occurs_conf,
+                        config_max=max_occurs_conf
+                    )
+                    if max_occurs is None:
+                        max_occurs = 10
+                    element_occurs = self.randomizer.integer(min_occurs, max_occurs)
+                    logger.debug('element_occurs: %s (random between %s and %s)', element_occurs, min_occurs,
+                                 max_occurs)
 
                     for _ in range(element_occurs):
                         xml_child_element = etree.SubElement(xml_element, xsd_child_element_type.name)
                         self._add_elements(xml_tree, xml_child_element, xsd_child_element_type, local_config)
-                return
 
             else:
                 raise RuntimeError()
@@ -215,32 +250,69 @@ class XmlGenerator:
                 else:
                     raise RuntimeError(f"Unhandled validator: {validator}")
 
+            if isinstance(min_value, Decimal):
+                min_value = float(min_value)
+            if isinstance(max_value, Decimal):
+                max_value = float(max_value)
+
             rand_config = local_config.randomization
 
-            logger.debug(
-                'restrictions before override: min_length: %4s; max_length: %4s; min_value: %4s; max_value: %4s',
-                min_length, max_length, min_value, max_value
+            logger.debug('bounds before adjust: min_length: %4s; max_length: %4s', min_length, max_length)
+            min_length, max_length = merge_constraints(
+                schema_min=min_length,
+                schema_max=max_length,
+                config_min=rand_config.min_length,
+                config_max=rand_config.max_length
             )
+            logger.debug('bounds after  adjust: min_length: %4s; max_length: %4s', min_length, max_length)
 
-            min_length, max_length = calculate_bounds_1(
-                min_length, max_length, rand_config.min_length, rand_config.max_length
-            )
+            type_id = xsd_type.id or xsd_type.base_type.id or xsd_type.root_type.id
+            logger.debug('generate value for type: "%s"', type_id)
 
-            min_value, max_value = calculate_bounds_1(
-                min_value, max_value, rand_config.min_inclusive, rand_config.max_inclusive
-            )
-
-            logger.debug(
-                'restrictions after  override: min_length: %4s; max_length: %4s; min_value: %4s; max_value: %4s',
-                min_length, max_length, min_value, max_value
-            )
-
-            generated_value = self._generate_value_by_type(
-                xsd_type, patterns,
-                min_length, max_length,
-                min_value, max_value,
-                total_digits, fraction_digits
-            )
+            match type_id:
+                case 'boolean':
+                    result = self._generate_boolean()
+                case 'string':
+                    result = self._generate_string(min_length, max_length, patterns)
+                case 'integer':
+                    result = self._generate_integer(min_value, max_value, total_digits)
+                case 'decimal':
+                    result = self._generate_decimal(rand_config, min_value, max_value, total_digits, fraction_digits)
+                case 'float':
+                    result = self._generate_float(rand_config, min_value, max_value)
+                case 'double':
+                    result = self._generate_double(rand_config, min_value, max_value)
+                case 'duration':
+                    result = self._generate_duration()
+                case 'dateTime':
+                    result = self._generate_datetime()
+                case 'date':
+                    result = self._generate_date()
+                case 'time':
+                    result = self._generate_time()
+                case 'gYearMonth':
+                    result = self._generate_gyearmonth()
+                case 'gYear':
+                    result = self._generate_gyear()
+                case 'gMonthDay':
+                    result = self._generate_gmonthday()
+                case 'gDay':
+                    result = self._generate_gday()
+                case 'gMonth':
+                    result = self._generate_gmonth()
+                case 'hexBinary':
+                    result = self._generate_hex_binary()
+                case 'base64Binary':
+                    result = self._generate_base64_binary()
+                case 'anyURI':
+                    result = self._generate_any_uri()
+                case 'QName':
+                    result = self._generate_qname()
+                case 'NOTATION':
+                    result = self._generate_notation()
+                case _:
+                    raise RuntimeError(type_id)
+            generated_value = result
             logger.debug('value generated: "%s"', generated_value)
             return generated_value
 
@@ -254,63 +326,10 @@ class XmlGenerator:
 
         raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
 
-    def _generate_value_by_type(self, xsd_type, patterns, min_length, max_length, min_value, max_value,
-                                total_digits, fraction_digits) -> str | None:
+    def _generate_boolean(self):
+        return self.randomizer.any(['true', 'false'])
 
-        type_id = xsd_type.id
-        base_type = xsd_type.base_type
-        if not type_id:
-            type_id = base_type.id
-            if not type_id:
-                type_id = xsd_type.root_type.id
-
-        logger.debug('generate value for type: "%s"', type_id)
-
-        match type_id:
-            case 'string':
-                return self._generate_string(patterns, min_length, max_length)
-            case 'boolean':
-                return self._generate_boolean()
-            case 'integer':
-                return self._generate_integer(total_digits, min_value, max_value)
-            case 'decimal':
-                return self._generate_decimal(total_digits, fraction_digits, min_value, max_value)
-            case 'float':
-                return self._generate_float(min_value, max_value)
-            case 'double':
-                return self._generate_double(min_value, max_value)
-            case 'duration':
-                return self._generate_duration()
-            case 'dateTime':
-                return self._generate_datetime()
-            case 'date':
-                return self._generate_date()
-            case 'time':
-                return self._generate_time()
-            case 'gYearMonth':
-                return self._generate_gyearmonth()
-            case 'gYear':
-                return self._generate_gyear()
-            case 'gMonthDay':
-                return self._generate_gmonthday()
-            case 'gDay':
-                return self._generate_gday()
-            case 'gMonth':
-                return self._generate_gmonth()
-            case 'hexBinary':
-                return self._generate_hex_binary()
-            case 'base64Binary':
-                return self._generate_base64_binary()
-            case 'anyURI':
-                return self._generate_any_uri()
-            case 'QName':
-                return self._generate_qname()
-            case 'NOTATION':
-                return self._generate_notation()
-            case _:
-                raise RuntimeError(type_id)
-
-    def _generate_string(self, patterns, min_length, max_length):
+    def _generate_string(self, min_length, max_length, patterns):
         if patterns is not None:
             # Генерация строки по regex
             random_enum = self.randomizer.any(patterns)
@@ -320,17 +339,14 @@ class XmlGenerator:
         # Иначе генерируем случайную строку
         return self.randomizer.ascii_string(min_length, max_length)
 
-    def _generate_boolean(self):
-        return self.randomizer.any(['true', 'false'])
-
-    def _generate_integer(self, total_digits, min_value, max_value):
+    def _generate_integer(self, min_value, max_value, total_digits):
         if total_digits:
             min_value = 10 ** (total_digits - 1)
             max_value = (10 ** total_digits) - 1
         rnd_int = self.randomizer.integer(min_value, max_value)
         return str(rnd_int)
 
-    def _generate_decimal(self, total_digits, fraction_digits, min_value, max_value):
+    def _generate_decimal(self, rand_config, schema_min, schema_max, total_digits, fraction_digits):
         if fraction_digits is None:
             fraction_digits = self.randomizer.integer(1, 3)
 
@@ -345,22 +361,27 @@ class XmlGenerator:
 
         integer_digits = total_digits - fraction_digits
 
-        # negative
-        min_value_fact = -(10 ** integer_digits - 1)
+        # negative bound
+        digit_min = -(10 ** integer_digits - 1)
+        # positive bound
+        digit_max = 10 ** integer_digits - 1
+        logger.debug("integer digits: %s; digit_min: %s; digit_max: %s", integer_digits, digit_min, digit_max)
 
-        # positive
-        max_value_fact = 10 ** integer_digits - 1
+        logger.debug('bounds before adjust: min_value: %4s; max_value: %4s', schema_min, schema_max)
+        config_min = rand_config.min_inclusive
+        config_max = rand_config.max_inclusive
+        effective_min, effective_max \
+            = merge_constraints(digit_min, digit_max, schema_min, schema_max, config_min, config_max)
+        logger.debug('bounds after  adjust: min_value: %4s; max_value: %4s', effective_min, effective_max)
 
-        min_value_fact, max_value_fact = calculate_bounds_2(min_value_fact, max_value_fact, min_value, max_value)
-
-        random_float = self.randomizer.float(min_value_fact, max_value_fact)
+        random_float = self.randomizer.float(effective_min, effective_max)
         return f"{random_float:.{fraction_digits}f}"
 
-    def _generate_float(self, min_value, max_value):
-        return self._generate_double(min_value, max_value)
+    def _generate_float(self, rand_config, min_value, max_value):
+        return self._generate_decimal(rand_config, min_value, max_value, None, 2)
 
-    def _generate_double(self, min_value, max_value):
-        return self._generate_decimal(None, 2, min_value, max_value)
+    def _generate_double(self, rand_config, min_value, max_value):
+        return self._generate_decimal(rand_config, min_value, max_value, None, 2)
 
     def _generate_duration(self):
         raise RuntimeError("not yet implemented")
@@ -419,38 +440,41 @@ class XmlGenerator:
         raise RuntimeError("not yet implemented")
 
 
-def calculate_bounds_1(fact_min, fact_max, config_min, config_max):
-    if config_min:
-        if fact_min is None:
-            fact_min = config_min
-        else:
-            new_min = max(fact_min, config_min)
-            if fact_max and new_min <= fact_max:
-                fact_min = new_min
+def merge_constraints(digit_min=None, digit_max=None, schema_min=None, schema_max=None, config_min=None,
+                      config_max=None):
+    logger.debug(
+        "merge numeric constraints: "
+        "digit_min: %s, digit_max: %s, schema_min: %s, schema_max: %s, config_min: %s, config_max: %s",
+        digit_min, digit_max, schema_min, schema_max, config_min, config_max)
 
-    if config_max:
-        if fact_max is None:
-            fact_max = config_max
-        else:
-            new_max = min(fact_max, config_max)
-            if new_max >= fact_min:
-                fact_max = new_max
+    # За основу берем цифровые ограничения (они самые нестрогие)
+    effective_min, effective_max = digit_min, digit_max
 
-    if fact_max and fact_min and fact_max < fact_min:
-        fact_max = fact_min = min(fact_max, fact_min)
+    # Применяем схемные ограничения
+    if schema_min is not None:
+        effective_min = max(effective_min, schema_min) if effective_min is not None else schema_min
+    if schema_max is not None:
+        effective_max = min(effective_max, schema_max) if effective_max is not None else schema_max
 
-    return fact_min, fact_max
-
-
-def calculate_bounds_2(fact_min, fact_max, config_min, config_max):
+    # Применяем конфигурационные ограничения с проверкой на конфликт
     if config_min is not None:
-        new_min = max(fact_min, config_min)
-        if fact_max and new_min <= fact_max:
-            fact_min = new_min
+        if effective_max is not None and config_min > effective_max:
+            logger.warning("can't apply bound from configuration: config_min (%s) > effective_max (%s)",
+                           config_min, effective_max)
+        else:
+            effective_min = max(effective_min, config_min) if effective_min is not None else config_min
 
     if config_max is not None:
-        new_max = min(fact_max, config_max)
-        if new_max >= fact_min:
-            fact_max = new_max
+        if effective_min is not None and config_max < effective_min:
+            logger.warning("can't apply bound from configuration: config_max (%s) < effective_min (%s)",
+                           config_max, effective_min)
+        else:
+            effective_max = min(effective_max, config_max) if effective_max is not None else config_max
 
-    return fact_min, fact_max
+    # Проверяем на конфликт
+    if effective_min is not None and effective_max is not None and effective_min > effective_max:
+        logger.warning("constrains conflict: effective_min (%s) > effective_max (%s). Swap values.",
+                       effective_min, effective_max)
+        effective_min, effective_max = effective_max, effective_min
+
+    return effective_min, effective_max

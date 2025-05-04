@@ -61,7 +61,7 @@ class Substitutor:
         resolved_value = self._process_expression(output_filename)
         self._local_context['output_filename'] = resolved_value
 
-        logger.debug('local_context reset')
+        logger.debug('reset local context...')
         logger.debug('local_context["source_filename"]  = %s', xsd_filename)
         logger.debug('local_context["source_extracted"] = %s (extracted with regexp %s)', source_extracted, source_filename)
         logger.debug('local_context["output_filename"]  = %s', resolved_value)

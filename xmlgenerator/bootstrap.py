@@ -12,7 +12,6 @@ from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
 
-# TODO конфигурация ограничений - occurs
 # TODO Generator - обработка стандартных xsd типов
 # TODO кастомные переменные для локального контекста
 # TODO валидация по Schematron
@@ -90,6 +89,7 @@ def _main():
 
 
 def _setup_loggers(args):
+    logging.addLevelName(logging.WARNING, 'WARN')
     log_level = logging.DEBUG if args.debug else logging.INFO
     logger.setLevel(log_level)
     configuration.logger.setLevel(log_level)

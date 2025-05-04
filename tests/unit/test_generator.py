@@ -9,7 +9,7 @@ from xmlschema import XMLSchema
 
 import tests
 from xmlgenerator.configuration import GeneratorConfig
-from xmlgenerator.generator import XmlGenerator, calculate_bounds_1, calculate_bounds_2
+from xmlgenerator.generator import XmlGenerator, merge_constraints
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 
@@ -933,49 +933,7 @@ class TestComplex:
             assert max(counts_by_occurs_item_forb) == 0
             assert counts_by_occurs_item_forb[0] == 100
 
-
-@pytest.mark.repeat(10)
-class TestCalculateBounds1:
-
-    def test_no_overrides(self):
-        result = calculate_bounds_1(None, None, None, None)
-        assert result == (None, None)
-
-    def test_fact_min_and_max(self):
-        result = calculate_bounds_1(10, 50, None, None)
-        assert result == (10, 50)
-
-    def test_config_min_override(self):
-        result = calculate_bounds_1(10, 50, 20, None)
-        assert result == (20, 50)
-
-    def test_config_max_override(self):
-        result = calculate_bounds_1(10, 50, None, 40)
-        assert result == (10, 40)
-
-    def test_config_min_and_max_override(self):
-        result = calculate_bounds_1(10, 50, 20, 40)
-        assert result == (20, 40)
-
-    def test_default_min_and_max(self):
-        result = calculate_bounds_1(None, None, None, None)
-        assert result == (None, None)
-
-    def test_fact_min_greater_than_fact_max(self):
-        result = calculate_bounds_1(50, 10, None, None)
-        assert result == (10, 10)
-
-    def test_config_min_greater_than_fact_max(self):
-        result = calculate_bounds_1(10, 50, 60, None)
-        assert result == (10, 50)
-
-    def test_config_max_less_than_fact_min(self):
-        result = calculate_bounds_1(10, 50, None, 5)
-        assert result == (10, 50)
-
-
-@pytest.mark.repeat(10)
-class TestCalculateBounds2:
+class TestMergeConstraints:
 
     @pytest.mark.parametrize("left, right, expected_left, expected_right", [
         # (-100, -100, ),
@@ -998,5 +956,51 @@ class TestCalculateBounds2:
 
         # (100, 100  ,),
     ])
-    def test_bounds(self, left, right, expected_left, expected_right):
-        assert calculate_bounds_2(-99, 99, left, right) == (expected_left, expected_right)
+    def test_digit_and_schema_bounds(self, left, right, expected_left, expected_right):
+        assert merge_constraints(-99, 99, left, right, None, None) == (expected_left, expected_right)
+
+    def test_digit_and_config_bounds(self):
+        result = merge_constraints(-999, 999, config_min=1000, config_max=10000)
+        assert result == (-999, 999)
+
+    def test_no_overrides(self):
+        result = merge_constraints(None, None, None, None, None, None)
+        assert result == (None, None)
+
+    def test_fact_min_and_max(self):
+        result = merge_constraints(schema_min=10, schema_max=50, config_min=None, config_max=None)
+        assert result == (10, 50)
+
+    def test_config_min_override(self):
+        result = merge_constraints(schema_min=10, schema_max=50, config_min=20, config_max=None)
+        assert result == (20, 50)
+
+    def test_config_max_override(self):
+        result = merge_constraints(schema_min=10, schema_max=50, config_min=None, config_max=40)
+        assert result == (10, 40)
+
+    def test_config_min_and_max_override(self):
+        result = merge_constraints(schema_min=10, schema_max=50, config_min=20, config_max=40)
+        assert result == (20, 40)
+
+    def test_fact_min_greater_than_fact_max(self):
+        result = merge_constraints(schema_min=50, schema_max=10, config_min=None, config_max=None)
+        assert result == (10, 50)
+
+    def test_config_min_greater_than_fact_max(self):
+        result = merge_constraints(schema_min=10, schema_max=50, config_min=60, config_max=None)
+        assert result == (10, 50)
+
+    def test_config_max_less_than_fact_min(self):
+        result = merge_constraints(schema_min=10, schema_max=50, config_min=None, config_max=5)
+        assert result == (10, 50)
+
+    def test_all_constraints_mixed(self):
+        # digit bounds: (-100, 100), schema: (-50, 50), config: (-40, 40)
+        result = merge_constraints(-100, 100, -50, 50, -40, 40)
+        assert result == (-40, 40)
+
+    def test_digit_and_config_override_only(self):
+        # digit bounds: (0, 100), no schema, config_min = 10
+        result = merge_constraints(0, 100, None, None, 10, None)
+        assert result == (10, 100)

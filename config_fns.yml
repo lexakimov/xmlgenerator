@@ -5,11 +5,12 @@ global:
 
   randomization:
     probability: 1
-    max_occurs: 5
-    min_length: 5
-    max_length: 10
-    min_inclusive: 100
-    max_inclusive: 1000
+    min_occurs: 0
+    max_occurs: 3
+    min_length: 8
+    max_length: 12
+    min_inclusive: 0
+    max_inclusive: 100000
 
   value_override:
     "^(ИдФайл|FileID)$": "{{ output_filename }}"
