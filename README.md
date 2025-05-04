@@ -144,6 +144,8 @@ global:
     # Probability of adding optional elements (0.0-1.0)
     # Default value: 0.5
     probability: 1
+    # Limit for the minimal number of elements
+    min_occurs: 0
     # Limit for the maximum number of elements
     max_occurs: 5
     # Minimum string length
