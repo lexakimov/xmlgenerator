@@ -276,6 +276,8 @@ class XmlGenerator:
                     result = self._generate_string(min_length, max_length, patterns)
                 case 'integer':
                     result = self._generate_integer(min_value, max_value, total_digits)
+                case 'long':
+                    result = self._generate_integer(min_value, max_value, total_digits)
                 case 'decimal':
                     result = self._generate_decimal(rand_config, min_value, max_value, total_digits, fraction_digits)
                 case 'float':
