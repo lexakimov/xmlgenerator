@@ -42,28 +42,27 @@ def log_xml(generated_xml):
 
 
 @pytest.mark.repeat(10)
-class TestSimple:
-    class TestBuiltInTypes:
-
+class TestBuiltInTypesGeneration:
+    class TestPrimitiveTypes:
         def test_string(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/string.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/string.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"\w+", generated_value)
 
         def test_boolean(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/boolean.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/boolean.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"true|false", generated_value)
 
         def test_decimal(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/decimal.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/decimal.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             integer_part, fraction_part = generated_value.split('.')
             # общее количество цифр <= 11 (дефолтное ограничение)
             assert len(integer_part.strip('-')) + len(fraction_part) <= 11
@@ -73,10 +72,10 @@ class TestSimple:
             assert 0 <= int(Decimal(fraction_part)) <= 999
 
         def test_float(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/float.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/float.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             integer_part, fraction_part = generated_value.split('.')
             # общее количество цифр <= 11 (дефолтное ограничение)
             assert len(integer_part.strip('-')) + len(fraction_part) <= 11
@@ -86,10 +85,10 @@ class TestSimple:
             assert 0 <= int(Decimal(fraction_part)) <= 999
 
         def test_double(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/double.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/double.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             integer_part, fraction_part = generated_value.split('.')
             # общее количество цифр <= 11 (дефолтное ограничение)
             assert len(integer_part.strip('-')) + len(fraction_part) <= 11
@@ -99,120 +98,120 @@ class TestSimple:
             assert 0 <= int(Decimal(fraction_part)) <= 999
 
         def test_datetime(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/datetime.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/dateTime.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"[1,2][9,0]\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$", generated_value)
 
         def test_date(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/date.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/date.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"[1,2][9,0]\d\d-\d\d-\d\d$", generated_value)
 
         def test_time(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/time.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/time.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"^\d\d:\d\d:\d\d$", generated_value)
 
         def test_gyearmonth(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/gyearmonth.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/gYearMonth.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"^\d\d\d\d-\d\d$", generated_value)
 
         def test_gyear(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/gyear.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/gYear.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"^\d\d\d\d$", generated_value)
 
         def test_gmonthday(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/gmonthday.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/gMonthDay.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"^--\d\d-\d\d$", generated_value)
 
         def test_gday(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/gday.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/gDay.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"^---\d\d$", generated_value)
 
         def test_gmonth(self, generator, config):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/gmonth.xsd")
+            xsd_schema = XMLSchema(f"data/types/primitive/gMonth.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"^--\d\d--$", generated_value)
 
         @pytest.mark.skip(reason="not yet implemented")
         @pytest.mark.parametrize("xsd", [
             'duration.xsd',
-            'hexbinary.xsd',
+            'hexBinary.xsd',
             'base64binary.xsd',
-            'anyuri.xsd',
-            'qname.xsd',
-            'notation.xsd',
+            'anyURI.xsd',
+            'QName.xsd',
+            'NOTATION.xsd',
         ])
-        def test_built_in_types_in_tags(self, generator, config, xsd):
-            xsd_schema = XMLSchema(f"data/simple/types_built_in/{xsd}")
+        def test_built_in_primitive_types(self, generator, config, xsd):
+            xsd_schema = XMLSchema(f"data/types/primitive/{xsd}")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert generated_value
 
-    class TestBuiltInRestrictedTypes:
+    class TestPrimitiveRestrictedTypes:
 
         def test_string_length(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/string_length.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/string_length.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert len(generated_value) == 10
 
         def test_string_length_min_max(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/string_length_min_max.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/string_length_min_max.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert len(generated_value) in range(10, 21)
 
         def test_string_enumeration(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/string_enumeration.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/string_enumeration.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             valid_values = ['red', 'green', 'blue']
             assert generated_value in valid_values
 
         def test_string_pattern(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/string_pattern.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/string_pattern.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r'[A-Z]{2}\d{3}', generated_value)
 
         def test_string_white_space(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/string_whitespace.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/string_whitespace.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert ' ' not in generated_value
 
         def test_decimal_total_digits(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/decimal_total_digits.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/decimal_total_digits.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             integer_part, fraction_part = generated_value.split('.')
             # общее количество цифр <= totalDigits
             assert len(integer_part.strip('-')) + len(fraction_part) <= 5
@@ -222,10 +221,10 @@ class TestSimple:
             assert 0 <= int(Decimal(fraction_part)) <= 999
 
         def test_decimal_fraction_digits(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/decimal_fraction_digits.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/decimal_fraction_digits.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             integer_part, fraction_part = generated_value.split('.')
             # общее количество цифр <= 10 (дефолтное ограничение)
             assert len(integer_part.strip('-')) + len(fraction_part) <= 10
@@ -235,10 +234,10 @@ class TestSimple:
             assert 0 <= int(Decimal(fraction_part)) <= 99
 
         def test_decimal_total_and_fraction_digits(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/decimal_total_and_fraction_digits.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/decimal_total_and_fraction_digits.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             integer_part, fraction_part = generated_value.split('.')
             # общее количество цифр <= 5
             assert len(integer_part.strip('-')) + len(fraction_part) <= 5
@@ -248,90 +247,126 @@ class TestSimple:
             assert 0 <= int(Decimal(fraction_part)) <= 99
 
         def test_float_pattern(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/float_pattern.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/float_pattern.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r'[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?', generated_value)
 
         def test_float_enumeration(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/float_enumeration.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/float_enumeration.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             valid_values = ['1.5', '2.5', '3.5']
             assert generated_value in valid_values
 
         def test_float_whitespace(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/float_whitespace.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/float_whitespace.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert ' ' not in generated_value
 
         def test_float_inclusive(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/float_inclusive.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/float_inclusive.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert 0.0 <= float(generated_value) <= 100.0
 
         def test_float_exclusive(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/float_exclusive.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/float_exclusive.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert -1.0 < float(generated_value) < 101.0
 
         def test_double_pattern(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/double_pattern.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/double_pattern.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r'[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?', generated_value)
 
         def test_double_enumeration(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/double_enumeration.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/double_enumeration.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             valid_values = ['1.5', '2.5', '3.5']
             assert generated_value in valid_values
 
         def test_double_whitespace(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/double_whitespace.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/double_whitespace.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert ' ' not in generated_value
 
         def test_double_inclusive(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/double_inclusive.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/double_inclusive.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert 0.0 <= float(generated_value) <= 100.0
 
         def test_double_exclusive(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/double_exclusive.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/double_exclusive.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert -1.0 < float(generated_value) < 101.0
 
         @pytest.mark.skip(reason="not yet implemented")
         def test_date_min_max(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_built_in_restricted/date_inclusive_min_max.xsd")
+            xsd_schema = XMLSchema("data/types/primitive_restricted/date_inclusive_min_max.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/root/text()")[0]
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             date_value = datetime.strptime(generated_value, '%Y-%m-%d')
             assert datetime(2020, 1, 1) <= date_value <= datetime(2025, 12, 31)
 
-    class TestDerivedRestrictedTypes:
+    class TestDerivedTypes:
 
+        @pytest.mark.skip(reason="not yet implemented")
+        @pytest.mark.parametrize("xsd", [
+            'byte.xsd',
+            'ENTITIES.xsd',
+            'ENTITY.xsd',
+            'ID.xsd',
+            'IDREF.xsd',
+            'IDREFS.xsd',
+            'int.xsd',
+            'integer.xsd',
+            'language.xsd',
+            'long.xsd',
+            'Name.xsd',
+            'NCName.xsd',
+            'negativeInteger.xsd',
+            'NMTOKEN.xsd',
+            'NMTOKENS.xsd',
+            'nonNegativeInteger.xsd',
+            'nonPositiveInteger.xsd',
+            'normalizedString.xsd',
+            'positiveInteger.xsd',
+            'short.xsd',
+            'token.xsd',
+            'unsignedByte.xsd',
+            'unsignedInt.xsd',
+            'unsignedLong.xsd',
+            'unsignedShort.xsd',
+        ])
+        def test_built_in_derived_types(self, generator, config, xsd):
+            xsd_schema = XMLSchema(f"data/types/derived/{xsd}")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
+            assert generated_value
+
+    class TestDerivedRestrictedTypes:
         def test_integer_inclusive_min_max(self, generator, config):
-            xsd_schema = XMLSchema("data/simple/types_derived_restricted/integer_inclusive_min_max.xsd")
+            xsd_schema = XMLSchema("data/types/derived_restricted/integer_inclusive_min_max.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/root/text()")[0]
@@ -340,292 +375,20 @@ class TestSimple:
 
 @pytest.mark.repeat(10)
 class TestComplex:
-    class TestAttributes:
-        class TestBuiltInTypes:
 
-            def test_string(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in/string.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"\w+", generated_value)
+    def test_string_elem(self, generator, config):
+        xsd_schema = XMLSchema("data/complex/string_elem.xsd")
+        generated_xml = generator.generate_xml(xsd_schema, config)
+        log_xml(generated_xml)
+        generated_value = generated_xml.xpath("/root/text()")[0]
+        assert re.match(r"\w+", generated_value)
 
-            def test_boolean(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in/boolean.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"true|false", generated_value)
-
-            def test_decimal(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in/decimal.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                integer_part, fraction_part = generated_value.split('.')
-                # общее количество цифр <= 11 (дефолтное ограничение)
-                assert len(integer_part.strip('-')) + len(fraction_part) <= 11
-                # количество цифр в целой части до 8 (дефолтное ограничение)
-                assert -99999999 <= int(Decimal(integer_part)) <= 99999999
-                # количество цифр в дробной части от 1 до 3 (дефолтное ограничение)
-                assert 0 <= int(Decimal(fraction_part)) <= 999
-
-            def test_float(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in/float.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                integer_part, fraction_part = generated_value.split('.')
-                # общее количество цифр <= 11 (дефолтное ограничение)
-                assert len(integer_part.strip('-')) + len(fraction_part) <= 11
-                # количество цифр в целой части до 8 (дефолтное ограничение)
-                assert -99999999 <= int(Decimal(integer_part)) <= 99999999
-                # количество цифр в дробной части от 1 до 3 (дефолтное ограничение)
-                assert 0 <= int(Decimal(fraction_part)) <= 999
-
-            def test_double(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in/double.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                integer_part, fraction_part = generated_value.split('.')
-                # общее количество цифр <= 11 (дефолтное ограничение)
-                assert len(integer_part.strip('-')) + len(fraction_part) <= 11
-                # количество цифр в целой части до 8 (дефолтное ограничение)
-                assert -99999999 <= int(Decimal(integer_part)) <= 99999999
-                # количество цифр в дробной части от 1 до 3 (дефолтное ограничение)
-                assert 0 <= int(Decimal(fraction_part)) <= 999
-
-            def test_datetime(self, generator, config):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/datetime.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"[1,2][9,0]\d\d-\d\d-\d\dT\d\d:\d\d:\d\d$", generated_value)
-
-            def test_date(self, generator, config):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/date.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"[1,2][9,0]\d\d-\d\d-\d\d$", generated_value)
-
-            def test_time(self, generator, config):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/time.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"^\d\d:\d\d:\d\d$", generated_value)
-
-            def test_gyearmonth(self, generator, config):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gyearmonth.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"^\d\d\d\d-\d\d$", generated_value)
-
-            def test_gyear(self, generator, config):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gyear.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"^\d\d\d\d$", generated_value)
-
-            def test_gmonthday(self, generator, config):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gmonthday.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"^--\d\d-\d\d$", generated_value)
-
-            def test_gday(self, generator, config):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gday.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"^---\d\d$", generated_value)
-
-            def test_gmonth(self, generator, config):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/gmonth.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r"^--\d\d--$", generated_value)
-
-            @pytest.mark.skip(reason="not yet implemented")
-            @pytest.mark.parametrize("xsd", [
-                'duration.xsd',
-                'hexbinary.xsd',
-                'base64binary.xsd',
-                'anyuri.xsd',
-                'qname.xsd',
-                'notation.xsd',
-            ])
-            def test_built_in_types_in_attributes(self, generator, config, xsd):
-                xsd_schema = XMLSchema(f"data/complex/attributes/types_built_in/{xsd}.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert generated_value
-
-        class TestBuiltInRestrictedTypes:
-
-            def test_string_length(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/string_length.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert len(generated_value) == 10
-
-            def test_string_length_min_max(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/string_length_min_max.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert len(generated_value) in range(10, 21)
-
-            def test_string_enumeration(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/string_enumeration.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                valid_values = ['red', 'green', 'blue']
-                assert generated_value in valid_values
-
-            def test_string_pattern(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/string_pattern.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r'[A-Z]{2}\d{3}', generated_value)
-
-            def test_string_white_space(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/string_whitespace.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert ' ' not in generated_value
-
-            def test_decimal_total_digits(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/decimal_total_digits.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                # общее количество цифр <= totalDigits
-                assert len(re.findall(r'\d', generated_value)) <= 5
-                # количество цифр в дробной части от 1 до 3 (дефолтное ограничение)
-                assert 1 <= len(generated_value.split('.')[1]) <= 3
-
-            def test_decimal_fraction_digits(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/decimal_fraction_digits.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                # общее количество цифр <= 10 (дефолтное ограничение)
-                assert len(re.findall(r'\d', generated_value)) <= 10
-                # количество цифр в дробной части == 2
-                assert len(generated_value.split('.')[1]) == 2
-
-            def test_decimal_total_and_fraction_digits(self, generator, config):
-                xsd_schema = XMLSchema(
-                    "data/complex/attributes/types_built_in_restricted/decimal_total_and_fraction_digits.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                # общее количество цифр <= 5
-                assert len(re.findall(r'\d', generated_value)) <= 5
-                # количество цифр в дробной части == 2
-                assert len(generated_value.split('.')[1]) == 2
-
-            def test_float_pattern(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/float_pattern.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r'[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?', generated_value)
-
-            def test_float_enumeration(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/float_enumeration.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                valid_values = ['1.5', '2.5', '3.5']
-                assert generated_value in valid_values
-
-            def test_float_whitespace(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/float_whitespace.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert ' ' not in generated_value
-
-            def test_float_inclusive(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/float_inclusive.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert 0.0 <= float(generated_value) <= 100.0
-
-            def test_float_exclusive(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/float_exclusive.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert -1.0 < float(generated_value) < 101.0
-
-            def test_double_pattern(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/double_pattern.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert re.match(r'[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?', generated_value)
-
-            def test_double_enumeration(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/double_enumeration.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                valid_values = ['1.5', '2.5', '3.5']
-                assert generated_value in valid_values
-
-            def test_double_whitespace(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/double_whitespace.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert ' ' not in generated_value
-
-            def test_double_inclusive(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/double_inclusive.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert 0.0 <= float(generated_value) <= 100.0
-
-            def test_double_exclusive(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/double_exclusive.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert -1.0 < float(generated_value) < 101.0
-
-            @pytest.mark.skip(reason="not yet implemented")
-            def test_date_min_max(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_built_in_restricted/date_inclusive_min_max.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                date_value = datetime.strptime(generated_value, '%Y-%m-%d')
-                assert datetime(2020, 1, 1) <= date_value <= datetime(2025, 12, 31)
-
-        class TestDerivedRestrictedTypes:
-
-            def test_integer_inclusive_min_max(self, generator, config):
-                xsd_schema = XMLSchema("data/complex/attributes/types_derived_restricted/integer_inclusive_min_max.xsd")
-                generated_xml = generator.generate_xml(xsd_schema, config)
-                log_xml(generated_xml)
-                generated_value = generated_xml.xpath("/root/@attributeValue")[0]
-                assert 10 <= int(generated_value) <= 100
+    def test_string_attr(self, generator, config):
+        xsd_schema = XMLSchema("data/complex/string_attr.xsd")
+        generated_xml = generator.generate_xml(xsd_schema, config)
+        log_xml(generated_xml)
+        generated_value = generated_xml.xpath("/root/@attributeValue")[0]
+        assert re.match(r"\w+", generated_value)
 
     class TestAll:
 
@@ -932,6 +695,7 @@ class TestComplex:
             assert min(counts_by_occurs_item_forb) == 0
             assert max(counts_by_occurs_item_forb) == 0
             assert counts_by_occurs_item_forb[0] == 100
+
 
 class TestMergeConstraints:
 
