@@ -271,50 +271,49 @@ class XmlGenerator:
 
             match type_id:
                 case 'boolean':
-                    result = self._generate_boolean()
+                    generated_value = self._generate_boolean()
                 case 'string':
-                    result = self._generate_string(min_length, max_length, patterns)
+                    generated_value = self._generate_string(min_length, max_length, patterns)
                 case 'integer':
-                    result = self._generate_integer(min_value, max_value, total_digits)
+                    generated_value = self._generate_integer(min_value, max_value, total_digits)
                 case 'long':
-                    result = self._generate_integer(min_value, max_value, total_digits)
+                    generated_value = self._generate_integer(min_value, max_value, total_digits)
                 case 'decimal':
-                    result = self._generate_decimal(rand_config, min_value, max_value, total_digits, fraction_digits)
+                    generated_value = self._generate_decimal(rand_config, min_value, max_value, total_digits, fraction_digits)
                 case 'float':
-                    result = self._generate_float(rand_config, min_value, max_value)
+                    generated_value = self._generate_float(rand_config, min_value, max_value)
                 case 'double':
-                    result = self._generate_double(rand_config, min_value, max_value)
+                    generated_value = self._generate_double(rand_config, min_value, max_value)
                 case 'duration':
-                    result = self._generate_duration()
+                    generated_value = self._generate_duration()
                 case 'dateTime':
-                    result = self._generate_datetime()
+                    generated_value = self._generate_datetime()
                 case 'date':
-                    result = self._generate_date()
+                    generated_value = self._generate_date()
                 case 'time':
-                    result = self._generate_time()
+                    generated_value = self._generate_time()
                 case 'gYearMonth':
-                    result = self._generate_gyearmonth()
+                    generated_value = self._generate_gyearmonth()
                 case 'gYear':
-                    result = self._generate_gyear()
+                    generated_value = self._generate_gyear()
                 case 'gMonthDay':
-                    result = self._generate_gmonthday()
+                    generated_value = self._generate_gmonthday()
                 case 'gDay':
-                    result = self._generate_gday()
+                    generated_value = self._generate_gday()
                 case 'gMonth':
-                    result = self._generate_gmonth()
+                    generated_value = self._generate_gmonth()
                 case 'hexBinary':
-                    result = self._generate_hex_binary()
+                    generated_value = self._generate_hex_binary()
                 case 'base64Binary':
-                    result = self._generate_base64_binary()
+                    generated_value = self._generate_base64_binary()
                 case 'anyURI':
-                    result = self._generate_any_uri()
+                    generated_value = self._generate_any_uri()
                 case 'QName':
-                    result = self._generate_qname()
+                    generated_value = self._generate_qname()
                 case 'NOTATION':
-                    result = self._generate_notation()
+                    generated_value = self._generate_notation()
                 case _:
                     raise RuntimeError(type_id)
-            generated_value = result
             logger.debug('value generated: "%s"', generated_value)
             return generated_value
 
