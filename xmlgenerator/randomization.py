@@ -133,3 +133,6 @@ class Randomizer:
     def snils_formatted(self):
         snils = self._fake.snils()
         return f"{snils[:3]}-{snils[3:6]}-{snils[6:9]} {snils[9:]}"
+
+    def email(self):
+        return self._fake.email()

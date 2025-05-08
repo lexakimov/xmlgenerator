@@ -32,6 +32,7 @@ global:
     "^ОГРН$":    "{{ ogrn_fl }}"
     "КПП":       "{{ kpp }}"
     "СНИЛС":     "{{ snils_formatted }}"
+    "ЭлПочта":   "{{ email }}"
 
 specific:
   ".*":
