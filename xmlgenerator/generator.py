@@ -248,75 +248,9 @@ class XmlGenerator:
         # -------------------------------------------------------------------------------------------------------------
         # Генерируем значения для стандартных типов и типов с ограничениями
         if isinstance(xsd_type, XsdAtomicBuiltin) or isinstance(xsd_type, XsdAtomicRestriction):
-            # Выясняем ограничения
-            min_length = getattr(xsd_type, 'min_length', None)  # None | int
-            max_length = getattr(xsd_type, 'max_length', None)  # None | int
-
-            min_value = getattr(xsd_type, 'min_value', None)  # None | int
-            max_value = getattr(xsd_type, 'max_value', None)  # None
-
-            total_digits = None
-            fraction_digits = None
-            patterns = getattr(xsd_type, 'patterns', None)
-
-            validators = getattr(xsd_type, 'validators', None)
-            for validator in validators:
-                if isinstance(validator, XsdMinExclusiveFacet):
-                    min_value = validator.value
-                elif isinstance(validator, XsdMinInclusiveFacet):
-                    min_value = validator.value
-                elif isinstance(validator, XsdMaxExclusiveFacet):
-                    max_value = validator.value
-                elif isinstance(validator, XsdMaxInclusiveFacet):
-                    max_value = validator.value
-                elif isinstance(validator, XsdLengthFacet):
-                    min_length = validator.value
-                    max_length = validator.value
-                elif isinstance(validator, XsdMinLengthFacet):
-                    min_length = validator.value
-                elif isinstance(validator, XsdMaxLengthFacet):
-                    max_length = validator.value
-                elif isinstance(validator, XsdTotalDigitsFacet):
-                    total_digits = validator.value
-                elif isinstance(validator, XsdFractionDigitsFacet):
-                    fraction_digits = validator.value
-                elif isinstance(validator, XsdEnumerationFacets):
-                    pass
-                elif callable(validator):
-                    pass
-                else:
-                    raise RuntimeError(f"Unhandled validator: {validator}")
-
-            if isinstance(min_value, Decimal):
-                min_value = float(min_value)
-            if isinstance(max_value, Decimal):
-                max_value = float(max_value)
-
-            rand_config = local_config.randomization
-
-            logger.debug('bounds before adjust: min_length: %4s; max_length: %4s', min_length, max_length)
-            min_length, max_length = merge_constraints(
-                schema_min=min_length,
-                schema_max=max_length,
-                config_min=rand_config.min_length,
-                config_max=rand_config.max_length
-            )
-            logger.debug('bounds after  adjust: min_length: %4s; max_length: %4s', min_length, max_length)
-
+            constraints = extract_type_constraints(xsd_type, local_config)
             type_id = xsd_type.id or xsd_type.base_type.id or xsd_type.root_type.id
             logger.debug('generate value for type: "%s"', type_id)
-
-            constraints = TypeConstraints(
-                min_length=min_length,
-                max_length=max_length,
-                min_value=min_value,
-                max_value=max_value,
-                total_digits=total_digits,
-                fraction_digits=fraction_digits,
-                patterns=patterns,
-                rand_config=rand_config
-            )
-
             generator = self.generators.get(type_id)
             if generator is None:
                 raise RuntimeError(f"Generator not found for type: {type_id}")
@@ -472,6 +406,70 @@ class XmlGenerator:
     # noinspection PyUnusedLocal
     def _generate_notation(self, constraints: TypeConstraints):
         raise RuntimeError("not yet implemented")
+
+
+def extract_type_constraints(xsd_type, local_config: GeneratorConfig) -> TypeConstraints:
+    min_length = getattr(xsd_type, 'min_length', None)
+    max_length = getattr(xsd_type, 'max_length', None)
+    min_value = getattr(xsd_type, 'min_value', None)
+    max_value = getattr(xsd_type, 'max_value', None)
+    total_digits = None
+    fraction_digits = None
+    patterns = getattr(xsd_type, 'patterns', None)
+    validators = getattr(xsd_type, 'validators', None)
+    for validator in validators:
+        if isinstance(validator, XsdMinExclusiveFacet):
+            min_value = validator.value
+        elif isinstance(validator, XsdMinInclusiveFacet):
+            min_value = validator.value
+        elif isinstance(validator, XsdMaxExclusiveFacet):
+            max_value = validator.value
+        elif isinstance(validator, XsdMaxInclusiveFacet):
+            max_value = validator.value
+        elif isinstance(validator, XsdLengthFacet):
+            min_length = validator.value
+            max_length = validator.value
+        elif isinstance(validator, XsdMinLengthFacet):
+            min_length = validator.value
+        elif isinstance(validator, XsdMaxLengthFacet):
+            max_length = validator.value
+        elif isinstance(validator, XsdTotalDigitsFacet):
+            total_digits = validator.value
+        elif isinstance(validator, XsdFractionDigitsFacet):
+            fraction_digits = validator.value
+        elif isinstance(validator, XsdEnumerationFacets):
+            pass
+        elif callable(validator):
+            pass
+        else:
+            raise RuntimeError(f"Unhandled validator: {validator}")
+
+    if isinstance(min_value, Decimal):
+        min_value = float(min_value)
+    if isinstance(max_value, Decimal):
+        max_value = float(max_value)
+
+    rand_config = local_config.randomization
+
+    logger.debug('bounds before adjust: min_length: %4s; max_length: %4s', min_length, max_length)
+    min_length, max_length = merge_constraints(
+        schema_min=min_length,
+        schema_max=max_length,
+        config_min=rand_config.min_length,
+        config_max=rand_config.max_length
+    )
+    logger.debug('bounds after  adjust: min_length: %4s; max_length: %4s', min_length, max_length)
+
+    return TypeConstraints(
+        min_length=min_length,
+        max_length=max_length,
+        min_value=min_value,
+        max_value=max_value,
+        total_digits=total_digits,
+        fraction_digits=fraction_digits,
+        patterns=patterns,
+        rand_config=rand_config
+    )
 
 
 def merge_constraints(digit_min=None, digit_max=None, schema_min=None, schema_max=None, config_min=None,
