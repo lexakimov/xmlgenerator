@@ -53,6 +53,16 @@ class Randomizer:
         letters = string.ascii_lowercase
         return ''.join(self._rnd.choice(letters) for _ in range(length)).capitalize()
 
+    def hex_string(self, min_length, max_length):
+        if min_length is None:
+            min_length = 1
+        if max_length is None:
+            max_length = 20
+
+        length = self._rnd.randint(min_length, max_length)
+        circumflexes = ''.join('^' for _ in range(length))
+        return self._fake.hexify(text=circumflexes, upper=True)
+
     def random_date(self, start_date: str = '1990-01-01', end_date: str = '2025-12-31') -> date:
         start = date.fromisoformat(start_date)
         end = date.fromisoformat(end_date)

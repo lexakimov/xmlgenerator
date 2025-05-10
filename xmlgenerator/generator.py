@@ -303,7 +303,7 @@ class XmlGenerator:
                 case 'gMonth':
                     generated_value = self._generate_gmonth()
                 case 'hexBinary':
-                    generated_value = self._generate_hex_binary()
+                    generated_value = self._generate_hex_binary(min_length, max_length)
                 case 'base64Binary':
                     generated_value = self._generate_base64_binary()
                 case 'anyURI':
@@ -425,8 +425,8 @@ class XmlGenerator:
         formatted = random_date.strftime('--%m--')
         return formatted
 
-    def _generate_hex_binary(self):
-        raise RuntimeError("not yet implemented")
+    def _generate_hex_binary(self, min_length, max_length):
+        return self.randomizer.hex_string(min_length, max_length)
 
     def _generate_base64_binary(self):
         raise RuntimeError("not yet implemented")

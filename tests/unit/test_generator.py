@@ -153,10 +153,16 @@ class TestBuiltInTypesGeneration:
             generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert re.match(r"^--\d\d--$", generated_value)
 
+        def test_hex_binary(self, generator, config):
+            xsd_schema = XMLSchema(f"data/types/primitive/hexBinary.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
+            assert re.match(r"^[0-9A-Fa-f]+$", generated_value)
+
         @pytest.mark.skip(reason="not yet implemented")
         @pytest.mark.parametrize("xsd", [
             'duration.xsd',
-            'hexBinary.xsd',
             'base64binary.xsd',
             'anyURI.xsd',
             'QName.xsd',
