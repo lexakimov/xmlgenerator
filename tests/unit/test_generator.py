@@ -44,6 +44,7 @@ def log_xml(generated_xml):
 @pytest.mark.repeat(10)
 class TestBuiltInTypesGeneration:
     class TestPrimitiveTypes:
+
         def test_string(self, generator, config):
             xsd_schema = XMLSchema(f"data/types/primitive/string.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -333,15 +334,21 @@ class TestBuiltInTypesGeneration:
             date_value = datetime.strptime(generated_value, '%Y-%m-%d')
             assert datetime(2020, 1, 1) <= date_value <= datetime(2025, 12, 31)
 
-    @pytest.mark.skip(reason="not yet implemented")
     class TestDerivedTypes:
-
+        # inherited from decimal
         def test_byte(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/byte.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert -128 <= int(generated_value) <= 127
+
+        def test_short(self, generator, config):
+            xsd_schema = XMLSchema("data/types/derived/short.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
+            assert -32768 <= int(generated_value) <= 32767
 
         def test_int(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/int.xsd")
@@ -355,36 +362,7 @@ class TestBuiltInTypesGeneration:
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/generatedValue/text()")[0]
-            # Целые числа произвольной точности, но ожидается разумный диапазон
-            assert re.match(r'^-?\d+$', generated_value)
-
-        def test_positive_integer(self, generator, config):
-            xsd_schema = XMLSchema("data/types/derived/positiveInteger.xsd")
-            generated_xml = generator.generate_xml(xsd_schema, config)
-            log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
-            assert int(generated_value) > 0
-
-        def test_negative_integer(self, generator, config):
-            xsd_schema = XMLSchema("data/types/derived/negativeInteger.xsd")
-            generated_xml = generator.generate_xml(xsd_schema, config)
-            log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
-            assert int(generated_value) < 0
-
-        def test_non_negative_integer(self, generator, config):
-            xsd_schema = XMLSchema("data/types/derived/nonNegativeInteger.xsd")
-            generated_xml = generator.generate_xml(xsd_schema, config)
-            log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
-            assert int(generated_value) >= 0
-
-        def test_non_positive_integer(self, generator, config):
-            xsd_schema = XMLSchema("data/types/derived/nonPositiveInteger.xsd")
-            generated_xml = generator.generate_xml(xsd_schema, config)
-            log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
-            assert int(generated_value) <= 0
+            assert -2147483648 <= int(generated_value) <= 2147483647
 
         def test_long(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/long.xsd")
@@ -393,19 +371,19 @@ class TestBuiltInTypesGeneration:
             generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert -9223372036854775808 <= int(generated_value) <= 9223372036854775807
 
-        def test_short(self, generator, config):
-            xsd_schema = XMLSchema("data/types/derived/short.xsd")
-            generated_xml = generator.generate_xml(xsd_schema, config)
-            log_xml(generated_xml)
-            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
-            assert -32768 <= int(generated_value) <= 32767
-
         def test_unsigned_byte(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/unsignedByte.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert 0 <= int(generated_value) <= 255
+
+        def test_unsigned_short(self, generator, config):
+            xsd_schema = XMLSchema("data/types/derived/unsignedShort.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
+            assert 0 <= int(generated_value) <= 65535
 
         def test_unsigned_int(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/unsignedInt.xsd")
@@ -421,13 +399,36 @@ class TestBuiltInTypesGeneration:
             generated_value = generated_xml.xpath("/generatedValue/text()")[0]
             assert 0 <= int(generated_value) <= 18446744073709551615
 
-        def test_unsigned_short(self, generator, config):
-            xsd_schema = XMLSchema("data/types/derived/unsignedShort.xsd")
+        def test_positive_integer(self, generator, config):
+            xsd_schema = XMLSchema("data/types/derived/positiveInteger.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
             log_xml(generated_xml)
             generated_value = generated_xml.xpath("/generatedValue/text()")[0]
-            assert 0 <= int(generated_value) <= 65535
+            assert 0 < int(generated_value) <= 2147483647
 
+        def test_negative_integer(self, generator, config):
+            xsd_schema = XMLSchema("data/types/derived/negativeInteger.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
+            assert -2147483648 < int(generated_value) < 0
+
+        def test_non_negative_integer(self, generator, config):
+            xsd_schema = XMLSchema("data/types/derived/nonNegativeInteger.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
+            assert int(generated_value) >= 0
+
+        def test_non_positive_integer(self, generator, config):
+            xsd_schema = XMLSchema("data/types/derived/nonPositiveInteger.xsd")
+            generated_xml = generator.generate_xml(xsd_schema, config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/generatedValue/text()")[0]
+            assert int(generated_value) <= 0
+
+        # inherited from string
+        @pytest.mark.skip(reason="not yet implemented")
         def test_language(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/language.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -436,6 +437,7 @@ class TestBuiltInTypesGeneration:
             # Проверка на языковые коды согласно RFC 3066
             assert re.match(r'^[a-zA-Z]{1,8}(-[a-zA-Z0-9]{1,8})*$', generated_value)
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_name(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/Name.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -444,6 +446,7 @@ class TestBuiltInTypesGeneration:
             # XML Name должно начинаться с буквы, подчеркивания или двоеточия
             assert re.match(r'^[a-zA-Z_:][a-zA-Z0-9_:.-]*$', generated_value)
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_ncname(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/NCName.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -453,6 +456,7 @@ class TestBuiltInTypesGeneration:
             assert re.match(r'^[a-zA-Z_][a-zA-Z0-9_.-]*$', generated_value)
             assert ':' not in generated_value
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_normalized_string(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/normalizedString.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -463,6 +467,7 @@ class TestBuiltInTypesGeneration:
             assert '\n' not in generated_value
             assert '\t' not in generated_value
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_token(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/token.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -476,6 +481,7 @@ class TestBuiltInTypesGeneration:
             assert not generated_value.endswith(' ')
             assert '  ' not in generated_value  # нет последовательностей пробелов
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_id(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/ID.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -485,6 +491,7 @@ class TestBuiltInTypesGeneration:
             assert re.match(r'^[a-zA-Z_][a-zA-Z0-9_.-]*$', generated_value)
             assert ':' not in generated_value
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_idref(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/IDREF.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -494,6 +501,7 @@ class TestBuiltInTypesGeneration:
             assert re.match(r'^[a-zA-Z_][a-zA-Z0-9_.-]*$', generated_value)
             assert ':' not in generated_value
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_idrefs(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/IDREFS.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -504,6 +512,7 @@ class TestBuiltInTypesGeneration:
                 assert re.match(r'^[a-zA-Z_][a-zA-Z0-9_.-]*$', idref)
                 assert ':' not in idref
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_entity(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/ENTITY.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -513,6 +522,7 @@ class TestBuiltInTypesGeneration:
             assert re.match(r'^[a-zA-Z_][a-zA-Z0-9_.-]*$', generated_value)
             assert ':' not in generated_value
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_entities(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/ENTITIES.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -523,6 +533,7 @@ class TestBuiltInTypesGeneration:
                 assert re.match(r'^[a-zA-Z_][a-zA-Z0-9_.-]*$', entity)
                 assert ':' not in entity
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_nmtoken(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/NMTOKEN.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -531,6 +542,7 @@ class TestBuiltInTypesGeneration:
             # NMTOKEN состоит из букв, цифр, точек, дефисов, подчеркиваний и двоеточий
             assert re.match(r'^[a-zA-Z0-9._:+-]*$', generated_value)
 
+        @pytest.mark.skip(reason="not yet implemented")
         def test_nmtokens(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived/NMTOKENS.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
@@ -541,6 +553,7 @@ class TestBuiltInTypesGeneration:
                 assert re.match(r'^[a-zA-Z0-9._:+-]*$', nmtoken)
 
     class TestDerivedRestrictedTypes:
+
         def test_integer_inclusive_min_max(self, generator, config):
             xsd_schema = XMLSchema("data/types/derived_restricted/integer_inclusive_min_max.xsd")
             generated_xml = generator.generate_xml(xsd_schema, config)
