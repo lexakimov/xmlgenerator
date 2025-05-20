@@ -8,6 +8,6 @@ shtab
 # dev
 pytest==8.3.5
 pytest-repeat
-setuptools==77.0.3
+setuptools==78.1.1
 nuitka
 twine
