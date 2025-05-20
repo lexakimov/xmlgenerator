@@ -348,7 +348,7 @@ class XmlGenerator:
         logger.debug('bounds after  adjust: min_value: %4s; max_value: %4s', effective_min, effective_max)
 
         if fraction_digits == 0:
-            random_int = self.randomizer.integer(min_value, max_value)
+            random_int = self.randomizer.integer(effective_min, effective_max)
             return str(random_int)
         else:
             random_float = self.randomizer.float(effective_min, effective_max)
