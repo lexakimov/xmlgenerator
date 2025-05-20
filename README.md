@@ -241,6 +241,7 @@ In the `value_override` sections, you can specify either a string value or speci
 | `ogrn_fl`                          | Primary State Registration Number (Physical Person)                                                        |
 | `kpp`                              | Reason Code for Registration                                                                               |
 | `snils_formatted`                  | SNILS (Personal Insurance Account Number) in the format `123-456-789 90`                                   |
+| `email`                            | Random email address                                                                                       |
 
 **Configuration Examples:**
 

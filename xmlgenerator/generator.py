@@ -1,5 +1,7 @@
 import logging
+from dataclasses import dataclass, replace
 from decimal import Decimal
+from typing import Optional, Any, Callable, Dict
 
 from lxml import etree
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdElement, \
@@ -13,10 +15,75 @@ from xmlgenerator.substitution import Substitutor
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class TypeConstraints:
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
+    min_value: Optional[Any] = None
+    max_value: Optional[Any] = None
+    total_digits: Optional[int] = None
+    fraction_digits: Optional[int] = None
+    patterns: Optional[list] = None
+    rand_config: Optional[Any] = None
+
+
 class XmlGenerator:
     def __init__(self, randomizer: Randomizer, substitutor: Substitutor):
         self.randomizer = randomizer
         self.substitutor = substitutor
+        self.generators: Dict[str, Callable[[TypeConstraints], str]] = {
+            # primitive
+            'boolean': self._generate_boolean,
+            'string': self._generate_string,
+            'decimal': self._generate_decimal,
+            'float': self._generate_float,
+            'double': self._generate_double,
+            'duration': self._generate_duration,
+            'dateTime': self._generate_datetime,
+            'date': self._generate_date,
+            'time': self._generate_time,
+            'gYearMonth': self._generate_gyearmonth,
+            'gYear': self._generate_gyear,
+            'gMonthDay': self._generate_gmonthday,
+            'gDay': self._generate_gday,
+            'gMonth': self._generate_gmonth,
+            'hexBinary': self._generate_hex_binary,
+            'base64Binary': self._generate_base64_binary,
+            'anyURI': self._generate_any_uri,
+            'QName': self._generate_qname,
+            'NOTATION': self._generate_notation,
+
+            # derived - from decimal
+            'byte': self._generate_byte,
+            'short': self._generate_short,
+            'int': self._generate_int,
+            'integer': self._generate_integer,
+            'long': self._generate_long,
+
+            'unsignedByte': self._generate_unsigned_byte,
+            'unsignedShort': self._generate_unsigned_short,
+            'unsignedInt': self._generate_unsigned_int,
+            'unsignedLong': self._generate_unsigned_long,
+
+            'positiveInteger': self._generate_positive_integer,
+            'negativeInteger': self._generate_negative_integer,
+            'nonPositiveInteger': self._generate_non_positive_integer,
+            'nonNegativeInteger': self._generate_non_negative_integer,
+
+            # derived - from string
+            'language': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'Name': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'NCName': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'normalizedString': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'token': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'ID': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'IDREF': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'IDREFS': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'ENTITY': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'ENTITIES': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'NMTOKEN': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'NMTOKENS': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+        }
 
     def generate_xml(self, xsd_schema, local_config: GeneratorConfig) -> etree.Element:
         logger.debug('generate xml document...')
@@ -211,108 +278,14 @@ class XmlGenerator:
         # -------------------------------------------------------------------------------------------------------------
         # Генерируем значения для стандартных типов и типов с ограничениями
         if isinstance(xsd_type, XsdAtomicBuiltin) or isinstance(xsd_type, XsdAtomicRestriction):
-            # Выясняем ограничения
-            min_length = getattr(xsd_type, 'min_length', None)  # None | int
-            max_length = getattr(xsd_type, 'max_length', None)  # None | int
-
-            min_value = getattr(xsd_type, 'min_value', None)  # None | int
-            max_value = getattr(xsd_type, 'max_value', None)  # None
-
-            total_digits = None
-            fraction_digits = None
-            patterns = getattr(xsd_type, 'patterns', None)
-
-            validators = getattr(xsd_type, 'validators', None)
-            for validator in validators:
-                if isinstance(validator, XsdMinExclusiveFacet):
-                    min_value = validator.value
-                elif isinstance(validator, XsdMinInclusiveFacet):
-                    min_value = validator.value
-                elif isinstance(validator, XsdMaxExclusiveFacet):
-                    max_value = validator.value
-                elif isinstance(validator, XsdMaxInclusiveFacet):
-                    max_value = validator.value
-                elif isinstance(validator, XsdLengthFacet):
-                    min_length = validator.value
-                    max_length = validator.value
-                elif isinstance(validator, XsdMinLengthFacet):
-                    min_length = validator.value
-                elif isinstance(validator, XsdMaxLengthFacet):
-                    max_length = validator.value
-                elif isinstance(validator, XsdTotalDigitsFacet):
-                    total_digits = validator.value
-                elif isinstance(validator, XsdFractionDigitsFacet):
-                    fraction_digits = validator.value
-                elif isinstance(validator, XsdEnumerationFacets):
-                    pass
-                elif callable(validator):
-                    pass
-                else:
-                    raise RuntimeError(f"Unhandled validator: {validator}")
-
-            if isinstance(min_value, Decimal):
-                min_value = float(min_value)
-            if isinstance(max_value, Decimal):
-                max_value = float(max_value)
-
-            rand_config = local_config.randomization
-
-            logger.debug('bounds before adjust: min_length: %4s; max_length: %4s', min_length, max_length)
-            min_length, max_length = merge_constraints(
-                schema_min=min_length,
-                schema_max=max_length,
-                config_min=rand_config.min_length,
-                config_max=rand_config.max_length
-            )
-            logger.debug('bounds after  adjust: min_length: %4s; max_length: %4s', min_length, max_length)
-
+            constraints = extract_type_constraints(xsd_type, local_config)
             type_id = xsd_type.id or xsd_type.base_type.id or xsd_type.root_type.id
             logger.debug('generate value for type: "%s"', type_id)
+            generator = self.generators.get(type_id)
+            if generator is None:
+                raise RuntimeError(f"Generator not found for type: {type_id}")
+            generated_value = generator(constraints)
 
-            match type_id:
-                case 'boolean':
-                    result = self._generate_boolean()
-                case 'string':
-                    result = self._generate_string(min_length, max_length, patterns)
-                case 'integer':
-                    result = self._generate_integer(min_value, max_value, total_digits)
-                case 'decimal':
-                    result = self._generate_decimal(rand_config, min_value, max_value, total_digits, fraction_digits)
-                case 'float':
-                    result = self._generate_float(rand_config, min_value, max_value)
-                case 'double':
-                    result = self._generate_double(rand_config, min_value, max_value)
-                case 'duration':
-                    result = self._generate_duration()
-                case 'dateTime':
-                    result = self._generate_datetime()
-                case 'date':
-                    result = self._generate_date()
-                case 'time':
-                    result = self._generate_time()
-                case 'gYearMonth':
-                    result = self._generate_gyearmonth()
-                case 'gYear':
-                    result = self._generate_gyear()
-                case 'gMonthDay':
-                    result = self._generate_gmonthday()
-                case 'gDay':
-                    result = self._generate_gday()
-                case 'gMonth':
-                    result = self._generate_gmonth()
-                case 'hexBinary':
-                    result = self._generate_hex_binary()
-                case 'base64Binary':
-                    result = self._generate_base64_binary()
-                case 'anyURI':
-                    result = self._generate_any_uri()
-                case 'QName':
-                    result = self._generate_qname()
-                case 'NOTATION':
-                    result = self._generate_notation()
-                case _:
-                    raise RuntimeError(type_id)
-            generated_value = result
             logger.debug('value generated: "%s"', generated_value)
             return generated_value
 
@@ -326,27 +299,27 @@ class XmlGenerator:
 
         raise RuntimeError(f"Can't generate value - unhandled type. Target name: {target_name}")
 
-    def _generate_boolean(self):
+    # noinspection PyUnusedLocal
+    def _generate_boolean(self, constraints: TypeConstraints):
         return self.randomizer.any(['true', 'false'])
 
-    def _generate_string(self, min_length, max_length, patterns):
-        if patterns is not None:
+    def _generate_string(self, constraints: TypeConstraints):
+        if constraints.patterns is not None:
             # Генерация строки по regex
-            random_enum = self.randomizer.any(patterns)
+            random_enum = self.randomizer.any(constraints.patterns)
             random_pattern = random_enum.attrib['value']
             return self.randomizer.regex(random_pattern)
 
         # Иначе генерируем случайную строку
-        return self.randomizer.ascii_string(min_length, max_length)
+        return self.randomizer.ascii_string(constraints.min_length, constraints.max_length)
 
-    def _generate_integer(self, min_value, max_value, total_digits):
-        if total_digits:
-            min_value = 10 ** (total_digits - 1)
-            max_value = (10 ** total_digits) - 1
-        rnd_int = self.randomizer.integer(min_value, max_value)
-        return str(rnd_int)
+    def _generate_decimal(self, constraints: TypeConstraints):
+        rand_config = constraints.rand_config
+        min_value = constraints.min_value
+        max_value = constraints.max_value
+        total_digits = constraints.total_digits
+        fraction_digits = constraints.fraction_digits
 
-    def _generate_decimal(self, rand_config, schema_min, schema_max, total_digits, fraction_digits):
         if fraction_digits is None:
             fraction_digits = self.randomizer.integer(1, 3)
 
@@ -367,81 +340,224 @@ class XmlGenerator:
         digit_max = 10 ** integer_digits - 1
         logger.debug("integer digits: %s; digit_min: %s; digit_max: %s", integer_digits, digit_min, digit_max)
 
-        logger.debug('bounds before adjust: min_value: %4s; max_value: %4s', schema_min, schema_max)
+        logger.debug('bounds before adjust: min_value: %4s; max_value: %4s', min_value, max_value)
         config_min = rand_config.min_inclusive
         config_max = rand_config.max_inclusive
         effective_min, effective_max \
-            = merge_constraints(digit_min, digit_max, schema_min, schema_max, config_min, config_max)
+            = merge_constraints(digit_min, digit_max, min_value, max_value, config_min, config_max)
         logger.debug('bounds after  adjust: min_value: %4s; max_value: %4s', effective_min, effective_max)
 
-        random_float = self.randomizer.float(effective_min, effective_max)
-        return f"{random_float:.{fraction_digits}f}"
+        if fraction_digits == 0:
+            random_int = self.randomizer.integer(min_value, max_value)
+            return str(random_int)
+        else:
+            random_float = self.randomizer.float(effective_min, effective_max)
+            return f"{random_float:.{fraction_digits}f}"
 
-    def _generate_float(self, rand_config, min_value, max_value):
-        return self._generate_decimal(rand_config, min_value, max_value, None, 2)
+    def _generate_float(self, constraints: TypeConstraints):
+        decimal_constraints = replace(constraints, fraction_digits=2)
+        return self._generate_decimal(decimal_constraints)
 
-    def _generate_double(self, rand_config, min_value, max_value):
-        return self._generate_decimal(rand_config, min_value, max_value, None, 2)
+    def _generate_double(self, constraints: TypeConstraints):
+        decimal_constraints = replace(constraints, fraction_digits=2)
+        return self._generate_decimal(decimal_constraints)
 
-    def _generate_duration(self):
+    def _generate_duration(self, constraints: TypeConstraints):
         raise RuntimeError("not yet implemented")
 
-    def _generate_datetime(self):
+    # noinspection PyUnusedLocal
+    def _generate_datetime(self, constraints: TypeConstraints):
         random_datetime = self.randomizer.random_datetime()
         formatted = random_datetime.isoformat()
         return formatted
 
-    def _generate_date(self):
+    # noinspection PyUnusedLocal
+    def _generate_date(self, constraints: TypeConstraints):
         random_date = self.randomizer.random_date()
         formatted = random_date.isoformat()
         return formatted
 
-    def _generate_time(self):
+    # noinspection PyUnusedLocal
+    def _generate_time(self, constraints: TypeConstraints):
         random_time = self.randomizer.random_time()
         formatted = random_time.isoformat()
         return formatted
 
-    def _generate_gyearmonth(self):
+    # noinspection PyUnusedLocal
+    def _generate_gyearmonth(self, constraints: TypeConstraints):
         random_date = self.randomizer.random_date()
         formatted = random_date.strftime('%Y-%m')
         return formatted
 
-    def _generate_gyear(self):
+    # noinspection PyUnusedLocal
+    def _generate_gyear(self, constraints: TypeConstraints):
         return str(self.randomizer.integer(2000, 2050))
 
-    def _generate_gmonthday(self):
+    # noinspection PyUnusedLocal
+    def _generate_gmonthday(self, constraints: TypeConstraints):
         random_date = self.randomizer.random_date()
         formatted = random_date.strftime('--%m-%d')
         return formatted
 
-    def _generate_gday(self):
+    # noinspection PyUnusedLocal
+    def _generate_gday(self, constraints: TypeConstraints):
         random_date = self.randomizer.random_date()
         formatted = random_date.strftime('---%d')
         return formatted
 
-    def _generate_gmonth(self):
+    # noinspection PyUnusedLocal
+    def _generate_gmonth(self, constraints: TypeConstraints):
         random_date = self.randomizer.random_date()
         formatted = random_date.strftime('--%m--')
         return formatted
 
-    def _generate_hex_binary(self):
+    def _generate_hex_binary(self, constraints: TypeConstraints):
+        return self.randomizer.hex_string(constraints.min_length, constraints.max_length)
+
+    # noinspection PyUnusedLocal
+    def _generate_base64_binary(self, constraints: TypeConstraints):
         raise RuntimeError("not yet implemented")
 
-    def _generate_base64_binary(self):
+    # noinspection PyUnusedLocal
+    def _generate_any_uri(self, constraints: TypeConstraints):
         raise RuntimeError("not yet implemented")
 
-    def _generate_any_uri(self):
+    # noinspection PyUnusedLocal
+    def _generate_qname(self, constraints: TypeConstraints):
         raise RuntimeError("not yet implemented")
 
-    def _generate_qname(self):
+    # noinspection PyUnusedLocal
+    def _generate_notation(self, constraints: TypeConstraints):
         raise RuntimeError("not yet implemented")
 
-    def _generate_notation(self):
-        raise RuntimeError("not yet implemented")
+    def _generate_byte(self, constraints: TypeConstraints):
+        constraints = replace(constraints, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_short(self, constraints: TypeConstraints):
+        constraints = replace(constraints, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_int(self, constraints: TypeConstraints):
+        constraints = replace(constraints, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_integer(self, constraints: TypeConstraints):
+        min_value = constraints.min_value if constraints.min_value is not None else -2147483648
+        max_value = constraints.max_value if constraints.max_value is not None else 2147483647
+        constraints = replace(constraints, min_value=min_value, max_value=max_value, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_long(self, constraints: TypeConstraints):
+        constraints = replace(constraints, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_unsigned_byte(self, constraints: TypeConstraints):
+        constraints = replace(constraints, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_unsigned_short(self, constraints: TypeConstraints):
+        constraints = replace(constraints, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_unsigned_int(self, constraints: TypeConstraints):
+        constraints = replace(constraints, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_unsigned_long(self, constraints: TypeConstraints):
+        constraints = replace(constraints, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_positive_integer(self, constraints: TypeConstraints):
+        min_value = constraints.min_value if constraints.min_value is not None else 1
+        max_value = constraints.max_value if constraints.max_value is not None else 2 ** 31 - 1
+        constraints = replace(constraints, min_value=min_value, max_value=max_value, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_negative_integer(self, constraints: TypeConstraints):
+        min_value = constraints.min_value if constraints.min_value is not None else -2 ** 31
+        max_value = constraints.max_value if constraints.max_value is not None else -1
+        constraints = replace(constraints, min_value=min_value, max_value=max_value, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_non_positive_integer(self, constraints: TypeConstraints):
+        min_value = constraints.min_value if constraints.min_value is not None else -2 ** 31
+        max_value = constraints.max_value if constraints.max_value is not None else 0
+        constraints = replace(constraints, min_value=min_value, max_value=max_value, fraction_digits=0)
+        return self._generate_decimal(constraints)
+
+    def _generate_non_negative_integer(self, constraints: TypeConstraints):
+        min_value = constraints.min_value if constraints.min_value is not None else 0
+        max_value = constraints.max_value if constraints.max_value is not None else 2 ** 31 - 1
+        constraints = replace(constraints, min_value=min_value, max_value=max_value, fraction_digits=0)
+        return self._generate_decimal(constraints)
 
 
-def merge_constraints(digit_min=None, digit_max=None, schema_min=None, schema_max=None, config_min=None,
-                      config_max=None):
+def extract_type_constraints(xsd_type, local_config: GeneratorConfig) -> TypeConstraints:
+    min_length = getattr(xsd_type, 'min_length', None)
+    max_length = getattr(xsd_type, 'max_length', None)
+    min_value = getattr(xsd_type, 'min_value', None)
+    max_value = getattr(xsd_type, 'max_value', None)
+    total_digits = None
+    fraction_digits = None
+    patterns = getattr(xsd_type, 'patterns', None)
+    validators = getattr(xsd_type, 'validators', None)
+    for validator in validators:
+        if isinstance(validator, XsdMinExclusiveFacet):
+            min_value = validator.value
+        elif isinstance(validator, XsdMinInclusiveFacet):
+            min_value = validator.value
+        elif isinstance(validator, XsdMaxExclusiveFacet):
+            max_value = validator.value
+        elif isinstance(validator, XsdMaxInclusiveFacet):
+            max_value = validator.value
+        elif isinstance(validator, XsdLengthFacet):
+            min_length = validator.value
+            max_length = validator.value
+        elif isinstance(validator, XsdMinLengthFacet):
+            min_length = validator.value
+        elif isinstance(validator, XsdMaxLengthFacet):
+            max_length = validator.value
+        elif isinstance(validator, XsdTotalDigitsFacet):
+            total_digits = validator.value
+        elif isinstance(validator, XsdFractionDigitsFacet):
+            fraction_digits = validator.value
+        elif isinstance(validator, XsdEnumerationFacets):
+            pass
+        elif callable(validator):
+            pass
+        else:
+            raise RuntimeError(f"Unhandled validator: {validator}")
+
+    if isinstance(min_value, Decimal):
+        min_value = float(min_value)
+    if isinstance(max_value, Decimal):
+        max_value = float(max_value)
+
+    rand_config = local_config.randomization
+
+    logger.debug('bounds before adjust: min_length: %4s; max_length: %4s', min_length, max_length)
+    min_length, max_length = merge_constraints(
+        schema_min=min_length,
+        schema_max=max_length,
+        config_min=rand_config.min_length,
+        config_max=rand_config.max_length
+    )
+    logger.debug('bounds after  adjust: min_length: %4s; max_length: %4s', min_length, max_length)
+
+    return TypeConstraints(
+        min_length=min_length,
+        max_length=max_length,
+        min_value=min_value,
+        max_value=max_value,
+        total_digits=total_digits,
+        fraction_digits=fraction_digits,
+        patterns=patterns,
+        rand_config=rand_config
+    )
+
+
+def merge_constraints(digit_min=None, digit_max=None, schema_min=None, schema_max=None, config_min=None, config_max=None):
     logger.debug(
         "merge numeric constraints: "
         "digit_min: %s, digit_max: %s, schema_min: %s, schema_max: %s, config_min: %s, config_max: %s",

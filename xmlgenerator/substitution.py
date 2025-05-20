@@ -46,6 +46,7 @@ class Substitutor:
             'ogrn_fl': lambda args: self.randomizer.ogrn_fl(),
             'kpp': lambda args: self.randomizer.kpp(),
             'snils_formatted': lambda args: self.randomizer.snils_formatted(),
+            'email': lambda args: self.randomizer.email(),
         }
 
     def reset_context(self, xsd_filename, config_local):

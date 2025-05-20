@@ -33,7 +33,7 @@ def _get_parser():
         dest="source_paths",
         help="paths to xsd schema(s) or directory with xsd schemas"
     )
-    parser.add_argument(
+    config_arg = parser.add_argument(
         "-c", "--config",
         metavar="<config.yml>",
         dest="config_yaml",
@@ -94,6 +94,7 @@ def _get_parser():
     )
 
     # add shell completions
+    config_arg.complete = shtab.FILE
     source_arg.complete = shtab.FILE
     output_arg.complete = shtab.FILE
     shtab.add_argument_to(parser, ["-C", "--completion"], "print shell completion script (bash, zsh, tcsh)")
