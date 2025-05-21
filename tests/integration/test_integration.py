@@ -1,33 +1,30 @@
 import os
 
 import pytest
+from xmlschema import XMLSchema
+
 import tests
 from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.generator import XmlGenerator
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
-from xmlschema import XMLSchema
 
 os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
 
 @pytest.fixture
 def randomizer():
-    """Фикстура для создания генератора случайных значений."""
     return Randomizer()
 
 @pytest.fixture
 def substitutor(randomizer):
-    """Фикстура для создания подстановщика значений."""
     return Substitutor(randomizer)
 
 @pytest.fixture
 def generator(randomizer, substitutor):
-    """Фикстура для создания генератора XML."""
     return XmlGenerator(randomizer, substitutor)
 
 @pytest.fixture
 def config():
-    """Фикстура для создания конфигурации генератора."""
     return GeneratorConfig()
 
 @pytest.mark.skip(reason="not yet implemented")

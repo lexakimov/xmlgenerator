@@ -71,18 +71,18 @@ class XmlGenerator:
             'nonNegativeInteger': self._generate_non_negative_integer,
 
             # derived - from string
-            'language': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'Name': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'NCName': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'normalizedString': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'token': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'ID': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'IDREF': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'IDREFS': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'ENTITY': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'ENTITIES': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'NMTOKEN': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
-            'NMTOKENS': lambda c: (_ for _ in ()).throw(Exception('not yet implemented')),
+            'language': self._generate_language,
+            'Name': self._generate_name,
+            'NCName': self._generate_nc_name,
+            'normalizedString': self._generate_normalized_string,
+            'token': self._generate_token,
+            'ID': self._generate_id,
+            'IDREF': self._generate_idref,
+            'IDREFS': self._generate_idrefs,
+            'ENTITY': self._generate_entity,
+            'ENTITIES': self._generate_entities,
+            'NMTOKEN': self._generate_nmtoken,
+            'NMTOKENS': self._generate_nmtokens,
         }
 
     def generate_xml(self, xsd_schema, local_config: GeneratorConfig) -> etree.Element:
@@ -491,6 +491,42 @@ class XmlGenerator:
         max_value = constraints.max_value if constraints.max_value is not None else 2 ** 31 - 1
         constraints = replace(constraints, min_value=min_value, max_value=max_value, fraction_digits=0)
         return self._generate_decimal(constraints)
+
+    def _generate_language(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_name(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_nc_name(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_normalized_string(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_token(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_id(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_idref(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_idrefs(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_entity(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_entities(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_nmtoken(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
+
+    def _generate_nmtokens(self, constraints: TypeConstraints):
+        raise RuntimeError('not yet implemented')
 
 
 def extract_type_constraints(xsd_type, local_config: GeneratorConfig) -> TypeConstraints:
