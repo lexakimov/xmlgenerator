@@ -3,7 +3,7 @@ xmlschema==3.4.3
 Faker==37.0.0
 rstr==3.2.2
 PyYAML==6.0.2
-shtab
+shtab==1.7.1
 
 # dev
 pytest==8.3.5

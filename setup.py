@@ -14,7 +14,8 @@ setup(
         'xmlschema',
         'Faker',
         'rstr',
-        'PyYAML'
+        'PyYAML',
+        'shtab'
     ],
     author='Alexey Akimov',
     author_email='lex.akimov23@gmail.com',
