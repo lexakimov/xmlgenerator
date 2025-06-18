@@ -7,7 +7,13 @@
                     <xs:complexType>
                         <xs:sequence>
                             <xs:element name="name" type="xs:string"/>
-                            <xs:element name="age" type="xs:integer"/>
+                            <xs:element name="age">
+                                <xs:simpleType id="ageType">
+                                    <xs:restriction base="xs:positiveInteger">
+                                        <xs:maxInclusive value="120"/>
+                                    </xs:restriction>
+                                </xs:simpleType>
+                            </xs:element>
                             <xs:element name="address">
                                 <xs:complexType>
                                     <xs:sequence>
@@ -27,7 +33,6 @@
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>
-                        <xs:attribute name="id" type="xs:ID" use="required"/>
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>

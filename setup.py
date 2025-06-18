@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='xmlgenerator',
-    version='0.5.1',
+    version='0.5.2',
     packages=find_packages(exclude=("tests", "tests.*")),
     entry_points={
         'console_scripts': [
@@ -14,7 +14,8 @@ setup(
         'xmlschema',
         'Faker',
         'rstr',
-        'PyYAML'
+        'PyYAML',
+        'shtab'
     ],
     author='Alexey Akimov',
     author_email='lex.akimov23@gmail.com',

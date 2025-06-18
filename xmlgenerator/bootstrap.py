@@ -12,12 +12,30 @@ from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
 
-# TODO Generator - обработка стандартных xsd типов
 # TODO кастомные переменные для локального контекста
 # TODO валидация по Schematron
 # TODO типизировать
 # TODO Почистить и перевести комментарии
 # TODO Дописать тесты
+
+# TODO _generate_duration
+# TODO _generate_base64_binary
+# TODO _generate_any_uri
+# TODO _generate_qname
+# TODO _generate_notation
+
+# TODO _generate_language
+# TODO _generate_name
+# TODO _generate_nc_name
+# TODO _generate_normalized_string
+# TODO _generate_token
+# TODO _generate_id
+# TODO _generate_idref
+# TODO _generate_idrefs
+# TODO _generate_entity
+# TODO _generate_entities
+# TODO _generate_nmtoken
+# TODO _generate_nmtokens
 
 logging.basicConfig(level=logging.WARN, format='%(asctime)s [%(name)-26s] %(levelname)-6s - %(message)s')
 
