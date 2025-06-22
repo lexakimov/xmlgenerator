@@ -37,49 +37,49 @@ def _get_parser():
         "-c", "--config",
         metavar="<config.yml>",
         dest="config_yaml",
-        help="pass yaml configuration file"
+        help="pass a YAML configuration file"
     )
     parser.add_argument(
         "-l", "--locale",
         metavar="<locale>",
         default="en_US",
-        help="randomizer locale (default: %(default)s)"
+        help="locale for the randomizer (default: %(default)s)"
     )
     output_arg = parser.add_argument(
         "-o", "--output",
         metavar="<output.xml>",
         dest="output_path",
-        help="save output to dir or file"
+        help="save the output to a directory or file"
     )
     parser.add_argument(
         "-p", "--pretty",
         action="store_true",
-        help="prettify output XML"
+        help="prettify the output XML"
     )
     parser.add_argument(
         "-v", "--validation",
         metavar="<validation>",
         choices=["none", "schema", "schematron"],
         default="schema",
-        help="validate generated XML document (none, schema, schematron, default is schema)"
+        help="validate the generated XML document (none, schema, schematron; default: %(default)s)"
     )
     parser.add_argument(
         "-ff", "--fail-fast",
         action="store_true",
         default="true",
-        help="terminate execution on validation error (default is true)"
+        help="terminate execution on a validation error (default: %(default)s)"
     )
     parser.add_argument(
         "-e", "--encoding",
         metavar="<encoding>",
         choices=["utf-8", "windows-1251"],
         default="utf-8",
-        help="output XML encoding (utf-8, windows-1251, default is utf-8)"
+        help="the output XML encoding (utf-8, windows-1251; default: %(default)s)"
     )
     parser.add_argument(
         "-s", "--seed",
         metavar="<seed>",
-        help="set randomization seed"
+        help="set the randomization seed"
     )
     parser.add_argument(
         "-d", "--debug",
@@ -90,14 +90,14 @@ def _get_parser():
         "-V", "--version",
         action='version',
         version='%(prog)s 0.1.0',
-        help="shows current version"
+        help="show the current version"
     )
 
     # add shell completions
     config_arg.complete = shtab.FILE
     source_arg.complete = shtab.FILE
     output_arg.complete = shtab.FILE
-    shtab.add_argument_to(parser, ["-C", "--completion"], "print shell completion script (bash, zsh, tcsh)")
+    shtab.add_argument_to(parser, ["-C", "--completion"], "print a shell completion script (bash, zsh, tcsh)")
     completion_act = [a for a in parser._actions if a.dest == 'completion']
     if completion_act:
         completion_act[0].metavar = '<shell>'
