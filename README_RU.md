@@ -25,7 +25,7 @@ pip install xmlgenerator
 ### Ручная установка исполняемого файла (linux)
 
 ```bash
-curl -LO https://github.com/lexakimov/xmlgenerator/releases/download/v0.5.2/xmlgenerator-linux-amd64
+curl -LO https://github.com/lexakimov/xmlgenerator/releases/download/v0.5.3/xmlgenerator-linux-amd64
 chmod +x xmlgenerator-linux-amd64
 sudo install xmlgenerator-linux-amd64 /usr/local/bin/xmlgenerator
 ```
