@@ -14,7 +14,7 @@ global:
 
   value_override:
     "^(ИдФайл|FileID)$": "{{ output_filename }}"
-    "^(ВерсПрог|VersProg)$": "xmlgenerator 0.1.0"
+    "^(ВерсПрог|VersProg)$": "xmlgenerator 0.5.4"
     "Фамилия":   "{{ last_name }}"
     "Имя":       "{{ first_name }}"
     "Отчество":  "{{ middle_name }}"

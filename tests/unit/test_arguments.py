@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 import tests
+from xmlgenerator import __version__
 from xmlgenerator.arguments import parse_args
 
 os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
@@ -44,7 +45,7 @@ class TestStandardArgs:
 
         captured = capsys.readouterr()
         assert excinfo.value.code == 0
-        assert 'xmlgenerator 0.1.0' in captured.out
+        assert f'xmlgenerator {__version__}' in captured.out
         assert not captured.err
 
 
