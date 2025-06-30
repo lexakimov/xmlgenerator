@@ -44,8 +44,8 @@ xmlgenerator -C bash | sudo tee /etc/bash_completion.d/xmlgenerator
 **Описание флагов и параметров запуска:**
 
 ```
-usage: xmlgenerator [-h] [-c <config.yml>] [-l <locale>] [-o <output.xml>] [-p] [-v <validation>] [-ff] [-e <encoding>]
-                    [-s <seed>] [-d] [-V] [-C <shell>]
+usage: xmlgenerator [-h] [-c <config.yml>] [-o <output.xml>] [-p] [-v <validation>] [-ff] [-e <encoding>] [-s <seed>]
+                    [-d] [-V] [-C <shell>]
                     xsd [xsd ...]
 
 Generates XML documents from XSD schemas
@@ -56,7 +56,6 @@ positional arguments:
 options:
   -h, --help                     show this help message and exit
   -c, --config <config.yml>      pass a YAML configuration file
-  -l, --locale <locale>          locale for the randomizer (default: en_US)
   -o, --output <output.xml>      save the output to a directory or file
   -p, --pretty                   prettify the output XML
   -v, --validation <validation>  validate the generated XML document (none, schema, schematron; default: schema)

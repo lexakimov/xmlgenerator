@@ -60,7 +60,7 @@ def _main():
 
     config = load_config(args.config_yaml)
 
-    randomizer = Randomizer(args.seed, args.locale)
+    randomizer = Randomizer(args.seed)
     substitutor = Substitutor(randomizer)
     generator = XmlGenerator(randomizer, substitutor)
     validator = XmlValidator(args.validation, args.fail_fast)
