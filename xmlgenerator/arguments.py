@@ -5,6 +5,8 @@ from pathlib import Path
 
 import shtab
 
+from xmlgenerator import __version__
+
 logger = logging.getLogger(__name__)
 
 
@@ -89,7 +91,7 @@ def _get_parser():
     parser.add_argument(
         "-V", "--version",
         action='version',
-        version='%(prog)s 0.1.0',
+        version='%(prog)s {version}'.format(version=__version__),
         help="show the current version"
     )
 

@@ -4,6 +4,8 @@ import subprocess
 import sys
 import time
 
+from xmlgenerator import __version__
+
 # TODO strip
 # pyinstaller ?
 # sudo pacman -S ccache
@@ -41,7 +43,7 @@ extra_nuitka_options = [
     # "--include-package=some_package",
 
     "--product-name=xmlgenerator",
-    "--product-version=0.1.0",
+    f"--product-version={__version__}",
     f"--file-version={file_ver}",
     "--onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}/{VERSION}",
 
