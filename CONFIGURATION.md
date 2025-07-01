@@ -347,7 +347,6 @@ xmlgenerator -c config.yml --pretty examples/employee.xsd
   <age>27</age>
 </employee>
 ```
-*Note: To generate Russian-language data, you may need to specify the locale, for example: `xmlgenerator -l ru_RU ...`*
 
 *A full list of available functions is provided in [Appendix 2](#appendix-2-placeholder-functions)*.
 
@@ -571,31 +570,35 @@ In the `value_override` sections, you can specify either a string value or speci
 
 **List of Placeholder Functions:**
 
-| Function                           | Description                                                                                     |
-|------------------------------------|-------------------------------------------------------------------------------------------------|
-| `source_filename`                  | Filename of the source XSD schema with its extension (e.g., `schema.xsd`).                      |
-| `source_extracted`                 | A string extracted from the source XSD filename using the regex specified in `source_filename`. |
-| `output_filename`                  | String defined by the `output_filename` configuration parameter.                                |
-| `uuid`                             | A random UUIDv4.                                                                                |
-| `regex("pattern")`                 | A random string value matching the specified regular expression.                                |
-| `any('A', "B", C)`                 | A random value from the provided enumeration.                                                   |
-| `number(A, B)`                     | A random number between A and B.                                                                |
-| `date("2010-01-01", "2025-01-01")` | A random date within the specified range.                                                       |
-| `last_name`                        | A random last name.                                                                             |
-| `first_name`                       | A random first name.                                                                            |
-| `middle_name`                      | A random middle name.                                                                           |
-| `address_text`                     | A random full address.                                                                          |
-| `administrative_unit`              | An administrative unit (e.g., a district).                                                      |
-| `house_number`                     | A house number.                                                                                 |
-| `city_name`                        | A city name.                                                                                    |
-| `postcode`                         | A postal code.                                                                                  |
-| `company_name`                     | A company name.                                                                                 |
-| `bank_name`                        | A bank name.                                                                                    |
-| `phone_number`                     | A phone number.                                                                                 |
-| `inn_fl`                           | Taxpayer Identification Number (for an individual).                                             |
-| `inn_ul`                           | Taxpayer Identification Number (for a legal entity).                                            |
-| `ogrn_ip`                          | Primary State Registration Number (for an individual entrepreneur).                             |
-| `ogrn_fl`                          | Primary State Registration Number (for an individual).                                          |
-| `kpp`                              | Tax Registration Reason Code (KPP).                                                             |
-| `snils_formatted`                  | SNILS (Personal Insurance Account Number) formatted as `123-456-789 90`.                        |
-| `email`                            | A random email address.                                                                         |
+| Function                           | Description                                                                                              |
+|------------------------------------|----------------------------------------------------------------------------------------------------------|
+| `source_filename`                  | Filename of the source XSD schema with its extension (e.g., `schema.xsd`).                               |
+| `source_extracted`                 | A string extracted from the source XSD filename using the regex specified in `source_filename`.          |
+| `output_filename`                  | String defined by the `output_filename` configuration parameter.                                         |
+| `uuid`                             | A random UUIDv4.                                                                                         |
+| `regex("pattern")`                 | A random string value matching the specified regular expression.                                         |
+| `any('A', "B", C)`                 | A random value from the provided enumeration.                                                            |
+| `any_from('./values.txt')`         | A random value from a multi-line file                                                                    |
+| `number(A, B)`                     | A random number between A and B.                                                                         |
+| `date("2010-01-01", "2025-01-01")` | A random date within the specified range. <tr><td colspan="2" align="center">**Personal data**</td></tr> |
+| `first_name`__*__                  | A random first name.                                                                                     |
+| `last_name`__*__                   | A random last name.                                                                                      |
+| `middle_name`__*__                 | A random middle name.                                                                                    |
+| `phone_number`__*__                | A phone number.                                                                                          |
+| `email`__*__                       | A random email address. <tr><td colspan="2" align="center">**Address**</td></tr>                         |
+| `country`__*__                     | A random country.                                                                                        |
+| `city`__*__                        | A random city name.                                                                                      |
+| `street`__*__                      | A random street.                                                                                         |
+| `house_number`__*__                | A house number.                                                                                          |
+| `postcode`__*__                    | A postal code.                                                                                           |
+| `administrative_unit`__*__         | An administrative unit (e.g., a district).                                                               |
+| `company_name`__*__                | A company name.                                                                                          |
+| `bank_name`__*__                   | A bank name. <tr><td colspan="2" align="center">**Russian locale only `ru_RU`**</td></tr>                |
+| `inn_fl`                           | Taxpayer Identification Number (for an individual).                                                      |
+| `inn_ul`                           | Taxpayer Identification Number (for a legal entity).                                                     |
+| `ogrn_ip`                          | Primary State Registration Number (for an individual entrepreneur).                                      |
+| `ogrn_fl`                          | Primary State Registration Number (for an individual).                                                   |
+| `kpp`                              | Tax Registration Reason Code (KPP).                                                                      |
+| `snils_formatted`                  | SNILS (Personal Insurance Account Number) formatted as `123-456-789 90`.                                 |
+
+\* It's available to set custom locale via `func("ru_RU")`. Default locale is `en_US`</td></tr>

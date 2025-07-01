@@ -23,30 +23,35 @@ class Substitutor:
             'output_filename': lambda args: self.get_output_filename(),
 
             'any': lambda args: self._any(args),
+            'any_from': lambda args: self._any_from(args),
             'regex': lambda args: self._regex(args),
             'uuid': lambda args: self.randomizer.uuid(),
             'number': lambda args: self._number(args),
             'date': lambda args: self._date_formatted(args),
 
-            'last_name': lambda args: self.randomizer.last_name(),
-            'first_name': lambda args: self.randomizer.first_name(),
-            'middle_name': lambda args: self.randomizer.middle_name(),
-            'address_text': lambda args: self.randomizer.address_text(),
-            'administrative_unit': lambda args: self.randomizer.administrative_unit(),
-            'house_number': lambda args: self.randomizer.house_number(),
-            'city_name': lambda args: self.randomizer.city_name(),
-            'country': lambda args: self.randomizer.country(),
-            'postcode': lambda args: self.randomizer.postcode(),
-            'company_name': lambda args: self.randomizer.company_name(),
-            'bank_name': lambda args: self.randomizer.bank_name(),
-            'phone_number': lambda args: self.randomizer.phone_number(),
+            'first_name': lambda args: self.randomizer.first_name(args),
+            'last_name': lambda args: self.randomizer.last_name(args),
+            'middle_name': lambda args: self.randomizer.middle_name(args),
+            'phone_number': lambda args: self.randomizer.phone_number(args),
+            'email': lambda args: self.randomizer.email(args),
+
+            'country': lambda args: self.randomizer.country(args),
+            'city': lambda args: self.randomizer.city(args),
+            'street': lambda args: self.randomizer.street(args),
+            'house_number': lambda args: self.randomizer.house_number(args),
+            'postcode': lambda args: self.randomizer.postcode(args),
+            'administrative_unit': lambda args: self.randomizer.administrative_unit(args),
+
+            'company_name': lambda args: self.randomizer.company_name(args),
+            'bank_name': lambda args: self.randomizer.bank_name(args),
+
+            # ru_RU only
             'inn_fl': lambda args: self.randomizer.inn_fl(),
             'inn_ul': lambda args: self.randomizer.inn_ul(),
             'ogrn_ip': lambda args: self.randomizer.ogrn_ip(),
             'ogrn_fl': lambda args: self.randomizer.ogrn_fl(),
             'kpp': lambda args: self.randomizer.kpp(),
             'snils_formatted': lambda args: self.randomizer.snils_formatted(),
-            'email': lambda args: self.randomizer.email(),
         }
 
     def reset_context(self, xsd_filename, config_local):
@@ -100,12 +105,12 @@ class Substitutor:
             match func_mod:
                 case None:
                     resolved_value = provider_func()
-                case 'global':
-                    resolved_value = global_context.get(func_name) or provider_func()
-                    global_context[func_name] = resolved_value
                 case 'local':
                     resolved_value = local_context.get(func_name) or provider_func()
                     local_context[func_name] = resolved_value
+                case 'global':
+                    resolved_value = global_context.get(func_name) or provider_func()
+                    global_context[func_name] = resolved_value
                 case _:
                     raise RuntimeError(f"Unknown modifier: {func_mod}")
 
@@ -121,6 +126,10 @@ class Substitutor:
         separated_args = str(args).split(sep=",")
         options = [i.strip(' ').strip("'").strip('"') for i in separated_args]
         return self.randomizer.any(options)
+
+    def _any_from(self, args):
+        file_path = args.strip(' ').strip("'").strip('"')
+        return self.randomizer.any_from(file_path)
 
     def _regex(self, args):
         pattern = args.strip("'").strip('"')

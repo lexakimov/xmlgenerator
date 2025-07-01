@@ -5,6 +5,8 @@ from pathlib import Path
 
 import shtab
 
+from xmlgenerator import __version__
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,12 +40,6 @@ def _get_parser():
         metavar="<config.yml>",
         dest="config_yaml",
         help="pass a YAML configuration file"
-    )
-    parser.add_argument(
-        "-l", "--locale",
-        metavar="<locale>",
-        default="en_US",
-        help="locale for the randomizer (default: %(default)s)"
     )
     output_arg = parser.add_argument(
         "-o", "--output",
@@ -89,7 +85,7 @@ def _get_parser():
     parser.add_argument(
         "-V", "--version",
         action='version',
-        version='%(prog)s 0.1.0',
+        version='%(prog)s {version}'.format(version=__version__),
         help="show the current version"
     )
 

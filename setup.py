@@ -1,8 +1,10 @@
 from setuptools import setup, find_packages
 
+from xmlgenerator import __version__
+
 setup(
     name='xmlgenerator',
-    version='0.5.3',
+    version=__version__,
     packages=find_packages(exclude=("tests", "tests.*")),
     entry_points={
         'console_scripts': [

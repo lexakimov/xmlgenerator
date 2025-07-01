@@ -1,7 +1,13 @@
+import os
+
 import pytest
 
+import tests
+from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import _pattern, Substitutor
+
+os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
 
 
 @pytest.mark.parametrize("expression, expected_groups_count", [
@@ -83,6 +89,29 @@ def test_parse_expression_few_expressions_in_one():
     assert findall[1][1] == "\'f2arg\'"
     assert findall[1][2] == "kek#lol"
 
+
+def test_reset_context():
+    substitutor = Substitutor(Randomizer(seed=111))
+
+    config_1 = GeneratorConfig(
+        source_filename='(?P<extracted>.*).(xsd|XSD)',
+        output_filename='{{ source_extracted }}_c82f1749-36a8-4237-ad11-0c2078197df4',
+    )
+    substitutor.reset_context("first_file.xsd", config_1)
+    assert substitutor._local_context["source_filename"] == "first_file.xsd"
+    assert substitutor._local_context["source_extracted"] == "first_file"
+    assert substitutor._local_context["output_filename"] == "first_file_c82f1749-36a8-4237-ad11-0c2078197df4"
+
+    config_2 = GeneratorConfig(
+        source_filename='(?P<extracted>.*)_file.(xsd|XSD)',
+        output_filename='{{ source_extracted }}_16dab037-65aa-4fcb-905f-7785ebff91d4',
+    )
+    substitutor.reset_context("second_file.xsd", config_2)
+    assert substitutor._local_context["source_filename"] == "second_file.xsd"
+    assert substitutor._local_context["source_extracted"] == "second"
+    assert substitutor._local_context["output_filename"] == "second_16dab037-65aa-4fcb-905f-7785ebff91d4"
+
+
 class TestFunctions:
 
     @pytest.mark.parametrize(
@@ -96,17 +125,39 @@ class TestFunctions:
             ("any('A', \"B\", C)", 'A'),
             ["number(0, 10)", "3"],
             ('date("2010-01-01", "2025-01-01")', '20141009'),
-            ('last_name', 'Шарапов'),
-            ('first_name', 'Еремей'),
-            ('middle_name', 'Гордеевич'),
-            ('address_text', 'с. Калязин, пр. Краснодарский, д. 96 к. 82, 646357'),
-            ('administrative_unit', 'Магаданская обл.'),
-            ('house_number', '85'),
-            ('city_name', 'Катав-Ивановск'),
-            ('postcode', '573669'),
-            ('company_name', 'ИП «Кузнецова Колесников»'),
-            ('bank_name', 'ЕАТП Банк'),
-            ('phone_number', '+7 (573) 669-2368'),
+
+            ('first_name', 'Ronald'),
+            ('last_name', 'Wilcox'),
+            ('middle_name', 'Ronald'),
+            ('phone_number', '857.536.6923'),
+            ('email', 'samanthastewart@example.org'),
+
+            ('first_name("ru_RU")', 'Еремей'),
+            ('last_name("ru_RU")', 'Шарапов'),
+            ('middle_name("ru_RU")', 'Гордеевич'),
+            ('phone_number("ru_RU")', '+7 (573) 669-2368'),
+            ('email("ru_RU")', 'lukagorshkov@example.org'),
+
+            ('country', 'Sweden'),
+            ('city', 'West Troy'),
+            ('street', 'Samantha Island'),
+            ('house_number', '57366'),
+            ('postcode', '28388'),
+            ('administrative_unit', 'Indiana'),
+
+            ('country("ru_RU")', 'Израиль'),
+            ('city("ru_RU")', 'Катав-Ивановск'),
+            ('street("ru_RU")', 'ш. Сахалинское'),
+            ('house_number("ru_RU")', '85'),
+            ('postcode("ru_RU")', '573669'),
+            ('administrative_unit("ru_RU")', 'Магаданская обл.'),
+
+            ('company_name', 'Morse LLC'),
+            ('bank_name', 'Morse LLC'),
+
+            ('company_name("ru_RU")', 'ИП «Кузнецова Колесников»'),
+            ('bank_name("ru_RU")', 'ЕАТП Банк'),
+
             ('inn_fl', '284151791372'),
             ('inn_ul', '2841647400'),
             ('ogrn_ip', '307415303422588'),
@@ -124,3 +175,52 @@ class TestFunctions:
         is_found, value = substitutor.substitute_value("test", {"test": "{{" + function + "}}"}.items())
         assert is_found
         assert value == expected
+
+    def test_any_from(self):
+        substitutor = Substitutor(Randomizer(seed=111))
+        results = set()
+        for i in range(0, 50):
+            _, value = substitutor.substitute_value("test", {"test": "{{ any_from('data/lines.txt') }}"}.items())
+            results.add(value)
+
+        assert len(results) == 3
+
+
+class TestFunctionModifiers:
+
+    def test_no_modifier(self):
+        substitutor = Substitutor(Randomizer(seed=111))
+        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+        assert value_1 != value_2
+
+    def test_local_modifier(self):
+        substitutor = Substitutor(Randomizer(seed=111))
+        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
+        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
+        _, value_3 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+        assert value_1 == value_2
+        assert value_1 != value_3
+
+        config = GeneratorConfig(source_filename='(?P<extracted>.*).(xsd|XSD)', output_filename='_', )
+        substitutor.reset_context("first_file.xsd", config)
+
+        _, value_4 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
+        assert value_4 != value_1
+
+    def test_global_modifier(self):
+        substitutor = Substitutor(Randomizer(seed=111))
+        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
+        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
+        _, value_3 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
+        _, value_4 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+
+        assert value_1 == value_2
+        assert value_1 != value_3
+        assert value_1 != value_4
+
+        config = GeneratorConfig(source_filename='(?P<extracted>.*).(xsd|XSD)', output_filename='_', )
+        substitutor.reset_context("first_file.xsd", config)
+
+        _, value_5 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
+        assert value_1 == value_5
