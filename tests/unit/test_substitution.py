@@ -1,7 +1,12 @@
+import os
+
 import pytest
 
+import tests
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import _pattern, Substitutor
+
+os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
 
 
 @pytest.mark.parametrize("expression, expected_groups_count", [
@@ -83,6 +88,7 @@ def test_parse_expression_few_expressions_in_one():
     assert findall[1][1] == "\'f2arg\'"
     assert findall[1][2] == "kek#lol"
 
+
 class TestFunctions:
 
     @pytest.mark.parametrize(
@@ -146,3 +152,12 @@ class TestFunctions:
         is_found, value = substitutor.substitute_value("test", {"test": "{{" + function + "}}"}.items())
         assert is_found
         assert value == expected
+
+    def test_any_from(self):
+        substitutor = Substitutor(Randomizer(seed=111))
+        results = set()
+        for i in range(0, 50):
+            _, value = substitutor.substitute_value("test", {"test": "{{ any_from('data/lines.txt') }}"}.items())
+            results.add(value)
+
+        assert len(results) == 3

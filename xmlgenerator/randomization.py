@@ -1,9 +1,11 @@
 import logging
+import mimetypes
 import random
 import re
 import string
 import sys
 from datetime import datetime, date, time, timedelta
+from pathlib import Path
 
 import rstr
 from faker import Faker
@@ -23,6 +25,7 @@ class Randomizer:
         self._seed = seed
         self._rnd = random.Random(seed)
         self._rstr = rstr.Rstr(self._rnd)
+        self._loaded_files = {}
 
     def _faker(self, locale='en_US'):
         if locale is None:
@@ -36,11 +39,41 @@ class Randomizer:
             self._fakers[locale] = faker
         return faker
 
+    def _lines(self, file_path: str):
+        if file_path is None or len(file_path) == 0:
+            raise RuntimeError('no file specified')
+
+        file_lines = self._loaded_files.get(file_path)
+        if file_lines is None:
+            resolved_path = Path(file_path).resolve()
+            if not resolved_path.exists():
+                raise FileNotFoundError(f'file {resolved_path} does not exists')
+            if not resolved_path.is_file():
+                raise RuntimeError(f'{resolved_path} is not text file')
+            mime = mimetypes.guess_type(resolved_path)
+            if mime[0] is None or not mime[0].startswith('text/'):
+                raise RuntimeError(f'file {resolved_path} is not text file')
+            try:
+                with open(resolved_path, 'r', encoding='utf-8') as f:
+                    file_content = f.read().rstrip()
+                    if not file_content:
+                        file_lines = []
+                    else:
+                        file_lines = file_content.split('\n')
+                    self._loaded_files[file_path] = file_lines
+            except FileNotFoundError:
+                raise FileNotFoundError(f'file {resolved_path} does not exists')
+
+        return file_lines
+
     def random(self):
         return self._rnd.random()
 
     def any(self, options):
         return self._rnd.choice(options)
+
+    def any_from(self, file_path):
+        return self._rnd.choice(self._lines(file_path))
 
     def regex(self, pattern):
         xeger = self._rstr.xeger(pattern)
@@ -166,13 +199,13 @@ class Randomizer:
 
     def inn_fl(self):
         return self._faker('ru_RU').individuals_inn()
-    
+
     def inn_ul(self):
         return self._faker('ru_RU').businesses_inn()
-    
+
     def ogrn_ip(self):
         return self._faker('ru_RU').individuals_ogrn()
-    
+
     def ogrn_fl(self):
         return self._faker('ru_RU').businesses_ogrn()
 

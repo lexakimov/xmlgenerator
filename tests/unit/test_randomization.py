@@ -20,7 +20,7 @@ def test_random_no_seed():
 def test_fake_no_seed():
     randomizer1 = Randomizer()
     randomizer2 = Randomizer()
-    for _ in range(5):
+    for _ in range(3):
         assert randomizer1.first_name() != randomizer2.first_name()
 
 

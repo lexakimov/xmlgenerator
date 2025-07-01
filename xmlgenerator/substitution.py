@@ -23,6 +23,7 @@ class Substitutor:
             'output_filename': lambda args: self.get_output_filename(),
 
             'any': lambda args: self._any(args),
+            'any_from': lambda args: self._any_from(args),
             'regex': lambda args: self._regex(args),
             'uuid': lambda args: self.randomizer.uuid(),
             'number': lambda args: self._number(args),
@@ -125,6 +126,10 @@ class Substitutor:
         separated_args = str(args).split(sep=",")
         options = [i.strip(' ').strip("'").strip('"') for i in separated_args]
         return self.randomizer.any(options)
+
+    def _any_from(self, args):
+        file_path = args.strip(' ').strip("'").strip('"')
+        return self.randomizer.any_from(file_path)
 
     def _regex(self, args):
         pattern = args.strip("'").strip('"')

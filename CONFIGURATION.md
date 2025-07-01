@@ -578,6 +578,7 @@ In the `value_override` sections, you can specify either a string value or speci
 | `uuid`                             | A random UUIDv4.                                                                                         |
 | `regex("pattern")`                 | A random string value matching the specified regular expression.                                         |
 | `any('A', "B", C)`                 | A random value from the provided enumeration.                                                            |
+| `any_from('./values.txt')`         | A random value from a multi-line file                                                                    |
 | `number(A, B)`                     | A random number between A and B.                                                                         |
 | `date("2010-01-01", "2025-01-01")` | A random date within the specified range. <tr><td colspan="2" align="center">**Personal data**</td></tr> |
 | `first_name`__*__                  | A random first name.                                                                                     |
