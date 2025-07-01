@@ -20,8 +20,8 @@ def test_random_no_seed():
 def test_fake_no_seed():
     randomizer1 = Randomizer()
     randomizer2 = Randomizer()
-    for _ in range(3):
-        assert randomizer1.first_name() != randomizer2.first_name()
+    for _ in range(5):
+        assert randomizer1.email() != randomizer2.email()
 
 
 @pytest.mark.repeat(10)
@@ -37,4 +37,4 @@ def test_fake_has_seed():
     randomizer1 = Randomizer(seed=123)
     randomizer2 = Randomizer(seed=123)
     for _ in range(5):
-        assert randomizer1.first_name() == randomizer2.first_name()
+        assert randomizer1.email() == randomizer2.email()
