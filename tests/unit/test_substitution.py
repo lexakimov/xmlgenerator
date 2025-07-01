@@ -3,6 +3,7 @@ import os
 import pytest
 
 import tests
+from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import _pattern, Substitutor
 
@@ -89,6 +90,28 @@ def test_parse_expression_few_expressions_in_one():
     assert findall[1][2] == "kek#lol"
 
 
+def test_reset_context():
+    substitutor = Substitutor(Randomizer(seed=111))
+
+    config_1 = GeneratorConfig(
+        source_filename='(?P<extracted>.*).(xsd|XSD)',
+        output_filename='{{ source_extracted }}_c82f1749-36a8-4237-ad11-0c2078197df4',
+    )
+    substitutor.reset_context("first_file.xsd", config_1)
+    assert substitutor._local_context["source_filename"] == "first_file.xsd"
+    assert substitutor._local_context["source_extracted"] == "first_file"
+    assert substitutor._local_context["output_filename"] == "first_file_c82f1749-36a8-4237-ad11-0c2078197df4"
+
+    config_2 = GeneratorConfig(
+        source_filename='(?P<extracted>.*)_file.(xsd|XSD)',
+        output_filename='{{ source_extracted }}_16dab037-65aa-4fcb-905f-7785ebff91d4',
+    )
+    substitutor.reset_context("second_file.xsd", config_2)
+    assert substitutor._local_context["source_filename"] == "second_file.xsd"
+    assert substitutor._local_context["source_extracted"] == "second"
+    assert substitutor._local_context["output_filename"] == "second_16dab037-65aa-4fcb-905f-7785ebff91d4"
+
+
 class TestFunctions:
 
     @pytest.mark.parametrize(
@@ -161,3 +184,43 @@ class TestFunctions:
             results.add(value)
 
         assert len(results) == 3
+
+
+class TestFunctionModifiers:
+
+    def test_no_modifier(self):
+        substitutor = Substitutor(Randomizer(seed=111))
+        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+        assert value_1 != value_2
+
+    def test_local_modifier(self):
+        substitutor = Substitutor(Randomizer(seed=111))
+        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
+        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
+        _, value_3 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+        assert value_1 == value_2
+        assert value_1 != value_3
+
+        config = GeneratorConfig(source_filename='(?P<extracted>.*).(xsd|XSD)', output_filename='_', )
+        substitutor.reset_context("first_file.xsd", config)
+
+        _, value_4 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
+        assert value_4 != value_1
+
+    def test_global_modifier(self):
+        substitutor = Substitutor(Randomizer(seed=111))
+        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
+        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
+        _, value_3 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
+        _, value_4 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+
+        assert value_1 == value_2
+        assert value_1 != value_3
+        assert value_1 != value_4
+
+        config = GeneratorConfig(source_filename='(?P<extracted>.*).(xsd|XSD)', output_filename='_', )
+        substitutor.reset_context("first_file.xsd", config)
+
+        _, value_5 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
+        assert value_1 == value_5
