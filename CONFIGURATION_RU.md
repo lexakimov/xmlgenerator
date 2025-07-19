@@ -229,8 +229,7 @@ xmlgenerator -c config.yml --pretty examples/order.xsd
 
 Аналогично строкам, параметры `min_inclusive` и `max_inclusive` позволяют задать или сузить диапазон для числовых значений, если он определен в XSD.
 
-Для демонстрации создадим XML по схеме [employee.xsd](examples/employee.xsd)
-В нашем примере это затронет поле `age`.
+Для демонстрации создадим XML по схеме [employee.xsd](examples/employee.xsd). В нашем примере это затронет поле `age`.
 
 **Конфигурация `config.yml`:**
 ```yaml
