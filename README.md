@@ -141,10 +141,9 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 
 4.1. **Install the package:**
 
+   Install in develop mode (code changes will be immediately reflected):
    ```bash
-   pip install .
-   # or for development mode (code changes will be immediately reflected)
-   # pip install -e .
+   pip install -e .
    ```
 
 4.2. **Otherwise, build single executable:**
@@ -152,11 +151,6 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
    ```bash
    python build_native.py
    ```
-
-### Project Structure
-
-- `xmlgenerator/` - main project code
-- `tests/` - tests
 
 ### Running Tests
 
