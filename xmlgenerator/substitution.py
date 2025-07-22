@@ -18,6 +18,7 @@ class Substitutor:
         self._global_context = {}
         self.providers_dict = {
             # local scope functions
+            'root_element': lambda args: self._local_context["root_element"],
             'source_filename': lambda args: self._local_context["source_filename"],
             'source_extracted': lambda args: self._local_context["source_extracted"],
             'output_filename': lambda args: self.get_output_filename(),
@@ -54,9 +55,10 @@ class Substitutor:
             'snils_formatted': lambda args: self.randomizer.snils_formatted(),
         }
 
-    def reset_context(self, xsd_filename, config_local):
+    def reset_context(self, xsd_filename, root_element_name, config_local):
         self._local_context.clear()
         self._local_context["source_filename"] = xsd_filename
+        self._local_context["root_element"] = root_element_name
 
         source_filename = config_local.source_filename
         matches = re.search(source_filename, xsd_filename).groupdict()
@@ -68,6 +70,7 @@ class Substitutor:
         self._local_context['output_filename'] = resolved_value
 
         logger.debug('reset local context...')
+        logger.debug('local_context["root_element"]     = %s', root_element_name)
         logger.debug('local_context["source_filename"]  = %s', xsd_filename)
         logger.debug('local_context["source_extracted"] = %s (extracted with regexp %s)', source_extracted, source_filename)
         logger.debug('local_context["output_filename"]  = %s', resolved_value)

@@ -73,37 +73,44 @@ def _main():
         # get configuration override for current schema
         local_config = config.get_for_file(xsd_file.name)
 
-        # Reset context for current schema
-        substitutor.reset_context(xsd_file.name, local_config)
-
         # Load XSD schema
         xsd_schema = XMLSchema(xsd_file)  # loglevel='DEBUG'
-        # Generate XML document
-        xml_root = generator.generate_xml(xsd_schema, local_config)
 
-        # Marshall to string
-        xml_str = etree.tostring(xml_root, encoding=args.encoding, pretty_print=args.pretty)
-        decoded = xml_str.decode('cp1251' if args.encoding == 'windows-1251' else args.encoding)
+        root_elements_count = len(xsd_schema.root_elements)
+        if root_elements_count > 1:
+            logger.debug('schema "%s" contains %s root elements', xsd_file.name, root_elements_count)
 
-        # Print out to console
-        if not output_path:
-            logger.debug('print xml document to stdout')
-            print(decoded)
+        for xsd_root_element in xsd_schema.root_elements:
+            # Reset context for current schema and root element
+            substitutor.reset_context(xsd_file.name, xsd_root_element.local_name, local_config)
+            # Generate XML document
+            xml_root = generator.generate_xml(xsd_root_element, local_config)
+            # Marshall to string
+            xml_str = etree.tostring(xml_root, encoding=args.encoding, pretty_print=args.pretty)
+            decoded = xml_str.decode('cp1251' if args.encoding == 'windows-1251' else args.encoding)
 
-        # Validation (if enabled)
-        validator.validate(xsd_schema, decoded)
+            # Print out to console
+            if not output_path:
+                logger.debug('print xml document to stdout')
+                print(decoded)
 
-        # Get output filename for current schema (without extension)
-        xml_filename = substitutor.get_output_filename()
+            # Validation (if enabled)
+            validator.validate(xsd_schema, decoded)
 
-        # Export XML to file
-        if output_path:
-            output_file = output_path
-            if output_path.is_dir():
-                output_file = output_path / f'{xml_filename}.xml'
-            logger.debug('save xml document as %s', output_file.absolute())
-            with open(output_file, 'wb') as f:
-                f.write(xml_str)
+            # Get output filename for current schema (without extension)
+            xml_filename = substitutor.get_output_filename()
+
+            # Export XML to file
+            if output_path:
+                output_file = output_path
+                if output_path.is_dir():
+                    output_file = output_path / f'{xml_filename}.xml'
+                output_file = output_file.absolute()
+                logger.debug('save xml document as %s', output_file.as_uri())
+                if output_file.exists():
+                    logger.warning('file %s already exists and will be overwritten', output_file.as_uri())
+                with open(output_file, 'wb') as f:
+                    f.write(xml_str)
 
 
 def _setup_loggers(args):

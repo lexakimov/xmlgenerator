@@ -97,7 +97,8 @@ def test_reset_context():
         source_filename='(?P<extracted>.*).(xsd|XSD)',
         output_filename='{{ source_extracted }}_c82f1749-36a8-4237-ad11-0c2078197df4',
     )
-    substitutor.reset_context("first_file.xsd", config_1)
+    substitutor.reset_context("first_file.xsd", "someRootElement", config_1)
+    assert substitutor._local_context["root_element"] == "someRootElement"
     assert substitutor._local_context["source_filename"] == "first_file.xsd"
     assert substitutor._local_context["source_extracted"] == "first_file"
     assert substitutor._local_context["output_filename"] == "first_file_c82f1749-36a8-4237-ad11-0c2078197df4"
@@ -106,7 +107,8 @@ def test_reset_context():
         source_filename='(?P<extracted>.*)_file.(xsd|XSD)',
         output_filename='{{ source_extracted }}_16dab037-65aa-4fcb-905f-7785ebff91d4',
     )
-    substitutor.reset_context("second_file.xsd", config_2)
+    substitutor.reset_context("second_file.xsd", "anotherRootElement", config_2)
+    assert substitutor._local_context["root_element"] == "anotherRootElement"
     assert substitutor._local_context["source_filename"] == "second_file.xsd"
     assert substitutor._local_context["source_extracted"] == "second"
     assert substitutor._local_context["output_filename"] == "second_16dab037-65aa-4fcb-905f-7785ebff91d4"
@@ -116,6 +118,7 @@ class TestFunctions:
 
     @pytest.mark.parametrize(
         "function, expected", [
+            ('root_element', 'someRootElement'),
             ('source_filename', 'filename-123'),
             ('source_extracted', 'extracted-123'),
             ('output_filename', 'output-123'),
@@ -168,6 +171,7 @@ class TestFunctions:
     )
     def test_functions(self, function, expected):
         substitutor = Substitutor(Randomizer(seed=111))
+        substitutor._local_context["root_element"] = 'someRootElement'
         substitutor._local_context["source_filename"] = 'filename-123'
         substitutor._local_context["source_extracted"] = 'extracted-123'
         substitutor._local_context['output_filename'] = 'output-123'
@@ -203,7 +207,7 @@ class TestFunctionModifiers:
         assert value_1 != value_3
 
         config = GeneratorConfig(source_filename='(?P<extracted>.*).(xsd|XSD)', output_filename='_', )
-        substitutor.reset_context("first_file.xsd", config)
+        substitutor.reset_context("first_file.xsd", "someRootElement", config)
 
         _, value_4 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
         assert value_4 != value_1
@@ -220,7 +224,7 @@ class TestFunctionModifiers:
         assert value_1 != value_4
 
         config = GeneratorConfig(source_filename='(?P<extracted>.*).(xsd|XSD)', output_filename='_', )
-        substitutor.reset_context("first_file.xsd", config)
+        substitutor.reset_context("first_file.xsd", "someRootElement", config)
 
         _, value_5 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
         assert value_1 == value_5

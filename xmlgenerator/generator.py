@@ -85,10 +85,9 @@ class XmlGenerator:
             'NMTOKENS': self._generate_nmtokens,
         }
 
-    def generate_xml(self, xsd_schema, local_config: GeneratorConfig) -> etree.Element:
-        logger.debug('generate xml document...')
-        ns_map = {None if k == '' else k: v for k, v in xsd_schema.namespaces.items() if v != ''}
-        xsd_root_element = xsd_schema.root_elements[0]
+    def generate_xml(self, xsd_root_element, local_config: GeneratorConfig) -> etree.Element:
+        logger.debug('generate xml document with root element "%s"', xsd_root_element.local_name)
+        ns_map = {None if k == '' else k: v for k, v in xsd_root_element.namespaces.items() if v != ''}
         xml_root_element = etree.Element(xsd_root_element.name, nsmap=ns_map)
         xml_tree = etree.ElementTree(xml_root_element)
         self._add_elements(xml_tree, xml_root_element, xsd_root_element, local_config)
