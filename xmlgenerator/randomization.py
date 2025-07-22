@@ -31,12 +31,14 @@ class Randomizer:
         if locale is None:
             locale = 'en_US'
         faker = self._fakers.get(locale)
-        logger.debug('get Faker with locale: %s', locale)
         if faker is None:
-            logger.debug('initialize new Faker with locale: %s', locale)
+            logger.debug('initialize new faker with locale: %s', locale)
             faker = Faker(locale=locale)
             faker.seed_instance(self._seed)
             self._fakers[locale] = faker
+        else:
+            logger.debug('get existing faker with locale: %s', locale)
+
         return faker
 
     def _lines(self, file_path: str):

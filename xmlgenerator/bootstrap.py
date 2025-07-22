@@ -56,7 +56,7 @@ def _main():
     if output_path:
         logger.debug('specified output path: %s', output_path.absolute())
     else:
-        logger.debug('output path is not specified. Generated xml will be written to stdout')
+        logger.debug('output path is not specified. Generated XML document will be written to stdout')
 
     config = load_config(args.config_yaml)
 
@@ -66,9 +66,9 @@ def _main():
     validator = XmlValidator(args.validation, args.fail_fast)
 
     total_count = len(xsd_files)
-    logger.debug('found %s schemas', total_count)
+    logger.debug('found %s schema(s)', total_count)
     for index, xsd_file in enumerate(xsd_files):
-        logger.info('processing schema %s of %s: %s', index + 1, total_count, xsd_file.name)
+        logger.info('processing schema %s of %s: %s', index + 1, total_count, xsd_file.as_uri())
 
         # get configuration override for current schema
         local_config = config.get_for_file(xsd_file.name)
