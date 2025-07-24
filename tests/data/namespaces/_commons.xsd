@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:bs="urn://foo/base"
+            xmlns="urn://foo/commons" targetNamespace="urn://foo/commons"
+            elementFormDefault="qualified">
+
+    <xsd:import namespace="urn://foo/base" schemaLocation="_base.xsd"/>
+
+    <xsd:complexType name="MessageRoot">
+        <xsd:sequence>
+            <xsd:element name="personInfo" type="PersonInfo"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="PersonInfo">
+        <xsd:complexContent>
+            <xsd:extension base="bs:PersonInfoBase">
+                <xsd:sequence>
+                    <xsd:element name="birthDate" type="xsd:date"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+</xsd:schema>

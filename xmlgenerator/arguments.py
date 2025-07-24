@@ -1,6 +1,7 @@
 import logging
 import sys
-from argparse import ArgumentParser, HelpFormatter
+from argparse import ArgumentParser, HelpFormatter, ArgumentError, Action
+from collections import Counter
 from pathlib import Path
 
 import shtab
@@ -17,16 +18,26 @@ class MyParser(ArgumentParser):
         sys.exit(2)
 
 
-class CustomHelpFormatter(HelpFormatter):
+class WideHelpFormatter(HelpFormatter):
     def __init__(self, prog):
         super().__init__(prog, max_help_position=36, width=120)
+
+class StoreKeyPairDictAction(Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest)
+        try:
+            key, value = values.split("=", 1)
+            items[key] = value
+        except ValueError:
+            raise ArgumentError(self, f"Incorrect argument format: '{values}'. Required format: 'key=value'.")
+        setattr(namespace, self.dest, items)
 
 
 def _get_parser():
     parser = MyParser(
         prog='xmlgenerator',
         description='Generates XML documents from XSD schemas',
-        formatter_class=CustomHelpFormatter
+        formatter_class=WideHelpFormatter
     )
 
     source_arg = parser.add_argument(
@@ -51,6 +62,14 @@ def _get_parser():
         "-p", "--pretty",
         action="store_true",
         help="prettify the output XML"
+    )
+    parser.add_argument(
+        "-n", "--namespace",
+        metavar='alias=namespace',
+        dest="ns_aliases",
+        action=StoreKeyPairDictAction,
+        default={},
+        help="define XML namespace alias (repeatable flag)"
     )
     parser.add_argument(
         "-v", "--validation",
@@ -113,6 +132,14 @@ def parse_args():
         config_path = Path(args.config_yaml)
         if not config_path.exists() or not config_path.is_file():
             parser.error(f"configuration file {config_path} does not exist.")
+
+    # check namespace aliases are unique
+    if args.ns_aliases:
+        counts = Counter(args.ns_aliases.values())
+        non_unique_ns = [ns for ns, cnt in counts.items() if cnt > 1]
+        if non_unique_ns:
+            parser.error(
+                f'multiple aliases passed for namespace "{non_unique_ns[0]}". Check the use of -n/--namespace flags.')
 
     # Собираем все .xsd файлы
     xsd_files = _collect_xsd_files(args.source_paths, parser)

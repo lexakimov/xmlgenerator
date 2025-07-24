@@ -48,27 +48,28 @@ The generator command is `xmlgenerator`
 **Flags and parameters:**
 
 ```
-usage: xmlgenerator [-h] [-c <config.yml>] [-o <output.xml>] [-p] [-v <validation>] [-ff] [-e <encoding>] [-s <seed>]
-                    [-d] [-V] [-C <shell>]
+usage: xmlgenerator [-h] [-c <config.yml>] [-o <output.xml>] [-p] [-n alias=namespace] [-v <validation>] [-ff]
+                    [-e <encoding>] [-s <seed>] [-d] [-V] [-C <shell>]
                     xsd [xsd ...]
 
 Generates XML documents from XSD schemas
 
 positional arguments:
-  xsd                            paths to xsd schema(s) or directory with xsd schemas
+  xsd                              paths to xsd schema(s) or directory with xsd schemas
 
 options:
-  -h, --help                     show this help message and exit
-  -c, --config <config.yml>      pass a YAML configuration file
-  -o, --output <output.xml>      save the output to a directory or file
-  -p, --pretty                   prettify the output XML
-  -v, --validation <validation>  validate the generated XML document (none, schema, schematron; default: schema)
-  -ff, --fail-fast               terminate execution on a validation error (default: true)
-  -e, --encoding <encoding>      the output XML encoding (utf-8, windows-1251; default: utf-8)
-  -s, --seed <seed>              set the randomization seed
-  -d, --debug                    enable debug mode
-  -V, --version                  show the current version
-  -C, --completion <shell>       print a shell completion script (bash, zsh, tcsh)
+  -h, --help                       show this help message and exit
+  -c, --config <config.yml>        pass a YAML configuration file
+  -o, --output <output.xml>        save the output to a directory or file
+  -p, --pretty                     prettify the output XML
+  -n, --namespace alias=namespace  define XML namespace alias (repeatable flag)
+  -v, --validation <validation>    validate the generated XML document (none, schema, schematron; default: schema)
+  -ff, --fail-fast                 terminate execution on a validation error (default: true)
+  -e, --encoding <encoding>        the output XML encoding (utf-8, windows-1251; default: utf-8)
+  -s, --seed <seed>                set the randomization seed
+  -d, --debug                      enable debug mode
+  -V, --version                    show the current version
+  -C, --completion <shell>         print a shell completion script (bash, zsh, tcsh)
 ```
 
 **Examples:**

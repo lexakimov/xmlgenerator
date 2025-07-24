@@ -84,7 +84,7 @@ def _main():
             # Reset context for current schema and root element
             substitutor.reset_context(xsd_file.name, xsd_root_element.local_name, local_config)
             # Generate XML document
-            xml_root = generator.generate_xml(xsd_root_element, local_config)
+            xml_root = generator.generate_xml(xsd_root_element, local_config, args.ns_aliases)
             # Marshall to string
             xml_str = etree.tostring(xml_root, encoding=args.encoding, pretty_print=args.pretty)
             decoded = xml_str.decode('cp1251' if args.encoding == 'windows-1251' else args.encoding)

@@ -177,3 +177,32 @@ class TestConfigFile:
         assert excinfo.value.code == 2
         assert 'usage: xmlgenerator [-h]' in captured.out
         assert 'configuration file not_exists.yml does not exist.' in captured.err
+
+
+class TestNamespaceAliases:
+
+    def test_parse_args__default_value(self, capsys):
+        args, xsd_files, output_path = parse('program data/simple_schemas/schema_1.xsd')
+
+        assert args.ns_aliases is not None
+        assert isinstance(args.ns_aliases, dict)
+        assert len(args.ns_aliases) is 0
+
+    def test_parse_args__one_flag(self, capsys):
+        args, xsd_files, output_path = parse('program -n alias=ns data/simple_schemas/schema_1.xsd')
+
+        assert args.ns_aliases == {"alias": "ns"}
+
+    def test_parse_args__two_flags(self, capsys):
+        args, xsd_files, output_path = parse('program -n alias1=ns1 -n alias2=ns2 data/simple_schemas/schema_1.xsd')
+
+        assert args.ns_aliases == {"alias1": "ns1", "alias2": "ns2"}
+
+    def test_parse_args__duplicated_flags(self, capsys):
+        with pytest.raises(SystemExit) as excinfo:
+            parse('program -n alias1=ns -n alias2=ns data/simple_schemas/schema_1.xsd')
+
+        captured = capsys.readouterr()
+        assert excinfo.value.code == 2
+        assert 'usage: xmlgenerator [-h]' in captured.out
+        assert 'multiple aliases passed for namespace "ns". Check the use of -n/--namespace flags.' in captured.err
