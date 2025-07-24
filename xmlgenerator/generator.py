@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Optional, Any, Callable, Dict
 
 from lxml import etree
+from xmlschema.names import XSD_NAMESPACE, XSI_NAMESPACE, XML_NAMESPACE, XHTML_NAMESPACE, HFP_NAMESPACE
 from xmlschema.validators import XsdComplexType, XsdAtomicRestriction, XsdTotalDigitsFacet, XsdElement, \
     XsdGroup, XsdFractionDigitsFacet, XsdLengthFacet, XsdMaxLengthFacet, XsdMinExclusiveFacet, XsdMinInclusiveFacet, \
     XsdMinLengthFacet, XsdAnyElement, XsdAtomicBuiltin, XsdEnumerationFacets, XsdMaxExclusiveFacet, XsdMaxInclusiveFacet
@@ -85,10 +86,8 @@ class XmlGenerator:
             'NMTOKENS': self._generate_nmtokens,
         }
 
-    def generate_xml(self, xsd_schema, local_config: GeneratorConfig) -> etree.Element:
-        logger.debug('generate xml document...')
-        ns_map = {None if k == '' else k: v for k, v in xsd_schema.namespaces.items() if v != ''}
-        xsd_root_element = xsd_schema.root_elements[0]
+    def generate_xml(self, xsd_root_element, local_config: GeneratorConfig, ns_map=None) -> etree.Element:
+        logger.debug('generate xml document with root element "%s"', xsd_root_element.local_name)
         xml_root_element = etree.Element(xsd_root_element.name, nsmap=ns_map)
         xml_tree = etree.ElementTree(xml_root_element)
         self._add_elements(xml_tree, xml_root_element, xsd_root_element, local_config)
@@ -527,6 +526,62 @@ class XmlGenerator:
 
     def _generate_nmtokens(self, constraints: TypeConstraints):
         raise RuntimeError('not yet implemented')
+
+
+_default_aliases = {
+    XSD_NAMESPACE: "xs",
+    XSI_NAMESPACE: "xsi",
+    XML_NAMESPACE: "xml",
+    HFP_NAMESPACE: "hfp",
+    XHTML_NAMESPACE: "html",
+}
+
+
+def _get_ns_list(schema):
+    namespaces = set()
+    schemas_to_process = [schema]
+
+    while schemas_to_process:
+        current_schema = schemas_to_process.pop()
+        tns = current_schema.target_namespace
+        if tns is not None and tns != '':
+            namespaces.add(tns)
+        tns = current_schema.default_namespace
+        if tns is not None and tns != '':
+            namespaces.add(tns)
+        namespaces.update(current_schema.imported_namespaces)
+        schemas_to_process.extend(current_schema.imports.values())
+
+    return sorted(namespaces)
+
+
+def get_ns_map(xsd_schema, ns_aliases=None):
+    tns = xsd_schema.target_namespace
+    if tns is None or tns == '':
+        tns = xsd_schema.default_namespace
+    imported_ns = _get_ns_list(xsd_schema)
+    ns_map = dict.fromkeys(imported_ns)
+    # assign user-specified aliases
+    if ns_aliases:
+        for k, v in ns_aliases.items():
+            ns_map[v] = k
+    # assign default aliases
+    for k, v in ns_map.items():
+        if v is None:
+            new_alias = _default_aliases.get(k)
+            if new_alias is not None:
+                ns_map[k] = new_alias
+    # assign generated aliases
+    counter = 0
+    for k, v in ns_map.items():
+        if v is None and k is not tns:
+            ns_map[k] = 'ns%s' % counter
+            counter += 1
+
+    ns_map = dict((v, k) for k, v in ns_map.items())
+    ns_map = dict(sorted(ns_map.items(), key=lambda item: (item[0] is not None, item[0])))
+
+    return ns_map
 
 
 def extract_type_constraints(xsd_type, local_config: GeneratorConfig) -> TypeConstraints:

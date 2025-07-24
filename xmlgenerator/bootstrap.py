@@ -7,7 +7,7 @@ import xmlgenerator
 from xmlgenerator import configuration, validation, randomization, substitution, generator
 from xmlgenerator.arguments import parse_args
 from xmlgenerator.configuration import load_config
-from xmlgenerator.generator import XmlGenerator
+from xmlgenerator.generator import XmlGenerator, get_ns_map
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
@@ -56,7 +56,7 @@ def _main():
     if output_path:
         logger.debug('specified output path: %s', output_path.absolute())
     else:
-        logger.debug('output path is not specified. Generated xml will be written to stdout')
+        logger.debug('output path is not specified. Generated XML document will be written to stdout')
 
     config = load_config(args.config_yaml)
 
@@ -66,44 +66,54 @@ def _main():
     validator = XmlValidator(args.validation, args.fail_fast)
 
     total_count = len(xsd_files)
-    logger.debug('found %s schemas', total_count)
+    logger.debug('found %s schema(s)', total_count)
     for index, xsd_file in enumerate(xsd_files):
-        logger.info('processing schema %s of %s: %s', index + 1, total_count, xsd_file.name)
+        logger.info('processing schema %s of %s: %s', index + 1, total_count, xsd_file.as_uri())
 
         # get configuration override for current schema
         local_config = config.get_for_file(xsd_file.name)
 
-        # Reset context for current schema
-        substitutor.reset_context(xsd_file.name, local_config)
-
-        # Load XSD schema
+        # load XSD schema
         xsd_schema = XMLSchema(xsd_file)  # loglevel='DEBUG'
-        # Generate XML document
-        xml_root = generator.generate_xml(xsd_schema, local_config)
 
-        # Marshall to string
-        xml_str = etree.tostring(xml_root, encoding=args.encoding, pretty_print=args.pretty)
-        decoded = xml_str.decode('cp1251' if args.encoding == 'windows-1251' else args.encoding)
+        # get namespace mapping
+        ns_map = get_ns_map(xsd_schema, args.ns_aliases)
 
-        # Print out to console
-        if not output_path:
-            logger.debug('print xml document to stdout')
-            print(decoded)
+        root_elements_count = len(xsd_schema.root_elements)
+        if root_elements_count > 1:
+            logger.debug('schema "%s" contains %s root elements', xsd_file.name, root_elements_count)
 
-        # Validation (if enabled)
-        validator.validate(xsd_schema, decoded)
+        for xsd_root_element in xsd_schema.root_elements:
+            # Reset context for current schema and root element
+            substitutor.reset_context(xsd_file.name, xsd_root_element.local_name, local_config)
+            # Generate XML document
+            xml_root = generator.generate_xml(xsd_root_element, local_config, ns_map)
+            # Marshall to string
+            xml_str = etree.tostring(xml_root, encoding=args.encoding, pretty_print=args.pretty)
+            decoded = xml_str.decode('cp1251' if args.encoding == 'windows-1251' else args.encoding)
 
-        # Get output filename for current schema (without extension)
-        xml_filename = substitutor.get_output_filename()
+            # Print out to console
+            if not output_path:
+                logger.debug('print xml document to stdout')
+                print(decoded)
 
-        # Export XML to file
-        if output_path:
-            output_file = output_path
-            if output_path.is_dir():
-                output_file = output_path / f'{xml_filename}.xml'
-            logger.debug('save xml document as %s', output_file.absolute())
-            with open(output_file, 'wb') as f:
-                f.write(xml_str)
+            # Validation (if enabled)
+            validator.validate(xsd_schema, decoded)
+
+            # Get output filename for current schema (without extension)
+            xml_filename = substitutor.get_output_filename()
+
+            # Export XML to file
+            if output_path:
+                output_file = output_path
+                if output_path.is_dir():
+                    output_file = output_path / f'{xml_filename}.xml'
+                output_file = output_file.absolute()
+                logger.debug('save xml document as %s', output_file.as_uri())
+                if output_file.exists():
+                    logger.warning('file %s already exists and will be overwritten', output_file.as_uri())
+                with open(output_file, 'wb') as f:
+                    f.write(xml_str)
 
 
 def _setup_loggers(args):

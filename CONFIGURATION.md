@@ -575,6 +575,7 @@ In the `value_override` sections, you can specify either a string value or speci
 | `source_filename`                  | Filename of the source XSD schema with its extension (e.g., `schema.xsd`).                               |
 | `source_extracted`                 | A string extracted from the source XSD filename using the regex specified in `source_filename`.          |
 | `output_filename`                  | String defined by the `output_filename` configuration parameter.                                         |
+| `root_element`                     | The name of the root element of the XML document.                                                        |
 | `uuid`                             | A random UUIDv4.                                                                                         |
 | `regex("pattern")`                 | A random string value matching the specified regular expression.                                         |
 | `any('A', "B", C)`                 | A random value from the provided enumeration.                                                            |

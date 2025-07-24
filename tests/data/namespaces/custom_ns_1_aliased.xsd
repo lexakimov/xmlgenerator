@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:rc="urn://foo/commons"
+            targetNamespace="urn://foo/custom"
+            elementFormDefault="qualified">
+
+    <xsd:import namespace="urn://foo/commons" schemaLocation="_commons.xsd"/>
+
+    <xsd:element name="root" type="rc:MessageRoot"/>
+
+</xsd:schema>
