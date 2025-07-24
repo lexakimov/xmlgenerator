@@ -10,7 +10,7 @@ from xmlschema.names import XSD_NAMESPACE
 
 import tests
 from xmlgenerator.configuration import GeneratorConfig
-from xmlgenerator.generator import XmlGenerator, merge_constraints
+from xmlgenerator.generator import XmlGenerator, merge_constraints, get_ns_map
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 
@@ -997,35 +997,35 @@ class TestNamespaceAliasing:
 
     def test_default_namespace_without_alias(self, generator, config):
         xsd_schema = XMLSchema("data/namespaces/default_ns_1.xsd")
-        generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config)
-        log_xml(generated_xml)
-        assert generated_xml.nsmap == {'xs': XSD_NAMESPACE}
+        ns_map = get_ns_map(xsd_schema)
+
+        assert ns_map == {'xs': XSD_NAMESPACE}
 
     def test_default_namespace_with_alias(self, generator, config):
         xsd_schema = XMLSchema("data/namespaces/default_ns_1_aliased.xsd")
-        generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config)
-        log_xml(generated_xml)
-        assert generated_xml.nsmap == {}
-        # assert generated_xml.nsmap == {'xs': XSD_NAMESPACE}
+        ns_map = get_ns_map(xsd_schema)
+
+        assert ns_map == {}
+        # assert ns_map == {'xs': XSD_NAMESPACE}
 
     def test_default_namespace_set_alias(self, generator, config):
         xsd_schema = XMLSchema("data/namespaces/default_ns_1.xsd")
-        generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config, {'abc': XSD_NAMESPACE})
-        log_xml(generated_xml)
-        assert generated_xml.nsmap == {'abc': XSD_NAMESPACE}
+        ns_map = get_ns_map(xsd_schema, {'abc': XSD_NAMESPACE})
+
+        assert ns_map == {'abc': XSD_NAMESPACE}
 
     def test_default_namespace_change_alias(self, generator, config):
         xsd_schema = XMLSchema("data/namespaces/default_ns_1_aliased.xsd")
-        generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config, {'abc': XSD_NAMESPACE})
-        log_xml(generated_xml)
-        assert generated_xml.nsmap == {'abc': XSD_NAMESPACE}
+        ns_map = get_ns_map(xsd_schema, {'abc': XSD_NAMESPACE})
+
+        assert ns_map == {'abc': XSD_NAMESPACE}
 
 
     def test_custom_namespace_without_alias(self, generator, config):
         xsd_schema = XMLSchema("data/namespaces/custom_ns_1.xsd")
-        generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config)
-        log_xml(generated_xml)
-        assert generated_xml.nsmap == {
+        ns_map = get_ns_map(xsd_schema)
+
+        assert ns_map == {
             None: 'urn://foo/custom',
             'ns0': 'urn://foo/base',
             'ns1': 'urn://foo/commons',
@@ -1034,9 +1034,9 @@ class TestNamespaceAliasing:
 
     def test_custom_namespace_with_alias(self, generator, config):
         xsd_schema = XMLSchema("data/namespaces/custom_ns_1_aliased.xsd")
-        generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config)
-        log_xml(generated_xml)
-        assert generated_xml.nsmap == {
+        ns_map = get_ns_map(xsd_schema)
+
+        assert ns_map == {
             None: 'urn://foo/custom',
             'ns0': 'urn://foo/base',
             'ns1': 'urn://foo/commons',
@@ -1044,9 +1044,9 @@ class TestNamespaceAliasing:
 
     def test_custom_namespace_set_alias(self, generator, config):
         xsd_schema = XMLSchema("data/namespaces/custom_ns_1.xsd")
-        generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config, {'cs': 'urn://foo/custom', 'cm': 'urn://foo/commons'})
-        log_xml(generated_xml)
-        assert generated_xml.nsmap == {
+        ns_map = get_ns_map(xsd_schema, {'cs': 'urn://foo/custom', 'cm': 'urn://foo/commons'})
+
+        assert ns_map == {
             'cs': 'urn://foo/custom',
             'cm': 'urn://foo/commons',
             'ns0': 'urn://foo/base',

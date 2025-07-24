@@ -86,9 +86,8 @@ class XmlGenerator:
             'NMTOKENS': self._generate_nmtokens,
         }
 
-    def generate_xml(self, xsd_root_element, local_config: GeneratorConfig, ns_aliases=None) -> etree.Element:
+    def generate_xml(self, xsd_root_element, local_config: GeneratorConfig, ns_map=None) -> etree.Element:
         logger.debug('generate xml document with root element "%s"', xsd_root_element.local_name)
-        ns_map = _get_ns_map(xsd_root_element, ns_aliases)
         xml_root_element = etree.Element(xsd_root_element.name, nsmap=ns_map)
         xml_tree = etree.ElementTree(xml_root_element)
         self._add_elements(xml_tree, xml_root_element, xsd_root_element, local_config)
@@ -556,11 +555,11 @@ def _get_ns_list(schema):
     return sorted(namespaces)
 
 
-def _get_ns_map(xsd_root_element, ns_aliases):
-    tns = xsd_root_element.target_namespace
+def get_ns_map(xsd_schema, ns_aliases=None):
+    tns = xsd_schema.target_namespace
     if tns is None or tns == '':
-        tns = xsd_root_element.default_namespace
-    imported_ns = _get_ns_list(xsd_root_element.schema)
+        tns = xsd_schema.default_namespace
+    imported_ns = _get_ns_list(xsd_schema)
     ns_map = dict.fromkeys(imported_ns)
     # assign user-specified aliases
     if ns_aliases:

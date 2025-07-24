@@ -7,7 +7,7 @@ import xmlgenerator
 from xmlgenerator import configuration, validation, randomization, substitution, generator
 from xmlgenerator.arguments import parse_args
 from xmlgenerator.configuration import load_config
-from xmlgenerator.generator import XmlGenerator
+from xmlgenerator.generator import XmlGenerator, get_ns_map
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import Substitutor
 from xmlgenerator.validation import XmlValidator
@@ -73,8 +73,11 @@ def _main():
         # get configuration override for current schema
         local_config = config.get_for_file(xsd_file.name)
 
-        # Load XSD schema
+        # load XSD schema
         xsd_schema = XMLSchema(xsd_file)  # loglevel='DEBUG'
+
+        # get namespace mapping
+        ns_map = get_ns_map(xsd_schema, args.ns_aliases)
 
         root_elements_count = len(xsd_schema.root_elements)
         if root_elements_count > 1:
@@ -84,7 +87,7 @@ def _main():
             # Reset context for current schema and root element
             substitutor.reset_context(xsd_file.name, xsd_root_element.local_name, local_config)
             # Generate XML document
-            xml_root = generator.generate_xml(xsd_root_element, local_config, args.ns_aliases)
+            xml_root = generator.generate_xml(xsd_root_element, local_config, ns_map)
             # Marshall to string
             xml_str = etree.tostring(xml_root, encoding=args.encoding, pretty_print=args.pretty)
             decoded = xml_str.decode('cp1251' if args.encoding == 'windows-1251' else args.encoding)
