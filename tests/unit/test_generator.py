@@ -38,7 +38,6 @@ def config():
 
 
 def log_xml(generated_xml):
-    """Выводит сгенерированный XML в консоль для отладки."""
     print(etree.tostring(generated_xml, pretty_print=True).decode('utf-8'))
 
 
