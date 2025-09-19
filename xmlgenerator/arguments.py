@@ -147,13 +147,30 @@ def parse_args():
     # Обработка пути вывода
     output_path = Path(args.output_path) if args.output_path else None
 
-    # Проверка: если несколько XSD файлов, то output должен быть директорией
-    if len(xsd_files) > 1 and output_path and not (output_path.is_dir() or args.output_path.endswith(('/', '\\'))):
-        parser.error("option -o/--output must be a directory when multiple source xsd schemas are provided.")
+    # Создание выходной директории если это необходимо
+    if output_path:
+        is_existing_dir = output_path.is_dir() if output_path.exists() else False
+        is_existing_file = output_path.is_file() if output_path.exists() else False
+        explicit_dir = args.output_path.endswith(('/', '\\'))
+        looks_like_dir = explicit_dir or not output_path.suffix
 
-    # Создание директории, если output указан как директория
-    if output_path and (output_path.is_dir() or args.output_path.endswith(('/', '\\'))):
-        output_path.mkdir(parents=True, exist_ok=True)
+        if len(xsd_files) > 1:
+            if is_existing_file:
+                parser.error(
+                    f"option -o/--output points to existing file {output_path}. "
+                    "It must be a directory when multiple schemas are provided."
+                )
+
+            if not is_existing_dir:
+                if not looks_like_dir:
+                    parser.error("option -o/--output must be a directory when multiple schemas are provided.")
+
+            if not is_existing_dir:
+                output_path.mkdir(parents=True, exist_ok=True)
+        else:
+            if explicit_dir or (looks_like_dir and not is_existing_file):
+                if not is_existing_dir:
+                    output_path.mkdir(parents=True, exist_ok=True)
 
     return args, xsd_files, output_path
 
