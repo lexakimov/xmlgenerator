@@ -1,0 +1,23 @@
+## Пример конфигурации для генерации документов по форматам МВД
+global:
+  output_filename: "{{ root_element }}"
+
+  randomization:
+    probability: 1
+
+    min_occurs: 1
+    max_occurs: 2
+
+    min_length: 8
+    max_length: 12
+
+    min_inclusive: 0
+    max_inclusive: 100000
+
+  value_override:
+    "lastName":   "{{ last_name('ru_RU') }}"
+    "firstName":  "{{ first_name('ru_RU') }}"
+    "middleName": "{{ middle_name('ru_RU') }}"
+    "regAddressType":  "{{ city('ru_RU') }}, {{ street('ru_RU') }}, д. {{ house_number('ru_RU') }}, кв. {{ number(1, 100) }}"
+    "fullAddress":  "{{ city('ru_RU') }}, {{ street('ru_RU') }}, д. {{ house_number('ru_RU') }}, кв. {{ number(1, 100) }}"
+    "adressGUID": "{{ uuid }}"

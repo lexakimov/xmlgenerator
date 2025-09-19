@@ -6,10 +6,6 @@ import time
 
 from xmlgenerator import __version__
 
-# TODO strip
-# pyinstaller ?
-# sudo pacman -S ccache
-
 # --- Конфигурация сборки Nuitka ---
 
 # Имя основного скрипта вашего приложения

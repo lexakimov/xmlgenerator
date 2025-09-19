@@ -69,6 +69,7 @@ class TestOneSchema:
         assert args.output_path is None
         assert args.pretty is False
         assert args.seed is None
+        assert args.ignore_validation_errors is False
         assert len(xsd_files) is 1
         assert output_path is None
 
@@ -85,6 +86,7 @@ class TestOneSchema:
         assert args.output_path is None
         assert args.pretty is False
         assert args.seed is None
+        assert args.ignore_validation_errors is False
         assert len(xsd_files) is 1
         assert output_path is None
 
@@ -96,7 +98,36 @@ class TestOneSchema:
         args, xsd_files, output_path = parse('program -o out.xml data/simple_schemas/schema_1.xsd')
 
         assert output_path is not None
+        assert not output_path.exists()
         assert args.config_yaml is None
+
+    def test_parse_args__one_schema__output_points_to_existing_file(self, capsys, tmp_path):
+        existing_file = tmp_path / "existing"
+        existing_file.write_text("data")
+
+        args, xsd_files, output_path = parse(f'program -o {existing_file} data/simple_schemas/schema_1.xsd')
+
+        assert output_path == existing_file
+        assert existing_file.exists()
+
+    def test_parse_args__one_schema__output_points_to_existing_directory(self, capsys, tmp_path):
+        existing_dir = tmp_path / "existing"
+        existing_dir.mkdir()
+        args, xsd_files, output_path = parse(f'program -o {existing_dir} data/simple_schemas/schema_1.xsd')
+        assert output_path == existing_dir
+        assert existing_dir.exists()
+
+    def test_parse_args__one_schema__create_output_folder(self, capsys):
+        assert not Path("output_dir").exists()
+        parse('program -o output_dir/ data/simple_schemas/schema_1.xsd')
+        assert Path("output_dir").exists()
+        Path("output_dir").rmdir()
+
+    def test_parse_args__one_schema__create_output_folder_without_trailing_slash(self, capsys):
+        assert not Path("output_dir").exists()
+        parse('program -o output_dir data/simple_schemas/schema_1.xsd')
+        assert Path("output_dir").exists()
+        Path("output_dir").rmdir()
 
 
 class TestTwoSchemas:
@@ -110,6 +141,7 @@ class TestTwoSchemas:
         assert args.output_path is None
         assert args.pretty is False
         assert args.seed is None
+        assert args.ignore_validation_errors is False
         assert len(xsd_files) is 2
         assert output_path is None
 
@@ -124,13 +156,42 @@ class TestTwoSchemas:
         captured = capsys.readouterr()
         assert excinfo.value.code == 2
         assert 'usage: xmlgenerator [-h]' in captured.out
-        assert 'error: option -o/--output must be a directory when multiple source xsd schemas are provided.' in captured.err
+        assert 'error: option -o/--output must be a directory when multiple schemas are provided.' in captured.err
 
     def test_parse_args__two_schemas__create_output_folder(self, capsys):
         assert not Path("output_dir").exists()
         parse('program -o output_dir/ data/simple_schemas/schema_1.xsd data/simple_schemas/schema_2.xsd')
         assert Path("output_dir").exists()
         Path("output_dir").rmdir()
+
+    def test_parse_args__two_schemas__create_output_folder_without_trailing_slash(self, capsys):
+        assert not Path("output_dir").exists()
+        parse('program -o output_dir data/simple_schemas/schema_1.xsd data/simple_schemas/schema_2.xsd')
+        assert Path("output_dir").exists()
+        Path("output_dir").rmdir()
+
+    def test_parse_args__two_schemas__create_output_folder_with_suffix_and_slash(self, capsys):
+        assert not Path("output.dir").exists()
+        parse('program -o output.dir/ data/simple_schemas/schema_1.xsd data/simple_schemas/schema_2.xsd')
+        assert Path("output.dir").exists()
+        Path("output.dir").rmdir()
+
+    def test_parse_args__two_schemas__output_points_to_existing_directory(self, capsys, tmp_path):
+        existing_dir = tmp_path / "existing"
+        existing_dir.mkdir()
+        parse(f'program -o {existing_dir} data/simple_schemas/schema_1.xsd data/simple_schemas/schema_2.xsd')
+        assert existing_dir.exists()
+
+    def test_parse_args__two_schemas__output_points_to_existing_file(self, capsys, tmp_path):
+        existing_file = tmp_path / "existing"
+        existing_file.write_text("data")
+
+        with pytest.raises(SystemExit) as excinfo:
+            parse(f'program -o {existing_file} data/simple_schemas/schema_1.xsd data/simple_schemas/schema_2.xsd')
+
+        captured = capsys.readouterr()
+        assert excinfo.value.code == 2
+        assert f'error: option -o/--output points to existing file {existing_file}. It must be a directory when multiple schemas are provided.' in captured.err
 
 
 class TestInputFolder:
@@ -153,6 +214,7 @@ class TestInputFolder:
         assert args.output_path is None
         assert args.pretty is False
         assert args.seed is None
+        assert args.ignore_validation_errors is False
         assert len(xsd_files) is 2
         assert 'schema_1.xsd' in [v.name for v in xsd_files]
         assert 'schema_2.xsd' in [v.name for v in xsd_files]
@@ -168,6 +230,12 @@ class TestConfigFile:
         args, xsd_files, output_path = parse('program -c data/config_empty.yaml data/simple_schemas/schema_1.xsd')
 
         assert args.config_yaml is not None
+        assert args.ignore_validation_errors is False
+
+    def test_parse_args__ignore_validation_errors_flag(self, capsys):
+        args, xsd_files, output_path = parse('program -i data/simple_schemas/schema_1.xsd')
+
+        assert args.ignore_validation_errors is True
 
     def test_parse_args__config_file_not_exists(self, capsys):
         with pytest.raises(SystemExit) as excinfo:

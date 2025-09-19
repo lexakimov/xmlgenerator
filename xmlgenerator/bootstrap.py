@@ -63,7 +63,7 @@ def _main():
     randomizer = Randomizer(args.seed)
     substitutor = Substitutor(randomizer)
     generator = XmlGenerator(randomizer, substitutor)
-    validator = XmlValidator(args.validation, args.fail_fast)
+    validator = XmlValidator(args.validation, args.ignore_validation_errors)
 
     total_count = len(xsd_files)
     logger.debug('found %s schema(s)', total_count)

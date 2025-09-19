@@ -1,6 +1,6 @@
-lxml==6.0.0
+lxml==6.0.1
 xmlschema==4.1.0
-Faker==37.4.2
+Faker==37.6.0
 rstr==3.2.2
 PyYAML==6.0.2
 shtab==1.7.2
@@ -9,5 +9,5 @@ shtab==1.7.2
 pytest==8.4.1
 pytest-repeat==0.9.4
 setuptools==80.9.0
-nuitka==2.7.12
+nuitka==2.7.13
 twine==6.1.0

@@ -122,11 +122,17 @@ class Randomizer:
         start = time.fromisoformat(start_time)
         end = time.fromisoformat(end_time)
 
-        random_h = self._rnd.randint(start.hour, end.hour)
-        random_m = self._rnd.randint(start.minute, end.minute)
-        random_s = self._rnd.randint(start.second, end.second)
+        start_seconds = start.hour * 3600 + start.minute * 60 + start.second
+        end_seconds = end.hour * 3600 + end.minute * 60 + end.second
 
-        return time(hour=random_h, minute=random_m, second=random_s)
+        if end_seconds < start_seconds:
+            raise ValueError('end_time must be greater than or equal to start_time')
+
+        random_seconds = self._rnd.randint(start_seconds, end_seconds)
+        hour, rem = divmod(random_seconds, 3600)
+        minute, second = divmod(rem, 60)
+
+        return time(hour=hour, minute=minute, second=second)
 
     def random_datetime(self, start_date: str = '1990-01-01', end_date: str = '2025-12-31') -> datetime:
         start = datetime.strptime(start_date, "%Y-%m-%d")
