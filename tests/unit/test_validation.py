@@ -36,3 +36,10 @@ def test_validator_ignores_validation_error(monkeypatch):
     schema = DummySchema(DummyError("boom"))
 
     validator.validate(schema, "<xml/>")
+
+
+def test_validator_skips_validation_when_disabled():
+    validator = XmlValidator('none', ignore_errors=False)
+    schema = DummySchema(Exception("should not raise"))
+
+    validator.validate(schema, "<xml/>")

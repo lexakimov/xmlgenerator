@@ -10,14 +10,21 @@ class XmlValidator:
     def __init__(self, post_validate: str, ignore_errors: bool):
         self.ignore_errors = ignore_errors
         match post_validate:
+            case 'none':
+                self.validation_func = self._skip_validation
             case 'schema':
                 self.validation_func = self._validate_with_schema
             case 'schematron':
                 self.validation_func = self._validate_with_schematron
+            case _:
+                raise ValueError(f"Unknown validation mode: {post_validate}")
         logger.debug("post validation: %s, ignore errors: %s", post_validate, ignore_errors)
 
     def validate(self, xsd_schema, document):
         self.validation_func(xsd_schema, document)
+
+    def _skip_validation(self, *_):
+        logger.debug("validation skipped (mode 'none')")
 
     def _validate_with_schema(self, xsd_schema, document):
         logger.debug("validate generated xml with xsd schema")
