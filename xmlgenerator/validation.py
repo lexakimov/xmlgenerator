@@ -7,14 +7,14 @@ logger = logging.getLogger(__name__)
 
 
 class XmlValidator:
-    def __init__(self, post_validate: str, fail_fast: bool):
-        self.fail_fast = fail_fast
+    def __init__(self, post_validate: str, ignore_errors: bool):
+        self.ignore_errors = ignore_errors
         match post_validate:
             case 'schema':
                 self.validation_func = self._validate_with_schema
             case 'schematron':
                 self.validation_func = self._validate_with_schematron
-        logger.debug("post validation: %s, fail fast: %s", post_validate, fail_fast)
+        logger.debug("post validation: %s, ignore errors: %s", post_validate, ignore_errors)
 
     def validate(self, xsd_schema, document):
         self.validation_func(xsd_schema, document)
@@ -25,7 +25,7 @@ class XmlValidator:
             xsd_schema.validate(document)
         except XMLSchemaValidationError as err:
             print(err, file=sys.stderr)
-            if self.fail_fast:
+            if not self.ignore_errors:
                 sys.exit(1)
 
     def _validate_with_schematron(self, xsd_schema, document):

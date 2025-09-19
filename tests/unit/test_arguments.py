@@ -69,6 +69,7 @@ class TestOneSchema:
         assert args.output_path is None
         assert args.pretty is False
         assert args.seed is None
+        assert args.ignore_validation_errors is False
         assert len(xsd_files) is 1
         assert output_path is None
 
@@ -85,6 +86,7 @@ class TestOneSchema:
         assert args.output_path is None
         assert args.pretty is False
         assert args.seed is None
+        assert args.ignore_validation_errors is False
         assert len(xsd_files) is 1
         assert output_path is None
 
@@ -110,6 +112,7 @@ class TestTwoSchemas:
         assert args.output_path is None
         assert args.pretty is False
         assert args.seed is None
+        assert args.ignore_validation_errors is False
         assert len(xsd_files) is 2
         assert output_path is None
 
@@ -153,6 +156,7 @@ class TestInputFolder:
         assert args.output_path is None
         assert args.pretty is False
         assert args.seed is None
+        assert args.ignore_validation_errors is False
         assert len(xsd_files) is 2
         assert 'schema_1.xsd' in [v.name for v in xsd_files]
         assert 'schema_2.xsd' in [v.name for v in xsd_files]
@@ -168,6 +172,12 @@ class TestConfigFile:
         args, xsd_files, output_path = parse('program -c data/config_empty.yaml data/simple_schemas/schema_1.xsd')
 
         assert args.config_yaml is not None
+        assert args.ignore_validation_errors is False
+
+    def test_parse_args__ignore_validation_errors_flag(self, capsys):
+        args, xsd_files, output_path = parse('program -i data/simple_schemas/schema_1.xsd')
+
+        assert args.ignore_validation_errors is True
 
     def test_parse_args__config_file_not_exists(self, capsys):
         with pytest.raises(SystemExit) as excinfo:

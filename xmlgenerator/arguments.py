@@ -79,10 +79,10 @@ def _get_parser():
         help="validate the generated XML document (none, schema, schematron; default: %(default)s)"
     )
     parser.add_argument(
-        "-ff", "--fail-fast",
+        "-i",
+        dest="ignore_validation_errors",
         action="store_true",
-        default="true",
-        help="terminate execution on a validation error (default: %(default)s)"
+        help="continue execution when validation errors occur"
     )
     parser.add_argument(
         "-e", "--encoding",

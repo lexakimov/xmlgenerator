@@ -64,7 +64,7 @@ options:
   -p, --pretty                     prettify the output XML
   -n, --namespace alias=namespace  define XML namespace alias (repeatable flag)
   -v, --validation <validation>    validate the generated XML document (none, schema, schematron; default: schema)
-  -ff, --fail-fast                 terminate execution on a validation error (default: true)
+  -i                               continue execution when validation errors occur
   -e, --encoding <encoding>        the output XML encoding (utf-8, windows-1251; default: utf-8)
   -s, --seed <seed>                set the randomization seed
   -d, --debug                      enable debug mode
@@ -105,8 +105,8 @@ options:
 Сгенерированные XML-документы проверяются на соответствие схеме, использованной для генерации.
 По умолчанию используется валидация через исходную XSD-схему.
 
-При несоответствии документа схеме, выполнение прекращается незамедлительно.
-Это поведение можно отключить через флаг `-ff false` или `--fail-fast false`.
+При несоответствии документа схеме выполнение прекращается незамедлительно.
+Чтобы продолжить обработку несмотря на ошибки валидации, используйте флаг `-i`.
 
 Чтобы отключить валидацию, укажите флаг `-v none` или `--validation none`.
 
