@@ -1,156 +1,273 @@
+import argparse
 import os
-import shutil
+import platform
 import subprocess
 import sys
 import time
 
 from xmlgenerator import __version__
 
-# --- Конфигурация сборки Nuitka ---
+DEFAULT_MAIN_SCRIPT = "xmlgenerator/bootstrap.py"
+DEFAULT_OUTPUT_FILENAME_BASE = "xmlgenerator"
+DEFAULT_OUTPUT_DIR = "dist_native"
+DEFAULT_EXTRA_ENVS = "CCFLAGS=-Oz -g0 -w"
 
-# Имя основного скрипта вашего приложения
-main_script = "xmlgenerator/bootstrap.py"
+BUILD_TIME = str(int(time.time()))
+FILE_VERSION = f"{BUILD_TIME[-4]}.{BUILD_TIME[-3]}.{BUILD_TIME[-2]}.{BUILD_TIME[-1]}"
 
-# Имя выходного исполняемого файла (без расширения)
-output_filename_base = "xmlgenerator"
+PLATFORM_ALIASES = {
+    "darwin": "macos",
+    "mac": "macos",
+    "macos": "macos",
+    "osx": "macos",
+    "win32": "windows",
+    "cygwin": "windows",
+    "windows": "windows",
+    "linux": "linux",
+    "linux2": "linux",
+}
 
-# Директория для собранного файла
-output_dir = "dist_native"
+ARCH_ALIASES = {
+    "x86_64": "amd64",
+    "amd64": "amd64",
+    "x64": "amd64",
+    "i686": "x86",
+    "i386": "x86",
+    "arm64": "arm64",
+    "aarch64": "arm64",
+}
 
-# Собрать в один файл? (True/False)
-use_onefile = True
 
-build_time = time.time()
-build_time = str(int(build_time))
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Build xmlgenerator into a native executable via Nuitka",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--artifact-name",
+        help=(
+            "Final artifact filename. "
+            "Provide an extension manually for non-standard packages."
+        ),
+        default=None,
+    )
+    parser.add_argument(
+        "--output-dir",
+        help="Output directory for build artifacts",
+        default=DEFAULT_OUTPUT_DIR,
+    )
+    parser.add_argument(
+        "--target-platform",
+        help=(
+            "Target platform name (linux/windows/macos). "
+            "Defaults to the current operating system."
+        ),
+        default=None,
+    )
+    parser.add_argument(
+        "--target-arch",
+        help=(
+            "Target architecture name (for example, amd64, arm64). "
+            "Defaults to the automatically detected value."
+        ),
+        default=None,
+    )
+    parser.add_argument(
+        "--extra-envs",
+        help=f"Target architecture name (for example, amd64, arm64). Default: {DEFAULT_EXTRA_ENVS}.",
+        default=DEFAULT_EXTRA_ENVS,
+    )
+    parser.add_argument(
+        "--extra-opts",
+        help="Custim Nuitka options.",
+        default=None,
+    )
 
-file_ver = f"{build_time[-4]}.{build_time[-3]}.{build_time[-2]}.{build_time[-1]}"
+    return parser.parse_args()
 
-print(file_ver)
 
-# Дополнительные опции Nuitka (добавляйте сюда нужные флаги)
-extra_nuitka_options = [
-    # "--show-progress",
-    "--no-deployment-flag=self-execution", # Флаг для исправления ошибки
-    "--standalone",
-    # "--python-flag=no_site",
-    # "--onefile-no-compression",
-    "--follow-stdlib",
-    # "--nofollow-import-to=tkinter",
-    # "--include-package=some_package",
+def normalize_platform_name(platform_hint: str | None) -> str:
+    if platform_hint:
+        key = platform_hint.strip().lower()
+    else:
+        key = sys.platform.lower()
+    return PLATFORM_ALIASES.get(key, key)
 
-    "--product-name=xmlgenerator",
-    f"--product-version={__version__}",
-    f"--file-version={file_ver}",
-    "--onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}/{VERSION}",
 
-    "--lto=yes",                  # Use link time optimizations (MSVC, gcc, clang).
-    # "--static-libpython=yes",   # Use static link library of Python    undefined symbol: PyList_New
+def normalize_architecture(arch_hint: str | None) -> str:
+    if arch_hint:
+        key = arch_hint.strip().lower()
+    else:
+        key = platform.machine().lower()
+    return ARCH_ALIASES.get(key, key)
 
-    # "--plugin-list",
-    "--enable-plugin=anti-bloat",
-    "--enable-plugin=pylint-warnings",
-    "--enable-plugin=no-qt",
-]
 
-# --- Логика сборки ---
+def ensure_output_filename(artifact_name: str | None, platform_name: str) -> str:
+    filename = (artifact_name or DEFAULT_OUTPUT_FILENAME_BASE).strip() or DEFAULT_OUTPUT_FILENAME_BASE
+    if platform_name == "windows" and not filename.lower().endswith(".exe"):
+        filename = f"{filename}.exe"
+    return filename
 
-# Определяем базовое имя скрипта для имени директории сборки
-main_script_basename = os.path.splitext(os.path.basename(main_script))[0]
 
-# Определяем ПОТЕНЦИАЛЬНЫЕ имена сборочных директорий Nuitka
-possible_temp_dirs = [
-    # os.path.join(output_dir, f"{main_script_basename}.build"),
-    # os.path.join(output_dir, f"{main_script_basename}.onefile-build"),
-]
+def write_step_output(name: str, value: str) -> None:
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output and value:
+        with open(github_output, "a", encoding="utf-8") as handle:
+            handle.write(f"{name}={value}\n")
 
-# Определяем полное имя выходного файла с расширением для текущей ОС
-if sys.platform == "win32":
-    output_filename = f"{output_filename_base}.exe"
-elif sys.platform == "darwin":
-    output_filename = output_filename_base
-else: # Linux и другие
-    output_filename = output_filename_base
 
-# Формируем команду Nuitka
-command = [
-    sys.executable,  # Используем тот же python, что и для запуска скрипта
-    "-m",
-    "nuitka",
-    f"--output-dir={output_dir}",
-    f"--output-filename={output_filename}", # Указываем имя выходного файла
-]
+def main() -> None:
+    args = parse_args()
 
-if use_onefile:
-    command.append("--onefile")
+    target_platform = normalize_platform_name(args.target_platform)
+    target_arch = normalize_architecture(args.target_arch)
+    output_dir = args.output_dir
+    output_filename = ensure_output_filename(args.artifact_name, target_platform)
+    artifact_path = os.path.join(output_dir, output_filename)
+    extra_opts = args.extra_opts.split() if args.extra_opts is not None else []
+    extra_envs = args.extra_envs.split(';')
 
-# Добавляем дополнительные опции
-command.extend(extra_nuitka_options)
+    print(f"Target platform: {target_platform}, architecture: {target_arch}")
+    print(f"extra_opts: {extra_opts}")
+    print(f"extra_envs: {extra_envs}")
+    print()
 
-# Добавляем главный скрипт в конец команды
-command.append(main_script)
+    command = [
+        sys.executable, "-m", "nuitka",
 
-print("Запуск Nuitka со следующей командой:")
-print(" ".join(command))
-print("-" * 30)
+        # Options:
+        "--python-flag=no_asserts,no_docstrings,no_site,static_hashes",
+        "--mode=onefile",
 
-# Запускаем сборку с Popen для потокового вывода
-try:
-    # --- Очистка выходной директории перед сборкой ---
-    if os.path.exists(output_dir):
-        print(f"Очистка существующей директории: {output_dir}")
-        try:
-            shutil.rmtree(output_dir)
-            print("Директория успешно очищена.")
-        except OSError as e:
-            print(f"Ошибка при очистке директории {output_dir}: {e}")
-            # Решаем, прерывать ли сборку, если очистка не удалась.
-            # В данном случае, продолжим, т.к. makedirs может сработать.
-    # ------------------------------------------------
+        # Control the inclusion of modules and packages in result:
 
-    # Убедимся, что директория существует (или создаем ее после очистки)
-    os.makedirs(output_dir, exist_ok=True)
+        # Control the following into imported modules:
 
-    # Используем Popen и перенаправляем stderr в stdout для единого потока
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace', bufsize=1)
+        # Onefile options:
+        "--onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}/{VERSION}",
 
-    print("--- Вывод Nuitka --- ")
-    # Читаем вывод построчно в реальном времени
-    if process.stdout:
-      for line in iter(process.stdout.readline, ''):
-          # Выводим каждую строку немедленно
-          sys.stdout.write(line)
-          sys.stdout.flush()
-      process.stdout.close()
+        # Data files:
 
-    # Ждем завершения процесса и получаем код возврата
-    return_code = process.wait()
+        # Metadata support:
+
+        # DLL files:
+
+        # Control the warnings to be given by Nuitka:
+        "--assume-yes-for-downloads",
+
+        # Immediate execution after compilation:
+
+        # Compilation choices:
+
+        # Output choices:
+        "--output-filename=" + output_filename,
+        "--output-dir=" + output_dir,
+        "--remove-output",
+
+        # Deployment control:
+        "--no-deployment-flag=self-execution",
+
+        # Environment control:
+
+        # Debug features:
+        "--no-debug-c-warnings",
+
+        # Nuitka Development features:
+
+        # Backend C compiler choice:
+        "--lto=yes",
+        # "--static-libpython=yes",     # Use static link library of Python
+        # "--static-libpython=no",
+
+        # Cache Control:
+
+        # PGO compilation choices:
+
+        # Tracing features:
+        #"--report=report.xml",
+
+        # General OS controls:
+
+        # Windows specific controls:
+
+        # macOS specific controls:
+
+        # Linux specific controls:
+
+        # Binary Version Information:
+        "--product-name=xmlgenerator",
+        "--product-version=" + __version__,
+        "--file-version=" + FILE_VERSION,
+
+        # Plugin control:
+        "--enable-plugin=pylint-warnings",
+        "--enable-plugin=no-qt",
+
+        # Cross compilation:
+
+        # Plugin options of 'anti-bloat' (categories: core):
+        "--show-anti-bloat-changes",
+        "--noinclude-pytest-mode=nofollow",
+        "--noinclude-setuptools-mode=nofollow",
+        "--noinclude-default-mode=warning",
+
+        # Plugin options of 'playwright' (categories: package-support):
+
+        # Plugin options of 'spacy' (categories: package-support):
+    ]
+
+    command.extend(extra_opts)
+    command.append(DEFAULT_MAIN_SCRIPT)
+
+    print("Running Nuitka with the following command:")
+    print(" ".join(command))
     print("-" * 30)
 
-    if return_code == 0:
-        print(f"Сборка успешно завершена! Исполняемый файл: {os.path.join(output_dir, output_filename)}")
+    try:
+        extended_env = os.environ.copy()
+        for pair in extra_envs:
+            if not pair:
+                continue
+            key, value = pair.split('=', 1)
+            extended_env[key] = value
 
-        # --- Удаление ВСЕХ известных сборочных директорий --- 
-        print("Попытка удаления временных сборочных директорий...")
-        for temp_dir_path in possible_temp_dirs:
-            if os.path.exists(temp_dir_path):
-                print(f"Найден и удаляется: {temp_dir_path}")
-                try:
-                    shutil.rmtree(temp_dir_path)
-                    print(f"Успешно удалено: {temp_dir_path}")
-                except OSError as e:
-                    print(f"Ошибка при удалении {temp_dir_path}: {e}")
-            # else:
-                # Можно раскомментировать для отладки:
-                # print(f"Директория не найдена: {temp_dir_path}")
-        print("Очистка временных директорий завершена.")
-        # --------------------------------------------------
-    else:
-        print(f"Ошибка во время сборки Nuitka (код возврата {return_code})")
-        sys.exit(return_code) # Выходим с кодом ошибки Nuitka
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+            env=extended_env
+        )
 
-except FileNotFoundError:
-     print(f"Ошибка: Не удалось найти '{sys.executable} -m nuitka'. Убедитесь, что Nuitka установлена в вашем окружении.")
-     sys.exit(1)
-except Exception as e:
-    print(f"Произошла непредвиденная ошибка: {e}")
-    sys.exit(1) 
+        print("--- Nuitka output --- ")
+        if process.stdout:
+            for line in iter(process.stdout.readline, ""):
+                sys.stdout.write(line)
+                sys.stdout.flush()
+            process.stdout.close()
+
+        return_code = process.wait()
+        print("-" * 60)
+
+        if return_code == 0:
+            print(f"Build succeeded! Executable: {artifact_path}")
+            write_step_output("artifact_path", artifact_path)
+        else:
+            print(f"Nuitka build failed (exit code {return_code})")
+            sys.exit(return_code)
+    except FileNotFoundError:
+        print(
+            f"Error: Unable to run '{sys.executable} -m nuitka'. "
+            "Ensure Nuitka is installed in your environment."
+        )
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected error occurred: {exc}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
