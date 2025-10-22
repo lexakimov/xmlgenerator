@@ -9,5 +9,5 @@ shtab==1.7.2
 pytest==8.4.2
 pytest-repeat==0.9.4
 setuptools==80.9.0
-nuitka==2.8.1
+nuitka==2.8.4
 twine==6.2.0
