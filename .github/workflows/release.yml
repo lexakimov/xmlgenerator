@@ -15,7 +15,7 @@ jobs:
       on_master: ${{ steps.check.outputs.on_master }}
     steps:
       - name: Check out repository code on master
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: 'master'
           fetch-depth: 0
@@ -43,38 +43,37 @@ jobs:
       versions_match: ${{ steps.check-version.outputs.versions_match }}
     steps:
       - name: Check out repository code for the tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.ref }}
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.14'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -e .
+        run: pip install -r requirements.txt
 
       - name: Compare tag version with setup.py version
         id: check-version
         run: |
-          # Получаем версию из тега (убираем префикс 'v')
+          # Extract version from tag (strip the leading 'v')
           TAG_VERSION=${GITHUB_REF#refs/tags/v}
           echo "Tag version: $TAG_VERSION"
           
-          # Извлекаем версию из setup.py
+          # Read version from setup.py
           SETUP_VERSION=$(python setup.py --version)
           echo "Setup.py version: $SETUP_VERSION"
           
-          # Сравниваем версии
+          # Compare versions
           if [ "$TAG_VERSION" = "$SETUP_VERSION" ]; then
-            echo "✅ Версии совпадают: $TAG_VERSION = $SETUP_VERSION"
+            echo "✅ Versions match: $TAG_VERSION = $SETUP_VERSION"
             echo "versions_match=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ Версии не совпадают: $TAG_VERSION ≠ $SETUP_VERSION"
+            echo "❌ Versions do not match: $TAG_VERSION ≠ $SETUP_VERSION"
             echo "versions_match=false" >> $GITHUB_OUTPUT
             exit 1
           fi
@@ -82,27 +81,19 @@ jobs:
   test:
     needs: [check-branch, check-version]
     if: needs.check-branch.outputs.on_master == 'true' && needs.check-version.outputs.versions_match == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code for the tag
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -e .
-
-      - name: Run tests with pytest
-        run: |
-          pytest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.14'
+    uses: ./.github/workflows/_pytest.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      ref: ${{ github.ref }}
 
   build-package:
     needs:
@@ -113,20 +104,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code for the tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.ref }}
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.14'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install build
+        run: pip install build
 
       - name: Build package
         run: |
@@ -144,33 +134,75 @@ jobs:
       - check-version
       - test
     if: needs.check-branch.outputs.on_master == 'true' && needs.check-version.outputs.versions_match == 'true'
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            python_ver: '3.12'
+            platform: windows
+            arch: amd64
+            artifact_name: xmlgenerator-windows-amd64.exe
+            extra_envs: "CCFLAGS=-Oz -g0 -w"
+            extra_opts: "--mingw64 --disable-cache=all"
+          - os: macos-latest
+            python_ver: '3.13'
+            platform: macos
+            arch: arm64
+            artifact_name: xmlgenerator-macos-arm64
+            extra_envs: "CCFLAGS=-Oz -g0 -w;CC=clang"
+            extra_opts: "--clang --disable-cache=all"
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository code for the tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.ref }}
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python_ver }}
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install build
+        run: pip install -r requirements.txt
 
       - name: Build native
+        id: build_native
         run: |
-          python build_native.py
-          mv dist_native/xmlgenerator dist_native/xmlgenerator-linux-amd64
+          python build_native.py --artifact-name ${{ matrix.artifact_name }} --target-platform ${{ matrix.platform }} --target-arch ${{ matrix.arch }} --extra-envs="${{ matrix.extra_envs }}" --extra-opts="${{ matrix.extra_opts }}"
 
       - name: Upload native artifact
         uses: actions/upload-artifact@v4
         with:
-          name: native-binary
+          name: native-${{ matrix.platform }}
+          path: ${{ steps.build_native.outputs.artifact_path }}
+
+  build-native-linux:
+    needs:
+      - check-branch
+      - check-version
+      - test
+    if: needs.check-branch.outputs.on_master == 'true' && needs.check-version.outputs.versions_match == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code for the tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Build native
+        id: build_native
+        run: |
+          docker build -t nuitka-builder -f .github/Dockerfile .
+          docker run -v $(pwd):/app nuitka-builder --artifact-name xmlgenerator-linux-amd64 --target-platform linux --target-arch amd64 --extra-envs="CCFLAGS=-Oz -g0 -w" --extra-opts="--disable-cache=all"
+
+      - name: Upload native artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linux
           path: dist_native/xmlgenerator-linux-amd64
 
   create-release:
@@ -179,20 +211,22 @@ jobs:
       - check-version
       - build-package
       - build-native
+      - build-native-linux
     if: needs.check-branch.outputs.on_master == 'true' && needs.check-version.outputs.versions_match == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Download Python packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: python-packages
           path: dist
 
-      - name: Download native binary
-        uses: actions/download-artifact@v4
+      - name: Download native binaries
+        uses: actions/download-artifact@v5
         with:
-          name: native-binary
+          pattern: native-*
           path: dist_native
+          merge-multiple: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -204,7 +238,7 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-            dist_native/xmlgenerator-linux-amd64
+            dist_native/*
 
   publish-package:
     needs:
@@ -215,17 +249,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.14'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install twine
+        run: pip install twine
 
       - name: Download Python packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: python-packages
           path: dist

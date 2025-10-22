@@ -1,13 +1,13 @@
-lxml==6.0.1
-xmlschema==4.1.0
-Faker==37.6.0
+lxml==6.0.2
+xmlschema==4.2.0
+Faker==37.11.0
 rstr==3.2.2
-PyYAML==6.0.2
+PyYAML==6.0.3
 shtab==1.7.2
 
 # dev
-pytest==8.4.1
+pytest==8.4.2
 pytest-repeat==0.9.4
 setuptools==80.9.0
-nuitka==2.7.13
-twine==6.1.0
+nuitka==2.8.1
+twine==6.2.0

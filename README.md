@@ -29,15 +29,12 @@ pip install xmlgenerator
 ### Install executable file manually (linux)
 
 ```bash
-curl -LO https://github.com/lexakimov/xmlgenerator/releases/download/v0.8.0/xmlgenerator-linux-amd64
+curl -LO https://github.com/lexakimov/xmlgenerator/releases/latest/download/xmlgenerator-linux-amd64
 chmod +x xmlgenerator-linux-amd64
 sudo install xmlgenerator-linux-amd64 /usr/local/bin/xmlgenerator
-```
 
-### Install shell completions (linux)
-
-```shell
-# also available: zsh, tcsh
+# also, you can install shell completions
+# available: bash, zsh, tcsh
 xmlgenerator -C bash | sudo tee /etc/bash_completion.d/xmlgenerator
 ```
 
