@@ -45,7 +45,7 @@ The generator command is `xmlgenerator`
 **Flags and parameters:**
 
 ```
-usage: xmlgenerator [-h] [-c <config.yml>] [-o <output.xml>] [-p] [-n alias=namespace] [-v <validation>] [-ff]
+usage: xmlgenerator [-h] [-c <config.yml>] [-o <output.xml>] [-p] [-n alias=namespace] [-v <validation>] [-i]
                     [-e <encoding>] [-s <seed>] [-d] [-V] [-C <shell>]
                     xsd [xsd ...]
 

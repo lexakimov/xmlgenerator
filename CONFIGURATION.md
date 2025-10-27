@@ -266,7 +266,7 @@ You can set a value for a field by specifying its exact name.
 ```yaml
 global:
   value_override:
-    # A value of "31" will be set for all <age> elements
+    # A value of "31" will be set for all <age> elements and attributes
     age: "31"
 ```
 
