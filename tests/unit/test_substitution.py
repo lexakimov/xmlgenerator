@@ -5,113 +5,100 @@ import pytest
 import tests
 from xmlgenerator.configuration import GeneratorConfig
 from xmlgenerator.randomization import Randomizer
-from xmlgenerator.substitution import _pattern, Substitutor
+from xmlgenerator.substitution import (
+    ExpressionSyntaxError,
+    Substitutor,
+    _extract_arguments,
+    _parse_subexpressions, )
 
 os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
 
 
-@pytest.mark.parametrize("expression, expected_groups_count", [
-    ('', 0),
-    ('{{}}', 1),
-    (' {{}} ', 1),
-    ('{{ }}', 1),
-    ('{{ }} {{ }} ', 2),
-    ('{{ }}abc{{ }} ', 2),
-])
-def test_parse_empty_expression(expression, expected_groups_count):
-    findall = _pattern.findall(expression)
-    assert len(findall) == expected_groups_count
-    for i in range(expected_groups_count):
-        assert len(findall[i]) == 3
-        assert findall[i][0] == ""
-        assert findall[i][1] == ""
-        assert findall[i][2] == ""
+class TestExpressionParsing:
 
+    def test_empty_string_returns_empty_list(self):
+        assert _parse_subexpressions('') == []
 
-@pytest.mark.parametrize("expression, expected_function", [
-    ('{{uuid}}', 'uuid'),
-    ('{{    uuid }}', 'uuid'),
-    ('{{    uuid       }}', 'uuid'),
-    ('{{ \t\r   uuid  \r     }}', 'uuid'),
-    ('{{ func }}', 'func'),
-    ('{{ func | }}', 'func'),
-    ('{{ func |}}', 'func'),
-    ('{{ func| }}', 'func'),
-])
-def test_parse_expression_with_function(expression, expected_function):
-    findall = _pattern.findall(expression)
-    assert len(findall) == 1
-    assert len(findall[0]) == 3
-    assert findall[0][0] == expected_function
-    assert findall[0][1] == ""
-    assert findall[0][2] == ""
+    def test_no_placeholders_returns_empty_list(self):
+        assert _parse_subexpressions('plain text without placeholders') == []
 
+    def test_parse_function_without_arguments(self):
+        subexpressions = _parse_subexpressions('{{ uuid }}')
+        assert len(subexpressions) == 1
+        se = subexpressions[0]
+        assert se.function == 'uuid'
+        assert se.argument is None
+        assert se.modifier is None
 
-@pytest.mark.parametrize("expression, expected_function, expected_argument, expected_modifier", [
-    ('{{ func|kek}}', 'func', '', 'kek'),
-    ('{{ func |   kek }}', 'func', '', 'kek'),
-    ('{{ func|kek lol}}', 'func', '', 'kek lol'),
-    ('{{ func|kek lol    }}     ', 'func', '', 'kek lol'),
-    ("{{ func( 'farg') |  kek lol    }}     ", "func", "'farg'", 'kek lol'),
-    ("{{ func( 'farg') |  kek lol    }}     ", "func", "'farg'", 'kek lol'),
-])
-def test_parse_expression_with_function_2(expression, expected_function, expected_argument, expected_modifier):
-    findall = _pattern.findall(expression)
-    assert len(findall) == 1
-    assert len(findall[0]) == 3
-    assert findall[0][0] == expected_function
-    assert findall[0][1] == expected_argument
-    assert findall[0][2] == expected_modifier
+    def test_parse_function_with_arguments_and_modifier(self):
+        expression = "{{ func( 'farg') |  kek lol    }}     "
+        subexpressions = _parse_subexpressions(expression)
+        assert len(subexpressions) == 1
+        se = subexpressions[0]
+        assert se.function == 'func'
+        assert se.argument == "'farg'"
+        assert se.modifier == 'kek lol'
+        assert se.start == 0
+        assert se.end == expression.index('}}') + 2
 
+    def test_parse_function_with_empty_arguments(self):
+        se = _parse_subexpressions('{{ func() }}')[0]
+        assert se.function == 'func'
+        assert se.argument == ''
+        assert se.modifier is None
 
-def test_parse_expression_extract_groups():
-    match = _pattern.match("{{ func( 'farg') |  kek lol    }}     ")
-    assert match.group("function") == "func"
-    assert match.group("argument") == "'farg'"
-    assert match.group("modifier") == "kek lol"
+    def test_parse_does_not_split_on_pipe_inside_arguments(self):
+        expression = '{{ regex("([0-9]{7,10}|abc)") | global }}'
+        se = _parse_subexpressions(expression)[0]
+        assert se.function == 'regex'
+        assert se.argument == '"([0-9]{7,10}|abc)"'
+        assert se.modifier == 'global'
 
+    def test_parse_multiple_placeholders(self):
+        expression = " pre text {{ func( 'farg') |  kek lol    }} dsdsdsd {{ func2( 'f2arg') |  kek#lol    }}     "
+        subexpressions = _parse_subexpressions(expression)
+        assert len(subexpressions) == 2
 
-def test_parse_expression_extract_groups_01():
-    match = _pattern.match("{{ regex(\"pattern\") }}     ")
-    assert match.group("function") == "regex"
-    assert match.group("argument") == "\"pattern\""
-    assert match.group("modifier") is None
+        assert subexpressions[0].function == 'func'
+        assert subexpressions[0].argument == "'farg'"
+        assert subexpressions[0].modifier == 'kek lol'
+        assert subexpressions[0].start == 10
+        assert subexpressions[0].end == expression.index('}}') + 2
 
+        assert subexpressions[1].function == 'func2'
+        assert subexpressions[1].argument == "'f2arg'"
+        assert subexpressions[1].modifier == 'kek#lol'
+        assert subexpressions[1].start == expression.index('{{', subexpressions[0].end)
+        assert subexpressions[1].end == expression.rfind('}}') + 2
 
-def test_parse_expression_few_expressions_in_one():
-    findall = _pattern.findall("{{ func( \'farg\') |  kek lol    }} dsdsdsd {{ func2( \'f2arg\') |  kek#lol    }}     ")
-    assert len(findall) == 2
-    assert findall[0][0] == "func"
-    assert findall[0][1] == "'farg'"
-    assert findall[0][2] == "kek lol"
+    @pytest.mark.parametrize(('expression', 'message', 'position'), [
+        pytest.param("{{ }}", "placeholder is empty", 2, id="placeholder_empty"),
+        pytest.param("{{ | local }}", "function name is missing", 3, id="function_missing"),
+        pytest.param("{{ func( }}", "missing closing ')' for placeholder", 0, id="missing_closing_parenthesis"),
+        pytest.param("{{ func('a') }", "missing closing '}}'", 14, id="missing_closing_braces"),
+        pytest.param(" {{ func() |   }}", "modifier is empty", 12, id="modifier_empty"),
+        pytest.param("{{ email('ru_RU') ) }}", "unexpected ')'", 18, id="unexpected_closing_parenthesis"),
+        pytest.param("{{ func(arg) trailing }}", "unexpected text after arguments", 13, id="unexpected_text_after_arguments"),
+        pytest.param('{{ "unterminated }}', "unterminated quote in placeholder", 0, id="unterminated_quote"),
+        pytest.param("{{ func arg }}", "unexpected text after function name 'func'", 8, id="unexpected_text_after_function_name"),
+    ])
+    def test_expression_errors(self, expression, message, position):
+        with pytest.raises(ExpressionSyntaxError) as excinfo:
+            _parse_subexpressions(expression)
 
-    assert findall[1][0] == "func2"
-    assert findall[1][1] == "\'f2arg\'"
-    assert findall[1][2] == "kek#lol"
+        error = excinfo.value
+        assert error.expression == expression
+        assert error.description == message
+        assert error.position == position
 
+    def test_arguments_must_start_with_parenthesis(self):
+        with pytest.raises(ExpressionSyntaxError) as excinfo:
+            _extract_arguments(start=0, text=" arg)", absolute_offset=2)
 
-def test_reset_context():
-    substitutor = Substitutor(Randomizer(seed=111))
-
-    config_1 = GeneratorConfig(
-        source_filename='(?P<extracted>.*).(xsd|XSD)',
-        output_filename='{{ source_extracted }}_c82f1749-36a8-4237-ad11-0c2078197df4',
-    )
-    substitutor.reset_context("first_file.xsd", "someRootElement", config_1)
-    assert substitutor._local_context["root_element"] == "someRootElement"
-    assert substitutor._local_context["source_filename"] == "first_file.xsd"
-    assert substitutor._local_context["source_extracted"] == "first_file"
-    assert substitutor._local_context["output_filename"] == "first_file_c82f1749-36a8-4237-ad11-0c2078197df4"
-
-    config_2 = GeneratorConfig(
-        source_filename='(?P<extracted>.*)_file.(xsd|XSD)',
-        output_filename='{{ source_extracted }}_16dab037-65aa-4fcb-905f-7785ebff91d4',
-    )
-    substitutor.reset_context("second_file.xsd", "anotherRootElement", config_2)
-    assert substitutor._local_context["root_element"] == "anotherRootElement"
-    assert substitutor._local_context["source_filename"] == "second_file.xsd"
-    assert substitutor._local_context["source_extracted"] == "second"
-    assert substitutor._local_context["output_filename"] == "second_16dab037-65aa-4fcb-905f-7785ebff91d4"
+        error = excinfo.value
+        assert error.expression is None
+        assert error.description == "arguments must start with '('"
+        assert error.position == 2
 
 
 class TestFunctions:
@@ -228,3 +215,27 @@ class TestFunctionModifiers:
 
         _, value_5 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
         assert value_1 == value_5
+
+
+def test_reset_context():
+    substitutor = Substitutor(Randomizer(seed=111))
+
+    config_1 = GeneratorConfig(
+        source_filename='(?P<extracted>.*).(xsd|XSD)',
+        output_filename='{{ source_extracted }}_c82f1749-36a8-4237-ad11-0c2078197df4',
+    )
+    substitutor.reset_context("first_file.xsd", "someRootElement", config_1)
+    assert substitutor._local_context["root_element"] == "someRootElement"
+    assert substitutor._local_context["source_filename"] == "first_file.xsd"
+    assert substitutor._local_context["source_extracted"] == "first_file"
+    assert substitutor._local_context["output_filename"] == "first_file_c82f1749-36a8-4237-ad11-0c2078197df4"
+
+    config_2 = GeneratorConfig(
+        source_filename='(?P<extracted>.*)_file.(xsd|XSD)',
+        output_filename='{{ source_extracted }}_16dab037-65aa-4fcb-905f-7785ebff91d4',
+    )
+    substitutor.reset_context("second_file.xsd", "anotherRootElement", config_2)
+    assert substitutor._local_context["root_element"] == "anotherRootElement"
+    assert substitutor._local_context["source_filename"] == "second_file.xsd"
+    assert substitutor._local_context["source_extracted"] == "second"
+    assert substitutor._local_context["output_filename"] == "second_16dab037-65aa-4fcb-905f-7785ebff91d4"

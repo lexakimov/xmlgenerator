@@ -9,7 +9,7 @@ from xmlgenerator.arguments import parse_args
 from xmlgenerator.configuration import load_config
 from xmlgenerator.generator import XmlGenerator, get_ns_map
 from xmlgenerator.randomization import Randomizer
-from xmlgenerator.substitution import Substitutor
+from xmlgenerator.substitution import ExpressionSyntaxError, Substitutor
 from xmlgenerator.validation import XmlValidator
 
 # TODO кастомные переменные для локального контекста
@@ -45,6 +45,9 @@ logger = logging.getLogger('xmlgenerator.bootstrap')
 def main():
     try:
         _main()
+    except ExpressionSyntaxError as ex:
+        _log_expression_error(ex)
+        exit(1)
     except KeyboardInterrupt as ex:
         logger.info('processing interrupted')
 
@@ -125,6 +128,13 @@ def _setup_loggers(args):
     xmlgenerator.generator.logger.setLevel(log_level)
     substitution.logger.setLevel(log_level)
     randomization.logger.setLevel(log_level)
+
+
+def _log_expression_error(exc: ExpressionSyntaxError) -> None:
+    pointer_line = ' ' * exc.position + '^ ' + exc.description
+    logger.error('Failed to parse expression:')
+    logger.error('%s', exc.expression)
+    logger.error('%s', pointer_line)
 
 
 if __name__ == "__main__":
