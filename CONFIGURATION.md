@@ -5,6 +5,24 @@
 
 This guide will help you understand how to configure `xmlgenerator`.
 
+* [Basic usage](#basic-usage)
+* [Configuration](#configuration)
+  * [Customizing the generation of elements and values](#customizing-the-generation-of-elements-and-values)
+    * [Probability of adding optional attributes](#probability-of-adding-optional-attributes)
+    * [Limiting the number of elements](#limiting-the-number-of-elements)
+    * [Limiting string length](#limiting-string-length)
+    * [Limiting the range for numeric values](#limiting-the-range-for-numeric-values)
+  * [Overriding values](#overriding-values)
+    * [By tag/attribute name](#by-tagattribute-name)
+    * [By regular expression for tag/attribute name](#by-regular-expression-for-tagattribute-name)
+    * [Using built-in functions](#using-built-in-functions)
+  * [Configuring output filenames](#configuring-output-filenames)
+  * [Applying settings for groups of documents](#applying-settings-for-groups-of-documents)
+    * [Configuration Example](#configuration-example)
+  * [Appendix 1: Configuration File Structure](#appendix-1-configuration-file-structure)
+  * [Appendix 2: Placeholder Functions](#appendix-2-placeholder-functions)
+
+
 ## Basic usage
 
 Let's start with the simplest scenario: generating an XML document from a single XSD schema and printing the result to the console.
