@@ -13,7 +13,6 @@ from xmlgenerator.substitution import ExpressionSyntaxError, Substitutor
 from xmlgenerator.validation import XmlValidator
 
 # TODO кастомные переменные для локального контекста
-# TODO валидация по Schematron
 # TODO типизировать
 # TODO Почистить и перевести комментарии
 # TODO Дописать тесты

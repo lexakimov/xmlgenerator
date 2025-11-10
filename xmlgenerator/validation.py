@@ -39,7 +39,7 @@ class XmlValidator:
         logger.debug("validate generated xml with xsd schematron")
         raise RuntimeError("not yet implemented")
 
-# TODO
+# TODO валидация по Schematron
 # def validate_xml_with_schematron(xml_file, schematron_file):
 #     # Загрузка Schematron-схемы
 #     with open(schematron_file, 'rb') as f:
