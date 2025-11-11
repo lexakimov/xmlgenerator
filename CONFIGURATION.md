@@ -500,6 +500,20 @@ Thus, the `specific` section provides a powerful mechanism for fine-tuning gener
 ### Appendix 1: Configuration File Structure
 
 ```yaml
+# Optional variables that can be referenced from placeholders via
+# `{{ global('name') }}` or `{{ local('name') }}`.
+# - `global` variables are evaluated once (the first time they are needed) and reused for
+#   every generated document.
+# - `local` variables are re-evaluated for each generated document and stored in the
+#   local context.
+variables:
+  global:
+    invoice_id: "{{ uuid }}"
+    batch_name: "{{ global('invoice_id') }}-{{ number(1, 10) }}"
+  local:
+    customer_prefix: "{{ source_extracted }}"
+    customer_id: "{{ local('customer_prefix') }}-{{ uuid }}"
+
 # Global settings (apply to all schemas)
 global:
 
@@ -535,9 +549,6 @@ global:
   # Key - string or regular expression to match the tag/attribute name.
   # Value - string with optional use of placeholders:
   # `{{ function }}` - substitutes the value provided by the predefined function.
-  # `{{ function | modifier }}` - same, but with a modifier [ global | local ].
-  # - `global` - a single value will be used for the entire generation process.
-  # - `local` - a single value will be used within the context of the current document.
   #
   # The list of available functions is below.
   # The order of entries matters; the first matching override will be selected.
@@ -578,13 +589,15 @@ Configuration Priority:
 
 In the `value_override` sections, you can specify either a string value or special placeholders:
 
-- `{{ function }}` - Substitutes the value provided by the predefined function.
-- `{{ function | modifier }}` - Same, but with a modifier `[ global | local ]`, where:
-    - `global`: The function will generate and use *the same single value* throughout the *entire generation process*
-      for all documents.
-    - `local`: The function will generate and use *the same single value* within the scope of *a single generated
-      document*.
-    - No modifier: A new value is generated each time the function is called.
+- `{{ function }}` - substitutes the value provided by the predefined function.
+- `{{ global('name') }}` - gets a value of the predefined global variable `name` (configured in the `variables` block);
+  the value is generated once per process on first use.
+- `{{ local('name') }}` - gets a value of the predefined local variable `name` (configured in the `variables` block);
+  the value is recalculated for each generated document. Built-in context values such as `root_element`,
+  `source_filename`, `source_extracted`, and `output_filename` are also available through `local()`.
+
+Global and local variables are declared in the optional `variables` block located at the root of the YAML file. Global variables behave similarly to the
+old `| global` modifier (the first computed value is reused everywhere) while local variables replace `| local`.
 
 **List of Placeholder Functions:**
 
@@ -594,6 +607,8 @@ In the `value_override` sections, you can specify either a string value or speci
 | `source_extracted`                 | A string extracted from the source XSD filename using the regex specified in `source_filename`.          |
 | `output_filename`                  | String defined by the `output_filename` configuration parameter.                                         |
 | `root_element`                     | The name of the root element of the XML document.                                                        |
+| `local('name')`                    | Value of the local variable `name` (configured under `variables.local` or built-in context values).      |
+| `global('name')`                   | Value of the global variable `name` (configured under `variables.global`).                               |
 | `uuid`                             | A random UUIDv4.                                                                                         |
 | `regex("pattern")`                 | A random string value matching the specified regular expression.                                         |
 | `any('A', "B", C)`                 | A random value from the provided enumeration.                                                            |

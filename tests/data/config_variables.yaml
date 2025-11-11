@@ -1,0 +1,8 @@
+variables:
+  global:
+    shared_id: "{{ uuid }}"
+    shared_suffix: "{{ global('shared_id') }}-suffix"
+  local:
+    base_code: "{{ source_extracted }}-specific"
+    full_code: "{{ local('base_code') }}-{{ root_element }}"
+    local_only: "{{ local('full_code') }}::{{ root_element }}"

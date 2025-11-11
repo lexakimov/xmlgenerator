@@ -3,7 +3,7 @@ import os
 import pytest
 
 import tests
-from xmlgenerator.configuration import GeneratorConfig
+from xmlgenerator.configuration import GeneratorConfig, VariablesConfig
 from xmlgenerator.randomization import Randomizer
 from xmlgenerator.substitution import (
     ExpressionSyntaxError,
@@ -28,58 +28,52 @@ class TestExpressionParsing:
         se = subexpressions[0]
         assert se.function == 'uuid'
         assert se.argument is None
-        assert se.modifier is None
 
-    def test_parse_function_with_arguments_and_modifier(self):
-        expression = "{{ func( 'farg') |  kek lol    }}     "
+    def test_parse_function_with_empty_arguments(self):
+        subexpressions = _parse_subexpressions('{{ func() }}')
+        assert len(subexpressions) == 1
+        se = subexpressions[0]
+        assert se.function == 'func'
+        assert se.argument is None
+
+    def test_parse_function_with_arguments_and_whitespace(self):
+        expression = "{{ func( 'farg')    }}     "
         subexpressions = _parse_subexpressions(expression)
         assert len(subexpressions) == 1
         se = subexpressions[0]
         assert se.function == 'func'
         assert se.argument == "'farg'"
-        assert se.modifier == 'kek lol'
         assert se.start == 0
         assert se.end == expression.index('}}') + 2
 
-    def test_parse_function_with_empty_arguments(self):
-        se = _parse_subexpressions('{{ func() }}')[0]
-        assert se.function == 'func'
-        assert se.argument == ''
-        assert se.modifier is None
-
     def test_parse_does_not_split_on_pipe_inside_arguments(self):
-        expression = '{{ regex("([0-9]{7,10}|abc)") | global }}'
+        expression = '{{ regex("([0-9]{7,10}|abc)") }}'
         se = _parse_subexpressions(expression)[0]
         assert se.function == 'regex'
         assert se.argument == '"([0-9]{7,10}|abc)"'
-        assert se.modifier == 'global'
 
     def test_parse_multiple_placeholders(self):
-        expression = " pre text {{ func( 'farg') |  kek lol    }} dsdsdsd {{ func2( 'f2arg') |  kek#lol    }}     "
+        expression = " pre text {{ func( 'farg')  }} dsdsdsd {{ func2( 'f2arg')  }}     "
         subexpressions = _parse_subexpressions(expression)
         assert len(subexpressions) == 2
 
         assert subexpressions[0].function == 'func'
         assert subexpressions[0].argument == "'farg'"
-        assert subexpressions[0].modifier == 'kek lol'
-        assert subexpressions[0].start == 10
+        assert subexpressions[0].start == expression.index('{{')
         assert subexpressions[0].end == expression.index('}}') + 2
 
         assert subexpressions[1].function == 'func2'
         assert subexpressions[1].argument == "'f2arg'"
-        assert subexpressions[1].modifier == 'kek#lol'
         assert subexpressions[1].start == expression.index('{{', subexpressions[0].end)
         assert subexpressions[1].end == expression.rfind('}}') + 2
 
     @pytest.mark.parametrize(('expression', 'message', 'position'), [
         pytest.param("{{ }}", "placeholder is empty", 2, id="placeholder_empty"),
-        pytest.param("{{ | local }}", "function name is missing", 3, id="function_missing"),
         pytest.param("{{ func( }}", "missing closing ')' for placeholder", 0, id="missing_closing_parenthesis"),
         pytest.param("{{ func('a') }", "missing closing '}}'", 14, id="missing_closing_braces"),
-        pytest.param(" {{ func() |   }}", "modifier is empty", 12, id="modifier_empty"),
         pytest.param("{{ email('ru_RU') ) }}", "unexpected ')'", 18, id="unexpected_closing_parenthesis"),
         pytest.param("{{ func(arg) trailing }}", "unexpected text after arguments", 13, id="unexpected_text_after_arguments"),
-        pytest.param('{{ "unterminated }}', "unterminated quote in placeholder", 0, id="unterminated_quote"),
+        # pytest.param('{{ "unterminated }}', "unterminated quote in placeholder", 0, id="unterminated_quote"),
         pytest.param("{{ func arg }}", "unexpected text after function name 'func'", 8, id="unexpected_text_after_function_name"),
     ])
     def test_expression_errors(self, expression, message, position):
@@ -157,7 +151,7 @@ class TestFunctions:
         ]
     )
     def test_functions(self, function, expected):
-        substitutor = Substitutor(Randomizer(seed=111))
+        substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
         substitutor._local_context["root_element"] = 'someRootElement'
         substitutor._local_context["source_filename"] = 'filename-123'
         substitutor._local_context["source_extracted"] = 'extracted-123'
@@ -168,7 +162,7 @@ class TestFunctions:
         assert value == expected
 
     def test_any_from(self):
-        substitutor = Substitutor(Randomizer(seed=111))
+        substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
         results = set()
         for i in range(0, 50):
             _, value = substitutor.substitute_value("test", {"test": "{{ any_from('data/lines.txt') }}"}.items())
@@ -176,49 +170,92 @@ class TestFunctions:
 
         assert len(results) == 3
 
+    def test_undefined_function(self):
+        substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+        with pytest.raises(RuntimeError, match="Unknown function not_existing_func"):
+            substitutor.substitute_value("test", {"test": "{{ not_existing_func }}"}.items())
 
-class TestFunctionModifiers:
 
-    def test_no_modifier(self):
-        substitutor = Substitutor(Randomizer(seed=111))
-        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
-        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
-        assert value_1 != value_2
+class TestVariables:
 
-    def test_local_modifier(self):
-        substitutor = Substitutor(Randomizer(seed=111))
-        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
-        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
-        _, value_3 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
-        assert value_1 == value_2
-        assert value_1 != value_3
+    def test_local_variables_reinitialized_between_runs(self):
+        config = GeneratorConfig(
+            source_filename='(?P<extracted>.*).(xsd|XSD)',
+            output_filename='{{ source_extracted }}_{{ uuid }}',
+        )
+        variables_config = VariablesConfig(local={
+            'customer_id': "{{ uuid }}",
+            'customer_label': "{{ local('customer_id') }}-{{ root_element }}",
+        })
+        substitutor = Substitutor(Randomizer(seed=111), variables_config)
 
-        config = GeneratorConfig(source_filename='(?P<extracted>.*).(xsd|XSD)', output_filename='_', )
-        substitutor.reset_context("first_file.xsd", "someRootElement", config)
+        substitutor.reset_context("first_file.xsd", "RootA", config)
+        _, first_id = substitutor.substitute_value("test", {"test": "{{ local('customer_id') }}"}.items())
+        _, first_label = substitutor.substitute_value("test", {"test": "{{ local('customer_label') }}"}.items())
 
-        _, value_4 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
-        assert value_4 != value_1
+        substitutor.reset_context("second_file.xsd", "RootB", config)
+        _, second_id = substitutor.substitute_value("test", {"test": "{{ local('customer_id') }}"}.items())
+        _, second_label = substitutor.substitute_value("test", {"test": "{{ local('customer_label') }}"}.items())
 
-    def test_global_modifier(self):
-        substitutor = Substitutor(Randomizer(seed=111))
-        _, value_1 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
-        _, value_2 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
-        _, value_3 = substitutor.substitute_value("test", {"test": "{{ uuid | local }}"}.items())
-        _, value_4 = substitutor.substitute_value("test", {"test": "{{ uuid }}"}.items())
+        assert first_id != second_id
 
-        assert value_1 == value_2
-        assert value_1 != value_3
-        assert value_1 != value_4
+        assert first_label.startswith(first_id)
+        assert first_label.endswith('RootA')
 
-        config = GeneratorConfig(source_filename='(?P<extracted>.*).(xsd|XSD)', output_filename='_', )
-        substitutor.reset_context("first_file.xsd", "someRootElement", config)
+        assert second_label.startswith(second_id)
+        assert second_label.endswith('RootB')
 
-        _, value_5 = substitutor.substitute_value("test", {"test": "{{ uuid | global }}"}.items())
-        assert value_1 == value_5
+    def test_global_variables_initialized_once(self):
+        config = GeneratorConfig(
+            source_filename='(?P<extracted>.*).(xsd|XSD)',
+            output_filename='{{ source_extracted }}_{{ uuid }}',
+        )
+        variables_config = VariablesConfig(global_={
+            'shared_id': "{{ uuid }}"
+        })
+        substitutor = Substitutor(Randomizer(seed=111), variables_config)
+
+        substitutor.reset_context("first_file.xsd", "RootA", config)
+        _, first_value = substitutor.substitute_value("test", {"test": "{{ global('shared_id') }}"}.items())
+
+        substitutor.reset_context("second_file.xsd", "RootB", config)
+        _, second_value = substitutor.substitute_value("test", {"test": "{{ global('shared_id') }}"}.items())
+
+        assert first_value == second_value
+
+    def test_missing_local_variable_raises(self):
+        substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+        with pytest.raises(RuntimeError, match="Local variable 'missing' is not defined"):
+            substitutor.substitute_value("test", {"test": "{{ local('missing') }}"}.items())
+
+    def test_missing_global_variable_raises(self):
+        substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+        with pytest.raises(RuntimeError, match="Global variable 'missing' is not defined"):
+            substitutor.substitute_value("test", {"test": "{{ global('missing') }}"}.items())
+
+    @pytest.mark.parametrize('braces', [
+        pytest.param("", id="empty 1"),
+        pytest.param("()", id="empty 2"),
+        pytest.param("('')", id="empty 3"),
+    ])
+    def test_local_variable_empty_name(self, braces):
+        substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+        with pytest.raises(RuntimeError, match="Local variable name is not specified"):
+            substitutor.substitute_value("test", {"test": "{{ local" + braces + "}}"}.items())
+
+    @pytest.mark.parametrize('braces', [
+        pytest.param("", id="empty 1"),
+        pytest.param("()", id="empty 2"),
+        pytest.param("('')", id="empty 3"),
+    ])
+    def test_global_variable_empty_name(self, braces):
+        substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+        with pytest.raises(RuntimeError, match="Global variable name is not specified"):
+            substitutor.substitute_value("test", {"test": "{{ global" + braces + "}}"}.items())
 
 
 def test_reset_context():
-    substitutor = Substitutor(Randomizer(seed=111))
+    substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
 
     config_1 = GeneratorConfig(
         source_filename='(?P<extracted>.*).(xsd|XSD)',

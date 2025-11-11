@@ -24,7 +24,7 @@ def randomizer():
 
 @pytest.fixture
 def substitutor(randomizer):
-    return Substitutor(randomizer)
+    return Substitutor(randomizer, None)
 
 
 @pytest.fixture

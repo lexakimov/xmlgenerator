@@ -2,6 +2,7 @@ import logging
 import re
 from typing import NamedTuple, Optional
 
+from xmlgenerator.configuration import VariablesConfig
 from xmlgenerator.randomization import Randomizer
 
 __all__ = ['Substitutor', 'ExpressionSyntaxError']
@@ -10,11 +11,16 @@ logger = logging.getLogger(__name__)
 
 
 class Substitutor:
-    def __init__(self, randomizer: Randomizer):
-        self.randomizer = randomizer
+    def __init__(self, randomizer: Randomizer, variables_config: VariablesConfig):
+        self.randomizer = randomizer  # TODO rename
+        self._variables_config = variables_config
         self._local_context = {}
         self._global_context = {}
-        self.providers_dict = {
+        self.providers_dict = {  # TODO rename
+            # scope access functions
+            'global': lambda args: self._get_variable_from_scope(args, self._global_context, 'global'),
+            'local': lambda args: self._get_variable_from_scope(args, self._local_context, 'local'),
+
             # local scope functions
             'root_element': lambda args: self._local_context["root_element"],
             'source_filename': lambda args: self._local_context["source_filename"],
@@ -73,6 +79,27 @@ class Substitutor:
         logger.debug('local_context["source_extracted"] = %s (extracted with regexp %s)', source_extracted, source_filename)
         logger.debug('local_context["output_filename"]  = %s', resolved_value)
 
+    def _get_variable_from_scope(self, args: Optional[str], context: dict, scope_name: str):
+        # TODO add logging
+
+        variable_name = args.strip(' ').strip("'").strip('"') if args is not None else None
+        if not variable_name:
+            raise RuntimeError(f"{scope_name.capitalize()} variable name is not specified")
+
+        value = context.get(variable_name)
+        if value is None:
+            config_field = scope_name if scope_name != 'global' else 'global_'
+            definitions = getattr(self._variables_config, config_field, None)
+
+            expression = definitions.get(variable_name)
+            if expression is None:
+                raise RuntimeError(f"{scope_name.capitalize()} variable '{variable_name}' is not defined")
+
+            value = self._process_expression(expression)
+            context[variable_name] = value
+
+        return value
+
     def get_output_filename(self):
         return self._local_context.get("output_filename")
 
@@ -88,34 +115,17 @@ class Substitutor:
 
     def _process_expression(self, expression):
         logger.debug('processing expression: %s', expression)
-        global_context = self._global_context
-        local_context = self._local_context
         result_value: str = expression
         resolved_substitutions = []
         subexpressions = _parse_subexpressions(expression)
         for se in subexpressions:
             func_name = se.function
             func_args = se.argument
-            func_mod = se.modifier
             func_lambda = self.providers_dict.get(func_name)
             if func_lambda is None:
                 raise RuntimeError(f"Unknown function {func_name}")
 
-            provider_func = lambda: func_lambda(func_args)
-            resolved_value = None
-
-            match func_mod:
-                case None:
-                    resolved_value = provider_func()
-                case 'local':
-                    resolved_value = local_context.get(func_name) or provider_func()
-                    local_context[func_name] = resolved_value
-                case 'global':
-                    resolved_value = global_context.get(func_name) or provider_func()
-                    global_context[func_name] = resolved_value
-                case _:
-                    raise RuntimeError(f"Unknown modifier: {func_mod}")
-
+            resolved_value = func_lambda(func_args)
             resolved_substitutions.append((se.start, se.end, str(resolved_value)))
 
         for start, end, replacement in reversed(resolved_substitutions):
@@ -152,7 +162,6 @@ class _ParsedExpression(NamedTuple):
     end: int
     function: str
     argument: Optional[str]
-    modifier: Optional[str]
 
 
 class ExpressionSyntaxError(ValueError):
@@ -186,16 +195,16 @@ def _parse_subexpressions(expression: str) -> list[_ParsedExpression]:
             raise ExpressionSyntaxError(expression, len(expression), "missing closing '}}'")
         inner = expression[start + 2:end]
         try:
-            function, argument, modifier = _parse_placeholder_inner(start, inner)
+            function, argument = _parse_placeholder_inner(start, inner)
         except ExpressionSyntaxError as exc:
             exc.attach_expression(expression)
             raise
-        subexpressions.append(_ParsedExpression(start, end + 2, function, argument, modifier))
+        subexpressions.append(_ParsedExpression(start, end + 2, function, argument))
         cursor = end + 2
     return subexpressions
 
 
-def _parse_placeholder_inner(start: int, inner: str) -> tuple[str, Optional[str], Optional[str]]:
+def _parse_placeholder_inner(start: int, inner: str) -> tuple[str, Optional[str]]:
     inner_start = start + 2
     stripped_inner = inner.strip()
     if not stripped_inner:
@@ -203,50 +212,9 @@ def _parse_placeholder_inner(start: int, inner: str) -> tuple[str, Optional[str]
 
     leading_ws = len(inner) - len(inner.lstrip())
     text_offset = inner_start + leading_ws
-    call_part, call_offset, modifier_part, modifier_offset = _split_modifier(start, stripped_inner, text_offset)
-    function, argument = _parse_function_call(start, call_part, call_offset)
+    function, argument = _parse_function_call(start, stripped_inner, text_offset)
 
-    modifier = None
-    if modifier_part is not None:
-        modifier_text = modifier_part.strip()
-        if not modifier_text:
-            raise ExpressionSyntaxError(None, modifier_offset, "modifier is empty")
-        modifier = modifier_text
-
-    return function, argument, modifier
-
-
-def _split_modifier(start: int, text: str, absolute_offset: int) -> tuple[str, int, Optional[str], Optional[int]]:
-    depth = 0
-    quote: Optional[str] = None
-    i = 0
-    while i < len(text):
-        ch = text[i]
-        if quote:
-            if ch == '\\':
-                i += 2
-                continue
-            if ch == quote:
-                quote = None
-            i += 1
-            continue
-        if ch in ('"', "'"):
-            quote = ch
-        elif ch == '(':
-            depth += 1
-        elif ch == ')':
-            if depth == 0:
-                raise ExpressionSyntaxError(None, absolute_offset + i, "unexpected ')'")
-            depth -= 1
-        elif ch == '|':
-            function = text[:i]
-            modifier = text[i + 1:]
-            _verify_balanced(start, depth, quote)
-            return function, absolute_offset, modifier, absolute_offset + i + 1
-        i += 1
-
-    _verify_balanced(start, depth, quote)
-    return text, absolute_offset, None, None
+    return function, argument
 
 
 def _parse_function_call(start: int, text: str, absolute_offset: int) -> tuple[str, Optional[str]]:
@@ -270,16 +238,18 @@ def _parse_function_call(start: int, text: str, absolute_offset: int) -> tuple[s
             raise ExpressionSyntaxError(None, remainder_offset, f"unexpected text after function name '{function}'")
         argument, rest, rest_offset = _extract_arguments(start, remainder_lstrip, remainder_offset)
         if rest.strip():
-            leftover_offset = rest_offset + (len(rest) - len(rest.lstrip()))
+            rest_lstrip = rest.lstrip()
+            leftover_offset = rest_offset + (len(rest) - len(rest_lstrip))
+            if rest_lstrip.startswith(')'):
+                raise ExpressionSyntaxError(None, leftover_offset, "unexpected ')'")
             raise ExpressionSyntaxError(None, leftover_offset, "unexpected text after arguments")
-        argument = argument.strip()
     else:
         argument = None
 
     return function, argument
 
 
-def _extract_arguments(start: int, text: str, absolute_offset: int) -> tuple[str, str, int]:
+def _extract_arguments(start: int, text: str, absolute_offset: int) -> tuple[Optional[str], str, int]:
     depth = 0
     quote: Optional[str] = None
     i = 0
@@ -292,9 +262,6 @@ def _extract_arguments(start: int, text: str, absolute_offset: int) -> tuple[str
             i += 1
             continue
         if quote:
-            if ch == '\\':
-                i += 2
-                continue
             if ch == quote:
                 quote = None
         else:
@@ -305,14 +272,11 @@ def _extract_arguments(start: int, text: str, absolute_offset: int) -> tuple[str
             elif ch == ')':
                 depth -= 1
                 if depth == 0:
-                    return text[1:i], text[i + 1:], absolute_offset + i + 1
+                    argument = text[1:i]
+                    argument = argument.strip() if argument else None
+                    rest = text[i + 1:]
+                    rest_offset = absolute_offset + i + 1
+                    return argument, rest, rest_offset
         i += 1
 
     raise ExpressionSyntaxError(None, start, "missing closing ')' for placeholder")
-
-
-def _verify_balanced(start: int, depth: int, quote: Optional[str]) -> None:
-    if depth != 0:
-        raise ExpressionSyntaxError(None, start, "missing closing ')' for placeholder")
-    if quote is not None:
-        raise ExpressionSyntaxError(None, start, "unterminated quote in placeholder")

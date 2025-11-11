@@ -4,7 +4,6 @@ from lxml import etree
 from xmlschema import XMLSchema
 
 import xmlgenerator
-from xmlgenerator import configuration, validation, randomization, substitution, generator
 from xmlgenerator.arguments import parse_args
 from xmlgenerator.configuration import load_config
 from xmlgenerator.generator import XmlGenerator, get_ns_map
@@ -63,7 +62,7 @@ def _main():
     config = load_config(args.config_yaml)
 
     randomizer = Randomizer(args.seed)
-    substitutor = Substitutor(randomizer)
+    substitutor = Substitutor(randomizer, config.variables)
     generator = XmlGenerator(randomizer, substitutor)
     validator = XmlValidator(args.validation, args.ignore_validation_errors)
 
@@ -122,11 +121,11 @@ def _setup_loggers(args):
     logging.addLevelName(logging.WARNING, 'WARN')
     log_level = logging.DEBUG if args.debug else logging.INFO
     logger.setLevel(log_level)
-    configuration.logger.setLevel(log_level)
-    validation.logger.setLevel(log_level)
+    xmlgenerator.configuration.logger.setLevel(log_level)
+    xmlgenerator.validation.logger.setLevel(log_level)
     xmlgenerator.generator.logger.setLevel(log_level)
-    substitution.logger.setLevel(log_level)
-    randomization.logger.setLevel(log_level)
+    xmlgenerator.substitution.logger.setLevel(log_level)
+    xmlgenerator.randomization.logger.setLevel(log_level)
 
 
 def _log_expression_error(exc: ExpressionSyntaxError) -> None:
