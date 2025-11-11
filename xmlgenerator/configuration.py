@@ -27,11 +27,17 @@ class GlobalRandomizationConfig(RandomizationConfig):
 
 
 @dataclass
+class VariablesConfig:
+    global_: Dict[str, str] = field(default_factory=dict)
+    local: Dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class GeneratorConfig:
     source_filename: str = None
     output_filename: str = None
     randomization: RandomizationConfig = field(default_factory=lambda: RandomizationConfig())
-    value_override: Dict[str, str] = field(default_factory=lambda: {})
+    value_override: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -45,6 +51,7 @@ class GlobalGeneratorConfig(GeneratorConfig):
 class Config:
     global_: GlobalGeneratorConfig = field(default_factory=lambda: GlobalGeneratorConfig())
     specific: Dict[str, GeneratorConfig] = field(default_factory=lambda: {})
+    variables: VariablesConfig = field(default_factory=VariablesConfig)
 
     def get_for_file(self, xsd_name):
         for pattern, conf in self.specific.items():

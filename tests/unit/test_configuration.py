@@ -24,6 +24,12 @@ def test_load_config_no_file():
     assert configuration.specific is not None
     assert len(configuration.specific) == 0
 
+    assert configuration.variables is not None
+    assert configuration.variables.global_ is not None
+    assert len(configuration.variables.global_) == 0
+    assert configuration.variables.local is not None
+    assert len(configuration.variables.local) == 0
+
 
 def test_load_config_empty_file():
     configuration = conf.load_config('data/config_empty.yaml')
@@ -32,8 +38,15 @@ def test_load_config_empty_file():
     assert configuration.global_
     assert configuration.global_.source_filename == '(?P<extracted>.*).(xsd|XSD)'
     assert configuration.global_.output_filename == '{{ source_extracted }}_{{ uuid }}'
+
     assert configuration.specific is not None
     assert len(configuration.specific) == 0
+
+    assert configuration.variables is not None
+    assert configuration.variables.global_ is not None
+    assert len(configuration.variables.global_) == 0
+    assert configuration.variables.local is not None
+    assert len(configuration.variables.local) == 0
 
 
 def test_load_config_non_empty():
@@ -62,6 +75,18 @@ def test_load_config_non_empty():
     assert configuration.specific['Schema_03'].randomization is not None
     assert configuration.specific['Schema_03'].randomization.probability is None
     assert configuration.specific['Schema_03'].value_override is not None
+
+
+def test_load_config_with_variables():
+    configuration = conf.load_config('data/config_variables.yaml')
+
+    variables = configuration.variables
+    assert list(variables.global_.keys()) == ['shared_id', 'shared_suffix']
+    assert variables.global_['shared_id'] == "{{ uuid }}"
+    assert variables.global_['shared_suffix'] == "{{ global('shared_id') }}-suffix"
+    assert list(variables.local.keys()) == ['base_code', 'full_code', 'local_only']
+    assert variables.local['base_code'] == "{{ source_extracted }}-specific"
+    assert variables.local['full_code'] == "{{ local('base_code') }}-{{ root_element }}"
 
 
 class TestMergeGlobalAndLocal:

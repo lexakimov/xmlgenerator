@@ -33,7 +33,7 @@ curl -LO https://github.com/lexakimov/xmlgenerator/releases/latest/download/xmlg
 chmod +x xmlgenerator-linux-amd64
 sudo install xmlgenerator-linux-amd64 /usr/local/bin/xmlgenerator
 
-# так же можно установить автодополнения для командной строки
+# также можно установить автодополнения для командной строки
 # доступны: bash, zsh, tcsh
 xmlgenerator -C bash | sudo tee /etc/bash_completion.d/xmlgenerator
 ```
@@ -45,7 +45,7 @@ xmlgenerator -C bash | sudo tee /etc/bash_completion.d/xmlgenerator
 **Описание флагов и параметров запуска:**
 
 ```
-usage: xmlgenerator [-h] [-c <config.yml>] [-o <output.xml>] [-p] [-n alias=namespace] [-v <validation>] [-ff]
+usage: xmlgenerator [-h] [-c <config.yml>] [-o <output.xml>] [-p] [-n alias=namespace] [-v <validation>] [-i]
                     [-e <encoding>] [-s <seed>] [-d] [-V] [-C <shell>]
                     xsd [xsd ...]
 
@@ -95,7 +95,7 @@ options:
 
 Генератор можно настроить с помощью YAML-файла, передав путь к нему через опцию `-c` или `--config`.
 
-Описание и примеры конфигурации описаны в [CONFIGURATION](./CONFIGURATION_RU.md).
+Описание и примеры конфигурации приведены в [CONFIGURATION_RU](./CONFIGURATION_RU.md).
 
 ## Валидация
 

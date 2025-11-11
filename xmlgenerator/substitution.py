@@ -1,22 +1,26 @@
 import logging
 import re
+from typing import NamedTuple, Optional
 
+from xmlgenerator.configuration import VariablesConfig
 from xmlgenerator.randomization import Randomizer
 
-__all__ = ['Substitutor']
-
-_pattern = re.compile(
-    r'\{\{\s*(?:(?P<function>\S*?)(?:\(\s*(?P<argument>[^)]*)\s*\))?\s*(?:\|\s*(?P<modifier>.*?))?)?\s*}}')
+__all__ = ['Substitutor', 'ExpressionSyntaxError']
 
 logger = logging.getLogger(__name__)
 
 
 class Substitutor:
-    def __init__(self, randomizer: Randomizer):
-        self.randomizer = randomizer
+    def __init__(self, randomizer: Randomizer, variables_config: VariablesConfig):
+        self._randomizer = randomizer
+        self._variables_config = variables_config
         self._local_context = {}
         self._global_context = {}
-        self.providers_dict = {
+        self._providers_dict = {
+            # scope access functions
+            'global': lambda args: self._get_variable_from_scope(args, self._global_context, 'global'),
+            'local': lambda args: self._get_variable_from_scope(args, self._local_context, 'local'),
+
             # local scope functions
             'root_element': lambda args: self._local_context["root_element"],
             'source_filename': lambda args: self._local_context["source_filename"],
@@ -26,33 +30,33 @@ class Substitutor:
             'any': lambda args: self._any(args),
             'any_from': lambda args: self._any_from(args),
             'regex': lambda args: self._regex(args),
-            'uuid': lambda args: self.randomizer.uuid(),
+            'uuid': lambda args: self._randomizer.uuid(),
             'number': lambda args: self._number(args),
             'date': lambda args: self._date_formatted(args),
 
-            'first_name': lambda args: self.randomizer.first_name(args),
-            'last_name': lambda args: self.randomizer.last_name(args),
-            'middle_name': lambda args: self.randomizer.middle_name(args),
-            'phone_number': lambda args: self.randomizer.phone_number(args),
-            'email': lambda args: self.randomizer.email(args),
+            'first_name': lambda args: self._randomizer.first_name(args),
+            'last_name': lambda args: self._randomizer.last_name(args),
+            'middle_name': lambda args: self._randomizer.middle_name(args),
+            'phone_number': lambda args: self._randomizer.phone_number(args),
+            'email': lambda args: self._randomizer.email(args),
 
-            'country': lambda args: self.randomizer.country(args),
-            'city': lambda args: self.randomizer.city(args),
-            'street': lambda args: self.randomizer.street(args),
-            'house_number': lambda args: self.randomizer.house_number(args),
-            'postcode': lambda args: self.randomizer.postcode(args),
-            'administrative_unit': lambda args: self.randomizer.administrative_unit(args),
+            'country': lambda args: self._randomizer.country(args),
+            'city': lambda args: self._randomizer.city(args),
+            'street': lambda args: self._randomizer.street(args),
+            'house_number': lambda args: self._randomizer.house_number(args),
+            'postcode': lambda args: self._randomizer.postcode(args),
+            'administrative_unit': lambda args: self._randomizer.administrative_unit(args),
 
-            'company_name': lambda args: self.randomizer.company_name(args),
-            'bank_name': lambda args: self.randomizer.bank_name(args),
+            'company_name': lambda args: self._randomizer.company_name(args),
+            'bank_name': lambda args: self._randomizer.bank_name(args),
 
             # ru_RU only
-            'inn_fl': lambda args: self.randomizer.inn_fl(),
-            'inn_ul': lambda args: self.randomizer.inn_ul(),
-            'ogrn_ip': lambda args: self.randomizer.ogrn_ip(),
-            'ogrn_fl': lambda args: self.randomizer.ogrn_fl(),
-            'kpp': lambda args: self.randomizer.kpp(),
-            'snils_formatted': lambda args: self.randomizer.snils_formatted(),
+            'inn_fl': lambda args: self._randomizer.inn_fl(),
+            'inn_ul': lambda args: self._randomizer.inn_ul(),
+            'ogrn_ip': lambda args: self._randomizer.ogrn_ip(),
+            'ogrn_fl': lambda args: self._randomizer.ogrn_fl(),
+            'kpp': lambda args: self._randomizer.kpp(),
+            'snils_formatted': lambda args: self._randomizer.snils_formatted(),
         }
 
     def reset_context(self, xsd_filename, root_element_name, config_local):
@@ -75,6 +79,30 @@ class Substitutor:
         logger.debug('local_context["source_extracted"] = %s (extracted with regexp %s)', source_extracted, source_filename)
         logger.debug('local_context["output_filename"]  = %s', resolved_value)
 
+    def _get_variable_from_scope(self, args: Optional[str], context: dict, scope_name: str):
+        variable_name = args.strip(' ').strip("'").strip('"') if args is not None else None
+        if not variable_name:
+            raise RuntimeError(f"{scope_name.capitalize()} variable name is not specified")
+
+        logger.debug('get variable "%s" from %s context...', variable_name, scope_name)
+        value = context.get(variable_name)
+        if value is None:
+            logger.debug('variable "%s" not found in %s context', variable_name, scope_name)
+            config_field = scope_name if scope_name != 'global' else 'global_'
+            definitions = getattr(self._variables_config, config_field, None)
+
+            expression = definitions.get(variable_name)
+            if expression is None:
+                raise RuntimeError(f"{scope_name.capitalize()} variable '{variable_name}' is not defined")
+
+            value = self._process_expression(expression)
+            logger.debug('variable "%s" added to %s context. value: %s', variable_name, scope_name, value)
+            context[variable_name] = value
+        else:
+            logger.debug('variable "%s" is found in %s context. value: %s', variable_name, scope_name, value)
+
+        return value
+
     def get_output_filename(self):
         return self._local_context.get("output_filename")
 
@@ -90,37 +118,21 @@ class Substitutor:
 
     def _process_expression(self, expression):
         logger.debug('processing expression: %s', expression)
-        global_context = self._global_context
-        local_context = self._local_context
         result_value: str = expression
-        span_to_replacement = {}
-        matches = _pattern.finditer(expression)
-        for match in matches:
-            func_name = match[1]
-            func_args = match[2]
-            func_mod = match[3]
-            func_lambda = self.providers_dict[func_name]
-            if not func_lambda:
+        resolved_substitutions = []
+        subexpressions = _parse_subexpressions(expression)
+        for se in subexpressions:
+            func_name = se.function
+            func_args = se.argument
+            func_lambda = self._providers_dict.get(func_name)
+            if func_lambda is None:
                 raise RuntimeError(f"Unknown function {func_name}")
 
-            provider_func = lambda: func_lambda(func_args)
+            resolved_value = func_lambda(func_args)
+            resolved_substitutions.append((se.start, se.end, str(resolved_value)))
 
-            match func_mod:
-                case None:
-                    resolved_value = provider_func()
-                case 'local':
-                    resolved_value = local_context.get(func_name) or provider_func()
-                    local_context[func_name] = resolved_value
-                case 'global':
-                    resolved_value = global_context.get(func_name) or provider_func()
-                    global_context[func_name] = resolved_value
-                case _:
-                    raise RuntimeError(f"Unknown modifier: {func_mod}")
-
-            span_to_replacement[match.span()] = resolved_value
-
-        for span, replacement in reversed(list(span_to_replacement.items())):
-            result_value = result_value[:span[0]] + replacement + result_value[span[1]:]
+        for start, end, replacement in reversed(resolved_substitutions):
+            result_value = result_value[:start] + replacement + result_value[end:]
 
         logger.debug('expression resolved to value: %s', result_value)
         return result_value
@@ -128,21 +140,146 @@ class Substitutor:
     def _any(self, args):
         separated_args = str(args).split(sep=",")
         options = [i.strip(' ').strip("'").strip('"') for i in separated_args]
-        return self.randomizer.any(options)
+        return self._randomizer.any(options)
 
     def _any_from(self, args):
         file_path = args.strip(' ').strip("'").strip('"')
-        return self.randomizer.any_from(file_path)
+        return self._randomizer.any_from(file_path)
 
     def _regex(self, args):
         pattern = args.strip("'").strip('"')
-        return self.randomizer.regex(pattern)
+        return self._randomizer.regex(pattern)
 
     def _number(self, args):
         left_bound, right_bound = (int(i) for i in str(args).split(sep=","))
-        return str(self.randomizer.integer(left_bound, right_bound))
+        return str(self._randomizer.integer(left_bound, right_bound))
 
     def _date_formatted(self, args):
         date_from, date_until = (i.strip(' ').strip("'").strip('"') for i in str(args).split(sep=","))
-        random_date = self.randomizer.random_datetime(date_from, date_until)
+        random_date = self._randomizer.random_datetime(date_from, date_until)
         return random_date.strftime("%Y%m%d")
+
+
+class _ParsedExpression(NamedTuple):
+    start: int
+    end: int
+    function: str
+    argument: Optional[str]
+
+
+class ExpressionSyntaxError(ValueError):
+    def __init__(self, expression: Optional[str], position: int, description: str):
+        super().__init__(f'Failed to parse expression: {expression}: {description} at position {position}')
+        self.expression = expression
+        # Clamp position to the expression boundaries to avoid IndexError when formatting
+        self.position = self._clamp_position(position, expression)
+        self.description = description
+
+    @staticmethod
+    def _clamp_position(position: int, expression: Optional[str]) -> int:
+        if expression is None:
+            return position
+        return max(0, min(len(expression), position))
+
+    def attach_expression(self, expression: str) -> None:
+        self.expression = expression
+        self.position = self._clamp_position(self.position, expression)
+
+
+def _parse_subexpressions(expression: str) -> list[_ParsedExpression]:
+    subexpressions: list[_ParsedExpression] = []
+    cursor = 0
+    while True:
+        start = expression.find('{{', cursor)
+        if start == -1:
+            break
+        end = expression.find('}}', start + 2)
+        if end == -1:
+            raise ExpressionSyntaxError(expression, len(expression), "missing closing '}}'")
+        inner = expression[start + 2:end]
+        try:
+            function, argument = _parse_placeholder_inner(start, inner)
+        except ExpressionSyntaxError as exc:
+            exc.attach_expression(expression)
+            raise
+        subexpressions.append(_ParsedExpression(start, end + 2, function, argument))
+        cursor = end + 2
+    return subexpressions
+
+
+def _parse_placeholder_inner(start: int, inner: str) -> tuple[str, Optional[str]]:
+    inner_start = start + 2
+    stripped_inner = inner.strip()
+    if not stripped_inner:
+        raise ExpressionSyntaxError(None, inner_start, "placeholder is empty")
+
+    leading_ws = len(inner) - len(inner.lstrip())
+    text_offset = inner_start + leading_ws
+    function, argument = _parse_function_call(start, stripped_inner, text_offset)
+
+    return function, argument
+
+
+def _parse_function_call(start: int, text: str, absolute_offset: int) -> tuple[str, Optional[str]]:
+    stripped = text.strip()
+    leading_ws = len(text) - len(text.lstrip())
+    content_offset = absolute_offset + leading_ws
+    if not stripped:
+        raise ExpressionSyntaxError(None, content_offset, "function name is missing")
+
+    idx = 0
+    while idx < len(stripped) and not stripped[idx].isspace() and stripped[idx] != '(':
+        idx += 1
+
+    function = stripped[:idx]
+
+    remainder = stripped[idx:]
+    if remainder:
+        remainder_lstrip = remainder.lstrip()
+        remainder_offset = content_offset + idx + (len(remainder) - len(remainder_lstrip))
+        if not remainder_lstrip.startswith('('):
+            raise ExpressionSyntaxError(None, remainder_offset, f"unexpected text after function name '{function}'")
+        argument, rest, rest_offset = _extract_arguments(start, remainder_lstrip, remainder_offset)
+        if rest.strip():
+            rest_lstrip = rest.lstrip()
+            leftover_offset = rest_offset + (len(rest) - len(rest_lstrip))
+            if rest_lstrip.startswith(')'):
+                raise ExpressionSyntaxError(None, leftover_offset, "unexpected ')'")
+            raise ExpressionSyntaxError(None, leftover_offset, "unexpected text after arguments")
+    else:
+        argument = None
+
+    return function, argument
+
+
+def _extract_arguments(start: int, text: str, absolute_offset: int) -> tuple[Optional[str], str, int]:
+    depth = 0
+    quote: Optional[str] = None
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if i == 0:
+            if ch != '(':
+                raise ExpressionSyntaxError(None, absolute_offset, "arguments must start with '('")
+            depth = 1
+            i += 1
+            continue
+        if quote:
+            if ch == quote:
+                quote = None
+        else:
+            if ch in ('"', "'"):
+                quote = ch
+            elif ch == '(':
+                depth += 1
+            elif ch == ')':
+                depth -= 1
+                if depth == 0:
+                    argument = text[1:i]
+                    argument = argument.strip() if argument else None
+                    rest = text[i + 1:]
+                    rest_offset = absolute_offset + i + 1
+                    return argument, rest, rest_offset
+        i += 1
+
+    raise ExpressionSyntaxError(None, start, "missing closing ')' for placeholder")

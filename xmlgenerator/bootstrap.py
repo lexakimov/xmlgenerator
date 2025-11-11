@@ -4,16 +4,14 @@ from lxml import etree
 from xmlschema import XMLSchema
 
 import xmlgenerator
-from xmlgenerator import configuration, validation, randomization, substitution, generator
 from xmlgenerator.arguments import parse_args
 from xmlgenerator.configuration import load_config
 from xmlgenerator.generator import XmlGenerator, get_ns_map
 from xmlgenerator.randomization import Randomizer
-from xmlgenerator.substitution import Substitutor
+from xmlgenerator.substitution import ExpressionSyntaxError, Substitutor
 from xmlgenerator.validation import XmlValidator
 
 # TODO кастомные переменные для локального контекста
-# TODO валидация по Schematron
 # TODO типизировать
 # TODO Почистить и перевести комментарии
 # TODO Дописать тесты
@@ -45,6 +43,9 @@ logger = logging.getLogger('xmlgenerator.bootstrap')
 def main():
     try:
         _main()
+    except ExpressionSyntaxError as ex:
+        _log_expression_error(ex)
+        exit(1)
     except KeyboardInterrupt as ex:
         logger.info('processing interrupted')
 
@@ -61,7 +62,7 @@ def _main():
     config = load_config(args.config_yaml)
 
     randomizer = Randomizer(args.seed)
-    substitutor = Substitutor(randomizer)
+    substitutor = Substitutor(randomizer, config.variables)
     generator = XmlGenerator(randomizer, substitutor)
     validator = XmlValidator(args.validation, args.ignore_validation_errors)
 
@@ -120,11 +121,18 @@ def _setup_loggers(args):
     logging.addLevelName(logging.WARNING, 'WARN')
     log_level = logging.DEBUG if args.debug else logging.INFO
     logger.setLevel(log_level)
-    configuration.logger.setLevel(log_level)
-    validation.logger.setLevel(log_level)
+    xmlgenerator.configuration.logger.setLevel(log_level)
+    xmlgenerator.validation.logger.setLevel(log_level)
     xmlgenerator.generator.logger.setLevel(log_level)
-    substitution.logger.setLevel(log_level)
-    randomization.logger.setLevel(log_level)
+    xmlgenerator.substitution.logger.setLevel(log_level)
+    xmlgenerator.randomization.logger.setLevel(log_level)
+
+
+def _log_expression_error(exc: ExpressionSyntaxError) -> None:
+    pointer_line = ' ' * exc.position + '^ ' + exc.description
+    logger.error('Failed to parse expression:')
+    logger.error('%s', exc.expression)
+    logger.error('%s', pointer_line)
 
 
 if __name__ == "__main__":
