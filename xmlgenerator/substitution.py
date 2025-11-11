@@ -80,14 +80,14 @@ class Substitutor:
         logger.debug('local_context["output_filename"]  = %s', resolved_value)
 
     def _get_variable_from_scope(self, args: Optional[str], context: dict, scope_name: str):
-        # TODO add logging
-
         variable_name = args.strip(' ').strip("'").strip('"') if args is not None else None
         if not variable_name:
             raise RuntimeError(f"{scope_name.capitalize()} variable name is not specified")
 
+        logger.debug('get variable "%s" from %s context...', variable_name, scope_name)
         value = context.get(variable_name)
         if value is None:
+            logger.debug('variable "%s" not found in %s context', variable_name, scope_name)
             config_field = scope_name if scope_name != 'global' else 'global_'
             definitions = getattr(self._variables_config, config_field, None)
 
@@ -96,7 +96,10 @@ class Substitutor:
                 raise RuntimeError(f"{scope_name.capitalize()} variable '{variable_name}' is not defined")
 
             value = self._process_expression(expression)
+            logger.debug('variable "%s" added to %s context. value: %s', variable_name, scope_name, value)
             context[variable_name] = value
+        else:
+            logger.debug('variable "%s" is found in %s context. value: %s', variable_name, scope_name, value)
 
         return value
 
