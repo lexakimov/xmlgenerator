@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 
 class Substitutor:
     def __init__(self, randomizer: Randomizer, variables_config: VariablesConfig):
-        self.randomizer = randomizer  # TODO rename
+        self._randomizer = randomizer
         self._variables_config = variables_config
         self._local_context = {}
         self._global_context = {}
-        self.providers_dict = {  # TODO rename
+        self._providers_dict = {
             # scope access functions
             'global': lambda args: self._get_variable_from_scope(args, self._global_context, 'global'),
             'local': lambda args: self._get_variable_from_scope(args, self._local_context, 'local'),
@@ -30,33 +30,33 @@ class Substitutor:
             'any': lambda args: self._any(args),
             'any_from': lambda args: self._any_from(args),
             'regex': lambda args: self._regex(args),
-            'uuid': lambda args: self.randomizer.uuid(),
+            'uuid': lambda args: self._randomizer.uuid(),
             'number': lambda args: self._number(args),
             'date': lambda args: self._date_formatted(args),
 
-            'first_name': lambda args: self.randomizer.first_name(args),
-            'last_name': lambda args: self.randomizer.last_name(args),
-            'middle_name': lambda args: self.randomizer.middle_name(args),
-            'phone_number': lambda args: self.randomizer.phone_number(args),
-            'email': lambda args: self.randomizer.email(args),
+            'first_name': lambda args: self._randomizer.first_name(args),
+            'last_name': lambda args: self._randomizer.last_name(args),
+            'middle_name': lambda args: self._randomizer.middle_name(args),
+            'phone_number': lambda args: self._randomizer.phone_number(args),
+            'email': lambda args: self._randomizer.email(args),
 
-            'country': lambda args: self.randomizer.country(args),
-            'city': lambda args: self.randomizer.city(args),
-            'street': lambda args: self.randomizer.street(args),
-            'house_number': lambda args: self.randomizer.house_number(args),
-            'postcode': lambda args: self.randomizer.postcode(args),
-            'administrative_unit': lambda args: self.randomizer.administrative_unit(args),
+            'country': lambda args: self._randomizer.country(args),
+            'city': lambda args: self._randomizer.city(args),
+            'street': lambda args: self._randomizer.street(args),
+            'house_number': lambda args: self._randomizer.house_number(args),
+            'postcode': lambda args: self._randomizer.postcode(args),
+            'administrative_unit': lambda args: self._randomizer.administrative_unit(args),
 
-            'company_name': lambda args: self.randomizer.company_name(args),
-            'bank_name': lambda args: self.randomizer.bank_name(args),
+            'company_name': lambda args: self._randomizer.company_name(args),
+            'bank_name': lambda args: self._randomizer.bank_name(args),
 
             # ru_RU only
-            'inn_fl': lambda args: self.randomizer.inn_fl(),
-            'inn_ul': lambda args: self.randomizer.inn_ul(),
-            'ogrn_ip': lambda args: self.randomizer.ogrn_ip(),
-            'ogrn_fl': lambda args: self.randomizer.ogrn_fl(),
-            'kpp': lambda args: self.randomizer.kpp(),
-            'snils_formatted': lambda args: self.randomizer.snils_formatted(),
+            'inn_fl': lambda args: self._randomizer.inn_fl(),
+            'inn_ul': lambda args: self._randomizer.inn_ul(),
+            'ogrn_ip': lambda args: self._randomizer.ogrn_ip(),
+            'ogrn_fl': lambda args: self._randomizer.ogrn_fl(),
+            'kpp': lambda args: self._randomizer.kpp(),
+            'snils_formatted': lambda args: self._randomizer.snils_formatted(),
         }
 
     def reset_context(self, xsd_filename, root_element_name, config_local):
@@ -121,7 +121,7 @@ class Substitutor:
         for se in subexpressions:
             func_name = se.function
             func_args = se.argument
-            func_lambda = self.providers_dict.get(func_name)
+            func_lambda = self._providers_dict.get(func_name)
             if func_lambda is None:
                 raise RuntimeError(f"Unknown function {func_name}")
 
@@ -137,23 +137,23 @@ class Substitutor:
     def _any(self, args):
         separated_args = str(args).split(sep=",")
         options = [i.strip(' ').strip("'").strip('"') for i in separated_args]
-        return self.randomizer.any(options)
+        return self._randomizer.any(options)
 
     def _any_from(self, args):
         file_path = args.strip(' ').strip("'").strip('"')
-        return self.randomizer.any_from(file_path)
+        return self._randomizer.any_from(file_path)
 
     def _regex(self, args):
         pattern = args.strip("'").strip('"')
-        return self.randomizer.regex(pattern)
+        return self._randomizer.regex(pattern)
 
     def _number(self, args):
         left_bound, right_bound = (int(i) for i in str(args).split(sep=","))
-        return str(self.randomizer.integer(left_bound, right_bound))
+        return str(self._randomizer.integer(left_bound, right_bound))
 
     def _date_formatted(self, args):
         date_from, date_until = (i.strip(' ').strip("'").strip('"') for i in str(args).split(sep=","))
-        random_date = self.randomizer.random_datetime(date_from, date_until)
+        random_date = self._randomizer.random_datetime(date_from, date_until)
         return random_date.strftime("%Y%m%d")
 
 
