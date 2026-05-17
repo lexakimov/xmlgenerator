@@ -2,10 +2,10 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/xmlgenerator)](https://pypi.org/project/xmlgenerator)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/xmlgenerator)](https://pypistats.org/packages/xmlgenerator)
+[![Coverage](https://codecov.io/gh/lexakimov/xmlgenerator/branch/master/graph/badge.svg)](https://codecov.io/gh/lexakimov/xmlgenerator)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lexakimov/xmlgenerator)
 
-- [Русский 🇷🇺](README_RU.md)
-- [English 🇺🇸](README.md)
+[ [🇷🇺 Русский](README_RU.md) ]
 
 Generates XML documents based on XSD schemas with the ability to customize data through a YAML configuration file.
 
@@ -61,7 +61,7 @@ options:
   -p, --pretty                     prettify the output XML
   -n, --namespace alias=namespace  define XML namespace alias (repeatable flag)
   -v, --validation <validation>    validate the generated XML document (none, schema, schematron; default: schema)
-  -i                               continue execution when validation errors occur
+  -i, --ignore-errors              continue execution when validation errors occur
   -e, --encoding <encoding>        the output XML encoding (utf-8, windows-1251; default: utf-8)
   -s, --seed <seed>                set the randomization seed
   -d, --debug                      enable debug mode
@@ -132,9 +132,9 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
       .\.venv\Scripts\activate
       ```
 
-3. **Install dependencies:**
+3. **Install the project with development dependencies:**
    ```bash
-   pip install -r requirements.txt
+   pip install -e ".[dev]"
    ```
 
 4.1. **Install the package:**
@@ -153,7 +153,14 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 ### Running Tests
 
 ```bash
+pip install -e ".[test]"
 pytest
+```
+
+Run tests with coverage:
+
+```bash
+pytest --cov=xmlgenerator --cov-report=term-missing --cov-report=html
 ```
 
 ---

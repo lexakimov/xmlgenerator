@@ -22,6 +22,8 @@ class TypeConstraints:
     max_length: Optional[int] = None
     min_value: Optional[Any] = None
     max_value: Optional[Any] = None
+    min_exclusive: bool = False
+    max_exclusive: bool = False
     total_digits: Optional[int] = None
     fraction_digits: Optional[int] = None
     patterns: Optional[list] = None
@@ -344,6 +346,15 @@ class XmlGenerator:
         config_max = rand_config.max_inclusive
         effective_min, effective_max \
             = merge_constraints(digit_min, digit_max, min_value, max_value, config_min, config_max)
+        effective_min, effective_max = apply_exclusive_bounds(
+            effective_min,
+            effective_max,
+            min_value,
+            max_value,
+            constraints.min_exclusive,
+            constraints.max_exclusive,
+            fraction_digits
+        )
         logger.debug('bounds after  adjust: min_value: %4s; max_value: %4s', effective_min, effective_max)
 
         if fraction_digits == 0:
@@ -574,7 +585,7 @@ def get_ns_map(xsd_schema, ns_aliases=None):
     # assign generated aliases
     counter = 0
     for k, v in ns_map.items():
-        if v is None and k is not tns:
+        if v is None and k != tns:
             ns_map[k] = 'ns%s' % counter
             counter += 1
 
@@ -589,6 +600,8 @@ def extract_type_constraints(xsd_type, local_config: GeneratorConfig) -> TypeCon
     max_length = getattr(xsd_type, 'max_length', None)
     min_value = getattr(xsd_type, 'min_value', None)
     max_value = getattr(xsd_type, 'max_value', None)
+    min_exclusive = False
+    max_exclusive = False
     total_digits = None
     fraction_digits = None
     patterns = getattr(xsd_type, 'patterns', None)
@@ -596,12 +609,16 @@ def extract_type_constraints(xsd_type, local_config: GeneratorConfig) -> TypeCon
     for validator in validators:
         if isinstance(validator, XsdMinExclusiveFacet):
             min_value = validator.value
+            min_exclusive = True
         elif isinstance(validator, XsdMinInclusiveFacet):
             min_value = validator.value
+            min_exclusive = False
         elif isinstance(validator, XsdMaxExclusiveFacet):
             max_value = validator.value
+            max_exclusive = True
         elif isinstance(validator, XsdMaxInclusiveFacet):
             max_value = validator.value
+            max_exclusive = False
         elif isinstance(validator, XsdLengthFacet):
             min_length = validator.value
             max_length = validator.value
@@ -641,11 +658,41 @@ def extract_type_constraints(xsd_type, local_config: GeneratorConfig) -> TypeCon
         max_length=max_length,
         min_value=min_value,
         max_value=max_value,
+        min_exclusive=min_exclusive,
+        max_exclusive=max_exclusive,
         total_digits=total_digits,
         fraction_digits=fraction_digits,
         patterns=patterns,
         rand_config=rand_config
     )
+
+
+def apply_exclusive_bounds(
+        effective_min,
+        effective_max,
+        schema_min,
+        schema_max,
+        min_exclusive: bool,
+        max_exclusive: bool,
+        fraction_digits: int
+):
+    if fraction_digits == 0:
+        step = 1
+    else:
+        step = 10 ** -fraction_digits
+
+    if min_exclusive and effective_min == schema_min:
+        effective_min += step
+    if max_exclusive and effective_max == schema_max:
+        effective_max -= step
+
+    if effective_min is not None and effective_max is not None and effective_min > effective_max:
+        raise RuntimeError(
+            f"Cannot generate value for exclusive bounds: effective_min ({effective_min}) > "
+            f"effective_max ({effective_max})"
+        )
+
+    return effective_min, effective_max
 
 
 def merge_constraints(digit_min=None, digit_max=None, schema_min=None, schema_max=None, config_min=None, config_max=None):

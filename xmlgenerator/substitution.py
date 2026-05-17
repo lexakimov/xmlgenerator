@@ -65,8 +65,17 @@ class Substitutor:
         self._local_context["root_element"] = root_element_name
 
         source_filename = config_local.source_filename
-        matches = re.search(source_filename, xsd_filename).groupdict()
+        match = re.search(source_filename, xsd_filename)
+        if match is None:
+            raise RuntimeError(f'source_filename pattern "{source_filename}" does not match "{xsd_filename}"')
+
+        matches = match.groupdict()
+        if 'extracted' not in matches:
+            raise RuntimeError(f'source_filename pattern "{source_filename}" must define named group "extracted"')
+
         source_extracted = matches['extracted']
+        if source_extracted is None:
+            raise RuntimeError(f'source_filename pattern "{source_filename}" did not capture group "extracted"')
         self._local_context["source_extracted"] = source_extracted
 
         output_filename = config_local.output_filename
@@ -195,10 +204,10 @@ def _parse_subexpressions(expression: str) -> list[_ParsedExpression]:
             break
         end = expression.find('}}', start + 2)
         if end == -1:
-            raise ExpressionSyntaxError(expression, len(expression), "missing closing '}}'")
-        inner = expression[start + 2:end]
+            raise ExpressionSyntaxError(expression, start + 1, "missing closing '}}'")
+        inner_text = expression[start + 2:end]
         try:
-            function, argument = _parse_placeholder_inner(start, inner)
+            function, argument = _parse_placeholder_inner(inner_text, start + 2)
         except ExpressionSyntaxError as exc:
             exc.attach_expression(expression)
             raise
@@ -207,79 +216,97 @@ def _parse_subexpressions(expression: str) -> list[_ParsedExpression]:
     return subexpressions
 
 
-def _parse_placeholder_inner(start: int, inner: str) -> tuple[str, Optional[str]]:
-    inner_start = start + 2
-    stripped_inner = inner.strip()
+def _parse_placeholder_inner(inner_text: str, absolute_offset: int) -> tuple[str, Optional[str]]:
+    stripped_inner = inner_text.strip()
     if not stripped_inner:
-        raise ExpressionSyntaxError(None, inner_start, "placeholder is empty")
+        raise ExpressionSyntaxError(None, absolute_offset, "placeholder is empty")
 
-    leading_ws = len(inner) - len(inner.lstrip())
-    text_offset = inner_start + leading_ws
-    function, argument = _parse_function_call(start, stripped_inner, text_offset)
+    leading_ws = len(inner_text) - len(inner_text.lstrip())
+    text_offset = absolute_offset + leading_ws
+    function, argument = _parse_function_call(stripped_inner, text_offset)
 
     return function, argument
 
 
-def _parse_function_call(start: int, text: str, absolute_offset: int) -> tuple[str, Optional[str]]:
-    stripped = text.strip()
-    leading_ws = len(text) - len(text.lstrip())
-    content_offset = absolute_offset + leading_ws
-    if not stripped:
-        raise ExpressionSyntaxError(None, content_offset, "function name is missing")
-
+def _parse_function_call(stripped_inner_text: str, absolute_offset: int) -> tuple[str, Optional[str]]:
     idx = 0
-    while idx < len(stripped) and not stripped[idx].isspace() and stripped[idx] != '(':
+    while idx < len(stripped_inner_text) and not stripped_inner_text[idx].isspace() and stripped_inner_text[idx] != '(':
         idx += 1
 
-    function = stripped[:idx]
+    function = stripped_inner_text[:idx]
+    if not function:
+        raise ExpressionSyntaxError(None, absolute_offset, "function name is missing")
 
-    remainder = stripped[idx:]
+    remainder = stripped_inner_text[idx:]
     if remainder:
         remainder_lstrip = remainder.lstrip()
-        remainder_offset = content_offset + idx + (len(remainder) - len(remainder_lstrip))
+        remainder_offset = absolute_offset + idx + len(remainder) - len(remainder_lstrip)
         if not remainder_lstrip.startswith('('):
-            raise ExpressionSyntaxError(None, remainder_offset, f"unexpected text after function name '{function}'")
-        argument, rest, rest_offset = _extract_arguments(start, remainder_lstrip, remainder_offset)
+            raise ExpressionSyntaxError(None, remainder_offset, f"unexpected text after function call")
+
+        argument, rest, rest_offset = _extract_arguments(remainder_lstrip, remainder_offset)
         if rest.strip():
             rest_lstrip = rest.lstrip()
-            leftover_offset = rest_offset + (len(rest) - len(rest_lstrip))
+            leftover_offset = rest_offset + len(rest) - len(rest_lstrip)
             if rest_lstrip.startswith(')'):
                 raise ExpressionSyntaxError(None, leftover_offset, "unexpected ')'")
-            raise ExpressionSyntaxError(None, leftover_offset, "unexpected text after arguments")
+            raise ExpressionSyntaxError(None, leftover_offset, "unexpected text after function call")
     else:
         argument = None
 
     return function, argument
 
 
-def _extract_arguments(start: int, text: str, absolute_offset: int) -> tuple[Optional[str], str, int]:
+def _extract_arguments(text: str, absolute_offset: int) -> tuple[Optional[str], str, int]:
     depth = 0
-    quote: Optional[str] = None
-    i = 0
-    while i < len(text):
-        ch = text[i]
+    paren_stack: list[int] = []
+    quote_stack: list[tuple[str, int]] = []
+    escape = False
+    for i, ch in enumerate(text):
         if i == 0:
-            if ch != '(':
-                raise ExpressionSyntaxError(None, absolute_offset, "arguments must start with '('")
+            # the parser always expects to start with '('
+            # if ch != '(':
+            #     raise ExpressionSyntaxError(None, absolute_offset, "missing opening '(' for function arguments")
             depth = 1
-            i += 1
+            paren_stack.append(absolute_offset + i)
             continue
-        if quote:
-            if ch == quote:
-                quote = None
-        else:
-            if ch in ('"', "'"):
-                quote = ch
-            elif ch == '(':
-                depth += 1
-            elif ch == ')':
-                depth -= 1
-                if depth == 0:
-                    argument = text[1:i]
-                    argument = argument.strip() if argument else None
-                    rest = text[i + 1:]
-                    rest_offset = absolute_offset + i + 1
-                    return argument, rest, rest_offset
-        i += 1
 
-    raise ExpressionSyntaxError(None, start, "missing closing ')' for placeholder")
+        if escape:
+            # previous character was an escape inside quotes, so skip special handling
+            escape = False
+            continue
+
+        if quote_stack:
+            # inside quotes we allow escaping and do not treat brackets specially, so only watch for closing quote
+            if ch == '\\':
+                escape = True
+                continue
+            if ch == quote_stack[-1][0]:
+                quote_stack.pop()
+            continue
+
+        if ch in ('"', "'"):
+            # push quote type to allow nested parentheses inside strings
+            quote_stack.append((ch, absolute_offset + i))
+        # elif ch == '(':
+        #     depth += 1
+        #     paren_stack.append(absolute_offset + i)
+        elif ch == ')':
+            depth -= 1
+            if paren_stack:
+                paren_stack.pop()
+            if depth == 0:
+                # found the matching closing parenthesis for the argument list
+                argument = text[1:i]
+                argument = argument.strip() if argument else None
+                rest = text[i + 1:]
+                rest_offset = absolute_offset + i + 1
+                return argument, rest, rest_offset
+
+    if quote_stack:
+        # reached end-of-text while still inside a quoted string
+        raise ExpressionSyntaxError(None, quote_stack[-1][1], f"missing closing quote {quote_stack[-1][0]}")
+
+    # ran out of text without closing the initial '(' depth
+    missing_paren_offset = paren_stack[-1] if paren_stack else absolute_offset + len(text)
+    raise ExpressionSyntaxError(None, missing_paren_offset, "missing closing ')'")

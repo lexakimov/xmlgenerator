@@ -561,6 +561,13 @@ class TestBuiltInTypesGeneration:
             generated_value = generated_xml.xpath("/root/text()")[0]
             assert 10 <= int(generated_value) <= 100
 
+        def test_integer_exclusive_min_max(self, generator, config):
+            xsd_schema = XMLSchema("data/built_in_types/derived_restricted/integer_exclusive_min_max.xsd")
+            generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")[0]
+            assert 10 < int(generated_value) < 100
+
 
 @pytest.mark.repeat(10)
 class TestComplexTypesGeneration:
@@ -1018,6 +1025,21 @@ class TestNamespaceAliasing:
         ns_map = get_ns_map(xsd_schema, {'abc': XSD_NAMESPACE})
 
         assert ns_map == {'abc': XSD_NAMESPACE}
+
+    def test_target_namespace_is_compared_by_value(self, monkeypatch):
+        class Schema:
+            target_namespace = ''.join(['urn://foo', '/custom'])
+            default_namespace = None
+
+        imported_namespace = ''.join(['urn://foo/', 'custom'])
+        assert imported_namespace == Schema.target_namespace
+        assert imported_namespace is not Schema.target_namespace
+
+        monkeypatch.setattr('xmlgenerator.generator._get_ns_list', lambda schema: [imported_namespace])
+
+        ns_map = get_ns_map(Schema())
+
+        assert ns_map == {None: imported_namespace}
 
 
     def test_custom_namespace_without_alias(self, generator, config):

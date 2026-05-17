@@ -5,11 +5,7 @@ import pytest
 import tests
 from xmlgenerator.configuration import GeneratorConfig, VariablesConfig
 from xmlgenerator.randomization import Randomizer
-from xmlgenerator.substitution import (
-    ExpressionSyntaxError,
-    Substitutor,
-    _extract_arguments,
-    _parse_subexpressions, )
+from xmlgenerator.substitution import ExpressionSyntaxError, Substitutor, _parse_subexpressions
 
 os.chdir(os.path.dirname(os.path.abspath(tests.__file__)))
 
@@ -69,12 +65,23 @@ class TestExpressionParsing:
 
     @pytest.mark.parametrize(('expression', 'message', 'position'), [
         pytest.param("{{ }}", "placeholder is empty", 2, id="placeholder_empty"),
-        pytest.param("{{ func( }}", "missing closing ')' for placeholder", 0, id="missing_closing_parenthesis"),
-        pytest.param("{{ func('a') }", "missing closing '}}'", 14, id="missing_closing_braces"),
+        pytest.param("{{ () }}", "function name is missing", 3, id="function_name_is_missing"),
+
+        pytest.param(" {{ func('a') ", "missing closing '}}'", 2, id="missing_closing_braces"),
+
+        pytest.param("{{ func(      }}", "missing closing ')'", 7, id="missing_closing_parenthesis"),
+        pytest.param("{{ func('abc'  }}", "missing closing ')'", 7, id="missing_closing_parenthesis_with_content"),
+
         pytest.param("{{ email('ru_RU') ) }}", "unexpected ')'", 18, id="unexpected_closing_parenthesis"),
-        pytest.param("{{ func(arg) trailing }}", "unexpected text after arguments", 13, id="unexpected_text_after_arguments"),
-        # pytest.param('{{ "unterminated }}', "unterminated quote in placeholder", 0, id="unterminated_quote"),
-        pytest.param("{{ func arg }}", "unexpected text after function name 'func'", 8, id="unexpected_text_after_function_name"),
+
+        pytest.param("{{ func arg }}", "unexpected text after function call", 8, id="unexpected_text_after_function"),
+        pytest.param("{{ func(arg) trailing }}", "unexpected text after function call", 13, id="unexpected_text_after_arguments"),
+
+        pytest.param("{{ func('unterminated) }}", "missing closing quote '", 8, id="missing_closing_single_quote"),
+        pytest.param("{{ func('unterminated\\') }}", "missing closing quote '", 8, id="missing_closing_single_quote_after_escape"),
+
+        pytest.param('{{ func("unterminated) }}', 'missing closing quote "', 8, id="missing_closing_double_quote"),
+        pytest.param('{{ func("unterminated\\") }}', 'missing closing quote "', 8, id="missing_closing_double_quote_after_escape"),
     ])
     def test_expression_errors(self, expression, message, position):
         with pytest.raises(ExpressionSyntaxError) as excinfo:
@@ -84,15 +91,6 @@ class TestExpressionParsing:
         assert error.expression == expression
         assert error.description == message
         assert error.position == position
-
-    def test_arguments_must_start_with_parenthesis(self):
-        with pytest.raises(ExpressionSyntaxError) as excinfo:
-            _extract_arguments(start=0, text=" arg)", absolute_offset=2)
-
-        error = excinfo.value
-        assert error.expression is None
-        assert error.description == "arguments must start with '('"
-        assert error.position == 2
 
 
 class TestFunctions:
@@ -276,3 +274,25 @@ def test_reset_context():
     assert substitutor._local_context["source_filename"] == "second_file.xsd"
     assert substitutor._local_context["source_extracted"] == "second"
     assert substitutor._local_context["output_filename"] == "second_16dab037-65aa-4fcb-905f-7785ebff91d4"
+
+
+def test_reset_context_raises_when_source_filename_does_not_match():
+    substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+    config = GeneratorConfig(
+        source_filename='(?P<extracted>.*).xml',
+        output_filename='{{ source_extracted }}',
+    )
+
+    with pytest.raises(RuntimeError, match='source_filename pattern ".*" does not match "first_file.xsd"'):
+        substitutor.reset_context("first_file.xsd", "someRootElement", config)
+
+
+def test_reset_context_raises_when_source_filename_has_no_extracted_group():
+    substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+    config = GeneratorConfig(
+        source_filename='(.*).(xsd|XSD)',
+        output_filename='{{ source_extracted }}',
+    )
+
+    with pytest.raises(RuntimeError, match='must define named group "extracted"'):
+        substitutor.reset_context("first_file.xsd", "someRootElement", config)
