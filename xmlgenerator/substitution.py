@@ -65,8 +65,17 @@ class Substitutor:
         self._local_context["root_element"] = root_element_name
 
         source_filename = config_local.source_filename
-        matches = re.search(source_filename, xsd_filename).groupdict()
+        match = re.search(source_filename, xsd_filename)
+        if match is None:
+            raise RuntimeError(f'source_filename pattern "{source_filename}" does not match "{xsd_filename}"')
+
+        matches = match.groupdict()
+        if 'extracted' not in matches:
+            raise RuntimeError(f'source_filename pattern "{source_filename}" must define named group "extracted"')
+
         source_extracted = matches['extracted']
+        if source_extracted is None:
+            raise RuntimeError(f'source_filename pattern "{source_filename}" did not capture group "extracted"')
         self._local_context["source_extracted"] = source_extracted
 
         output_filename = config_local.output_filename

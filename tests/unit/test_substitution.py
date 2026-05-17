@@ -274,3 +274,25 @@ def test_reset_context():
     assert substitutor._local_context["source_filename"] == "second_file.xsd"
     assert substitutor._local_context["source_extracted"] == "second"
     assert substitutor._local_context["output_filename"] == "second_16dab037-65aa-4fcb-905f-7785ebff91d4"
+
+
+def test_reset_context_raises_when_source_filename_does_not_match():
+    substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+    config = GeneratorConfig(
+        source_filename='(?P<extracted>.*).xml',
+        output_filename='{{ source_extracted }}',
+    )
+
+    with pytest.raises(RuntimeError, match='source_filename pattern ".*" does not match "first_file.xsd"'):
+        substitutor.reset_context("first_file.xsd", "someRootElement", config)
+
+
+def test_reset_context_raises_when_source_filename_has_no_extracted_group():
+    substitutor = Substitutor(Randomizer(seed=111), VariablesConfig())
+    config = GeneratorConfig(
+        source_filename='(.*).(xsd|XSD)',
+        output_filename='{{ source_extracted }}',
+    )
+
+    with pytest.raises(RuntimeError, match='must define named group "extracted"'):
+        substitutor.reset_context("first_file.xsd", "someRootElement", config)
