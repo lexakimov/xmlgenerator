@@ -561,6 +561,13 @@ class TestBuiltInTypesGeneration:
             generated_value = generated_xml.xpath("/root/text()")[0]
             assert 10 <= int(generated_value) <= 100
 
+        def test_integer_exclusive_min_max(self, generator, config):
+            xsd_schema = XMLSchema("data/built_in_types/derived_restricted/integer_exclusive_min_max.xsd")
+            generated_xml = generator.generate_xml(xsd_schema.root_elements[0], config)
+            log_xml(generated_xml)
+            generated_value = generated_xml.xpath("/root/text()")[0]
+            assert 10 < int(generated_value) < 100
+
 
 @pytest.mark.repeat(10)
 class TestComplexTypesGeneration:
