@@ -61,7 +61,7 @@ options:
   -p, --pretty                     prettify the output XML
   -n, --namespace alias=namespace  define XML namespace alias (repeatable flag)
   -v, --validation <validation>    validate the generated XML document (none, schema, schematron; default: schema)
-  -i                               continue execution when validation errors occur
+  -i, --ignore-errors              continue execution when validation errors occur
   -e, --encoding <encoding>        the output XML encoding (utf-8, windows-1251; default: utf-8)
   -s, --seed <seed>                set the randomization seed
   -d, --debug                      enable debug mode
