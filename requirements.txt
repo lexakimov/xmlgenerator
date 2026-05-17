@@ -11,3 +11,4 @@ pytest-repeat==0.9.4
 setuptools==82.0.1
 nuitka==4.1
 twine==6.2.0
+patchelf==0.17.2.4
