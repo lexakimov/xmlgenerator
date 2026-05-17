@@ -131,9 +131,9 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
       .\.venv\Scripts\activate
       ```
 
-3. **Install dependencies:**
+3. **Install the project with development dependencies:**
    ```bash
-   pip install -r requirements.txt
+   pip install -e ".[dev]"
    ```
 
 4.1. **Install the package:**
@@ -152,6 +152,7 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 ### Running Tests
 
 ```bash
+pip install -e ".[test]"
 pytest
 ```
 

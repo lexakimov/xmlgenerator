@@ -5,8 +5,8 @@ RUN apt-get update && apt-get install -y build-essential && apt-get clean && rm 
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY . .
 
-RUN pip install --progress-bar off --no-cache-dir -r requirements.txt
+RUN pip install --progress-bar off --no-cache-dir -e ".[build]"
 
 ENTRYPOINT [ "python", "build_native.py" ]

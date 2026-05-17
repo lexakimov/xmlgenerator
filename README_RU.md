@@ -131,9 +131,9 @@ options:
       .\.venv\Scripts\activate
       ```
 
-3. **Установите зависимости:**
+3. **Установите проект с зависимостями для разработки:**
    ```bash
-   pip install -r requirements.txt
+   pip install -e ".[dev]"
    ```
 
 4.1. **Установите пакет:**
@@ -152,6 +152,7 @@ options:
 ### Запуск тестов
 
 ```bash
+pip install -e ".[test]"
 pytest
 ```
 
