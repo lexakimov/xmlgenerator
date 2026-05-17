@@ -585,7 +585,7 @@ def get_ns_map(xsd_schema, ns_aliases=None):
     # assign generated aliases
     counter = 0
     for k, v in ns_map.items():
-        if v is None and k is not tns:
+        if v is None and k != tns:
             ns_map[k] = 'ns%s' % counter
             counter += 1
 
