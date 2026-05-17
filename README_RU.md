@@ -2,6 +2,7 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/xmlgenerator)](https://pypi.org/project/xmlgenerator)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/xmlgenerator)](https://pypistats.org/packages/xmlgenerator)
+[![Coverage](https://codecov.io/gh/lexakimov/xmlgenerator/branch/master/graph/badge.svg)](https://codecov.io/gh/lexakimov/xmlgenerator)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lexakimov/xmlgenerator)
 
 [ [🇺🇸 English](README.md) ]
@@ -154,6 +155,12 @@ options:
 ```bash
 pip install -e ".[test]"
 pytest
+```
+
+Запуск тестов с подсчетом покрытия:
+
+```bash
+pytest --cov=xmlgenerator --cov-report=term-missing --cov-report=html
 ```
 
 ---

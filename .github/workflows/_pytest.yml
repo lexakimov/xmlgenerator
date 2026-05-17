@@ -9,6 +9,10 @@ on:
       ref:
         required: false
         type: string
+      upload-codecov:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -29,5 +33,18 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[test]"
 
-      - name: Run tests with pytest
-        run: pytest
+      - name: Run tests with coverage
+        run: pytest --cov=xmlgenerator --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ inputs.python-version }}
+          path: coverage.xml
+
+      - name: Upload coverage to Codecov
+        if: inputs.upload-codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
