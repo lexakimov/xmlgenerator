@@ -4,8 +4,7 @@
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/xmlgenerator)](https://pypistats.org/packages/xmlgenerator)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lexakimov/xmlgenerator)
 
-- [Русский 🇷🇺](README_RU.md)
-- [English 🇺🇸](README.md)
+[ [🇺🇸 English](README.md) ]
 
 Генерирует XML-документы на основе XSD-схем с возможностью настройки через конфигурационный YAML-файл.
 
