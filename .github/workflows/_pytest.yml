@@ -37,7 +37,7 @@ jobs:
         run: pytest --cov=xmlgenerator --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4 # TODO update
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-${{ inputs.python-version }}
           path: coverage.xml
