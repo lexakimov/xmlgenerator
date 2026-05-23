@@ -201,7 +201,10 @@ class Randomizer:
     def bank_name(self, args=None):
         locale = args.strip(' ').strip("'").strip('"') if args is not None else None
         faker = self._faker(locale)
-        return faker.bank() if hasattr(faker, 'bank') else faker.company()
+        try:
+            return faker.bank()
+        except AttributeError: # NotImplementedError
+            return faker.company()
 
     # ru_RU only
 

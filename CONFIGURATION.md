@@ -1,7 +1,6 @@
 # Configuring xmlgenerator
 
-- [Русский 🇷🇺](./CONFIGURATION_RU.md)
-- [English 🇺🇸](./CONFIGURATION.md)
+[ [🇷🇺 Русский](CONFIGURATION_RU.md) ]
 
 This guide will help you understand how to configure `xmlgenerator`.
 

@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=80", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xmlgenerator"
+dynamic = ["version"]
+description = "Generates XML documents from XSD schemas"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Alexey Akimov", email = "lex.akimov23@gmail.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "lxml==6.1.1",
+    "xmlschema==4.3.1",
+    "Faker==40.19.1",
+    "rstr==3.2.2",
+    "PyYAML==6.0.3",
+    "shtab==1.8.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/lexakimov/xmlgenerator"
+Issues = "https://github.com/lexakimov/xmlgenerator/issues"
+
+[project.scripts]
+xmlgenerator = "xmlgenerator.bootstrap:main"
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.0.3",
+    "pytest-cov==7.1.0",
+    "pytest-repeat==0.9.4",
+]
+build = [
+    "build==1.5.0",
+    "nuitka==4.1.1",
+    "patchelf==0.17.2.4",
+    "twine==6.2.0",
+]
+dev = [
+    "pytest==9.0.3",
+    "pytest-cov==7.1.0",
+    "pytest-repeat==0.9.4",
+    "build==1.5.0",
+    "nuitka==4.1.1",
+    "patchelf==0.17.2.4",
+    "twine==6.2.0",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "xmlgenerator.__version__" }
+
+[tool.setuptools.packages.find]
+exclude = ["tests", "tests.*"]
+
+[tool.coverage.run]
+branch = true
+source = ["xmlgenerator"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"

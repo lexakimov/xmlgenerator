@@ -52,28 +52,28 @@ jobs:
         with:
           python-version: '3.14'
           cache: 'pip'
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -e .
 
-      - name: Compare tag version with setup.py version
+      - name: Compare tag version with package version
         id: check-version
         run: |
           # Extract version from tag (strip the leading 'v')
           TAG_VERSION=${GITHUB_REF#refs/tags/v}
           echo "Tag version: $TAG_VERSION"
-          
-          # Read version from setup.py
-          SETUP_VERSION=$(python setup.py --version)
-          echo "Setup.py version: $SETUP_VERSION"
-          
+
+          # Read version from the package metadata source
+          PACKAGE_VERSION=$(python -c "from xmlgenerator import __version__; print(__version__)")
+          echo "Package version: $PACKAGE_VERSION"
+
           # Compare versions
-          if [ "$TAG_VERSION" = "$SETUP_VERSION" ]; then
-            echo "✅ Versions match: $TAG_VERSION = $SETUP_VERSION"
+          if [ "$TAG_VERSION" = "$PACKAGE_VERSION" ]; then
+            echo "✅ Versions match: $TAG_VERSION = $PACKAGE_VERSION"
             echo "versions_match=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ Versions do not match: $TAG_VERSION ≠ $SETUP_VERSION"
+            echo "❌ Versions do not match: $TAG_VERSION ≠ $PACKAGE_VERSION"
             echo "versions_match=false" >> $GITHUB_OUTPUT
             exit 1
           fi
@@ -113,16 +113,14 @@ jobs:
         with:
           python-version: '3.14'
           cache: 'pip'
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install build setuptools
+          pip install build
 
       - name: Build package
-        run: |
-          python setup.py sdist bdist_wheel
+        run: python -m build
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v4
@@ -166,10 +164,10 @@ jobs:
         with:
           python-version: ${{ matrix.python_ver }}
           cache: 'pip'
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -e ".[build]"
 
       - name: Build native
         id: build_native
@@ -260,12 +258,11 @@ jobs:
         with:
           python-version: '3.14'
           cache: 'pip'
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install twine
+          pip install -e ".[build]"
 
       - name: Download Python packages
         uses: actions/download-artifact@v5
