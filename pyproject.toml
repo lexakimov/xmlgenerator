@@ -41,7 +41,7 @@ test = [
 build = [
     "build==1.5.0",
     "nuitka==4.1.1",
-    "patchelf==0.17.2.4",
+    "patchelf==0.17.2.4; sys_platform == 'linux'",
     "twine==6.2.0",
 ]
 dev = [
@@ -50,7 +50,7 @@ dev = [
     "pytest-repeat==0.9.4",
     "build==1.5.0",
     "nuitka==4.1.1",
-    "patchelf==0.17.2.4",
+    "patchelf==0.17.2.4; sys_platform == 'linux'",
     "twine==6.2.0",
 ]
 
