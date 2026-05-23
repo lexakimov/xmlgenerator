@@ -123,7 +123,7 @@ jobs:
         run: python -m build
 
       - name: Upload package artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4 # TODO update
         with:
           name: python-packages
           path: dist/
@@ -175,7 +175,7 @@ jobs:
           python build_native.py --artifact-name ${{ matrix.artifact_name }} --target-platform ${{ matrix.platform }} --target-arch ${{ matrix.arch }} --extra-envs="${{ matrix.extra_envs }}" --extra-opts="${{ matrix.extra_opts }}"
 
       - name: Upload native artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4 # TODO update
         with:
           name: native-${{ matrix.platform }}
           path: ${{ steps.build_native.outputs.artifact_path }}
@@ -200,7 +200,7 @@ jobs:
           docker run -v $(pwd):/app nuitka-builder --artifact-name xmlgenerator-linux-amd64 --target-platform linux --target-arch amd64 --extra-envs="CCFLAGS=-Oz -g0 -w" --extra-opts="--disable-cache=all"
 
       - name: Upload native artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4 # TODO update
         with:
           name: native-linux
           path: dist_native/xmlgenerator-linux-amd64
