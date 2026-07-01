@@ -520,7 +520,12 @@ Thus, the `specific` section provides a powerful mechanism for fine-tuning gener
 
 ### Appendix 1: Configuration File Structure
 
+You can add the `yaml-language-server` directive at the beginning of a configuration file.
+Editors that support JSON Schema for YAML, such as VS Code, will use it to provide structure hints and validation.
+
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/lexakimov/xmlgenerator/refs/heads/master/configuration-schema.json
+
 # Optional block for variables, accessible as `{{ global('name') }}` and `{{ local('name') }}`.
 variables:
   # variable values are evaluated from the specified expressions once (on first access) and then

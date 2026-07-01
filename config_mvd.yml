@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/lexakimov/xmlgenerator/refs/heads/master/configuration-schema.json
+
 ## Пример конфигурации для генерации документов по форматам МВД
 global:
   output_filename: "{{ root_element }}"

@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/lexakimov/xmlgenerator/refs/heads/master/configuration-schema.json",
+  "title": "xmlgenerator YAML configuration",
+  "description": "JSON Schema for xmlgenerator YAML configuration files.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "variables": {
+      "$ref": "#/$defs/variables"
+    },
+    "global": {
+      "$ref": "#/$defs/globalGeneratorConfig"
+    },
+    "specific": {
+      "description": "Per-source-schema settings. Keys are source XSD filename patterns or regular expressions; the first matching entry is used.",
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/generatorConfig"
+      },
+      "default": {}
+    }
+  },
+  "$defs": {
+    "variables": {
+      "description": "Reusable placeholder expressions available through global('name') and local('name').",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "global": {
+          "$ref": "#/$defs/stringMap",
+          "description": "Values evaluated once per process on first access."
+        },
+        "local": {
+          "$ref": "#/$defs/stringMap",
+          "description": "Values evaluated once per generated document."
+        }
+      },
+      "default": {}
+    },
+    "stringMap": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {}
+    },
+    "globalGeneratorConfig": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/generatorConfig"
+        }
+      ],
+      "description": "Settings applied to all schemas unless overridden by a matching entry in specific."
+    },
+    "generatorConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_filename": {
+          "type": "string",
+          "description": "Regular expression used to extract a value from the source XSD filename. It should contain the named group (?P<extracted>...).",
+          "default": "(?P<extracted>.*).(xsd|XSD)"
+        },
+        "output_filename": {
+          "type": "string",
+          "description": "Generated XML filename template. Placeholders such as {{ source_extracted }} and {{ uuid }} are allowed.",
+          "default": "{{ source_extracted }}_{{ uuid }}"
+        },
+        "randomization": {
+          "$ref": "#/$defs/randomization"
+        },
+        "value_override": {
+          "$ref": "#/$defs/valueOverride"
+        }
+      }
+    },
+    "randomization": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Probability of adding optional elements and attributes.",
+          "default": 0.5
+        },
+        "min_occurs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Lower bound for generated occurrences."
+        },
+        "max_occurs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Upper bound for generated occurrences."
+        },
+        "min_length": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Lower bound for generated string length."
+        },
+        "max_length": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Upper bound for generated string length."
+        },
+        "min_inclusive": {
+          "type": "integer",
+          "description": "Lower bound for generated numeric values."
+        },
+        "max_inclusive": {
+          "type": "integer",
+          "description": "Upper bound for generated numeric values."
+        }
+      }
+    },
+    "valueOverride": {
+      "description": "Generated value overrides. Keys are tag or attribute names, or regular expressions. Values are strings with optional placeholders; null resets an inherited override.",
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "default": {}
+    }
+  }
+}
