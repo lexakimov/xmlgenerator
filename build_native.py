@@ -136,16 +136,17 @@ def main() -> None:
         sys.executable, "-m", "nuitka",
 
         # Options:
-        # elementpath builds datatype documentation dynamically when docstrings
-        # are absent. Its slotted base classes expose _xsd_version as a
-        # member_descriptor in that code path, so stripping docstrings makes
-        # importing xmlschema fail at runtime.
         "--python-flag=no_asserts,no_site,static_hashes",
         "--mode=onefile",
 
         # Control the inclusion of modules and packages in result:
 
         # Control the following into imported modules:
+        "--nofollow-import-to=lxml.builder",
+        "--nofollow-import-to=lxml.objectify",
+        "--nofollow-import-to=lxml.sax",
+        "--nofollow-import-to=yaml.cyaml",
+        "--nofollow-import-to=yaml._yaml",
 
         # Onefile options:
         "--onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}/{VERSION}",
