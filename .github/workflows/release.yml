@@ -199,6 +199,9 @@ jobs:
           docker build -t nuitka-builder -f .github/Dockerfile .
           docker run -v $(pwd):/app nuitka-builder --artifact-name xmlgenerator-linux-amd64 --target-platform linux --target-arch amd64 --extra-envs="CCFLAGS=-Oz -g0 -w" --extra-opts="--disable-cache=all"
 
+      - name: Smoke test native executable
+        run: dist_native/xmlgenerator-linux-amd64 --version
+
       - name: Upload native artifact
         uses: actions/upload-artifact@v7
         with:

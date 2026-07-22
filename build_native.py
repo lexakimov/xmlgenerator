@@ -136,7 +136,11 @@ def main() -> None:
         sys.executable, "-m", "nuitka",
 
         # Options:
-        "--python-flag=no_asserts,no_docstrings,no_site,static_hashes",
+        # elementpath builds datatype documentation dynamically when docstrings
+        # are absent. Its slotted base classes expose _xsd_version as a
+        # member_descriptor in that code path, so stripping docstrings makes
+        # importing xmlschema fail at runtime.
+        "--python-flag=no_asserts,no_site,static_hashes",
         "--mode=onefile",
 
         # Control the inclusion of modules and packages in result:
