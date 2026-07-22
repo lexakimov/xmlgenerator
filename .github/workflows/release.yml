@@ -274,6 +274,8 @@ jobs:
       - check-branch
       - check-version
       - build-package
+      - build-native
+      - build-native-linux
     if: needs.check-branch.outputs.on_master == 'true' && needs.check-version.outputs.versions_match == 'true'
     runs-on: ubuntu-latest
     steps:
