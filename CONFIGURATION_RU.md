@@ -518,7 +518,12 @@ xmlgenerator -c config.yml -o output/ --pretty examples/
 
 ### Приложение 1: Структура конфигурационного файла
 
+В начало конфигурационного файла можно добавить директиву `yaml-language-server`.
+Среды разработки с поддержкой JSON Schema для YAML, например VS Code, будут использовать ее для подсказок по структуре и валидации.
+
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/lexakimov/xmlgenerator/refs/heads/master/configuration-schema.json
+
 # Необязательный блок переменных, доступных как `{{ global('key') }}` и `{{ local('key') }}`.
 variables:
   global:

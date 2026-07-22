@@ -135,7 +135,7 @@ class TestFunctions:
             ('administrative_unit("ru_RU")', 'Магаданская обл.'),
 
             ('company_name', 'Morse LLC'),
-            ('bank_name', 'Morse LLC'),
+            ('bank_name', 'HSBC UK'),
 
             ('company_name("ru_RU")', 'ИП «Кузнецова Колесников»'),
             ('bank_name("ru_RU")', 'ЕАТП Банк'),

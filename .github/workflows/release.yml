@@ -144,15 +144,17 @@ jobs:
             arch: amd64
             artifact_name: xmlgenerator-windows-amd64.exe
             extra_envs: "CCFLAGS=-Oz -g0 -w"
-            extra_opts: "--mingw64 --disable-cache=all"
+            extra_opts: "--mingw64"
           - os: macos-latest
             python_ver: '3.13'
             platform: macos
             arch: arm64
             artifact_name: xmlgenerator-macos-arm64
             extra_envs: "CCFLAGS=-Oz -g0 -w;CC=clang"
-            extra_opts: "--clang --disable-cache=all"
+            extra_opts: "--clang"
     runs-on: ${{ matrix.os }}
+    env:
+      NUITKA_CACHE_DIR: ${{ github.workspace }}/.nuitka-cache
     steps:
       - name: Check out repository code for the tag
         uses: actions/checkout@v5
@@ -166,6 +168,14 @@ jobs:
           cache: 'pip'
           cache-dependency-path: pyproject.toml
 
+      - name: Cache Nuitka
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.NUITKA_CACHE_DIR }}
+          key: nuitka-${{ runner.os }}-${{ matrix.arch }}-py${{ matrix.python_ver }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            nuitka-${{ runner.os }}-${{ matrix.arch }}-py${{ matrix.python_ver }}-
+
       - name: Install dependencies
         run: pip install -e ".[build]"
 
@@ -173,6 +183,11 @@ jobs:
         id: build_native
         run: |
           python build_native.py --artifact-name ${{ matrix.artifact_name }} --target-platform ${{ matrix.platform }} --target-arch ${{ matrix.arch }} --extra-envs="${{ matrix.extra_envs }}" --extra-opts="${{ matrix.extra_opts }}"
+
+      - name: Smoke test native executable
+        env:
+          ARTIFACT_PATH: ${{ steps.build_native.outputs.artifact_path }}
+        run: python -c "import os, subprocess; subprocess.run([os.environ['ARTIFACT_PATH'], '--version'], check=True)"
 
       - name: Upload native artifact
         uses: actions/upload-artifact@v7
@@ -187,17 +202,31 @@ jobs:
       - test
     if: needs.check-branch.outputs.on_master == 'true' && needs.check-version.outputs.versions_match == 'true'
     runs-on: ubuntu-latest
+    env:
+      NUITKA_CACHE_DIR: ${{ github.workspace }}/.nuitka-cache
     steps:
       - name: Check out repository code for the tag
         uses: actions/checkout@v5
         with:
           ref: ${{ github.ref }}
 
+      - name: Cache Nuitka
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.NUITKA_CACHE_DIR }}
+          key: nuitka-${{ runner.os }}-amd64-py3.13-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            nuitka-${{ runner.os }}-amd64-py3.13-
+
       - name: Build native
         id: build_native
         run: |
+          mkdir -p "${{ env.NUITKA_CACHE_DIR }}"
           docker build -t nuitka-builder -f .github/Dockerfile .
-          docker run -v $(pwd):/app nuitka-builder --artifact-name xmlgenerator-linux-amd64 --target-platform linux --target-arch amd64 --extra-envs="CCFLAGS=-Oz -g0 -w" --extra-opts="--disable-cache=all"
+          docker run --rm -v "${{ github.workspace }}:/app" -v "${{ env.NUITKA_CACHE_DIR }}:/root/.cache/Nuitka" nuitka-builder --artifact-name xmlgenerator-linux-amd64 --target-platform linux --target-arch amd64 --extra-envs="CCFLAGS=-Oz -g0 -w"
+
+      - name: Smoke test native executable
+        run: dist_native/xmlgenerator-linux-amd64 --version
 
       - name: Upload native artifact
         uses: actions/upload-artifact@v7
@@ -245,6 +274,8 @@ jobs:
       - check-branch
       - check-version
       - build-package
+      - build-native
+      - build-native-linux
     if: needs.check-branch.outputs.on_master == 'true' && needs.check-version.outputs.versions_match == 'true'
     runs-on: ubuntu-latest
     steps:
