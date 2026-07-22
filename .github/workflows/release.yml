@@ -184,6 +184,11 @@ jobs:
         run: |
           python build_native.py --artifact-name ${{ matrix.artifact_name }} --target-platform ${{ matrix.platform }} --target-arch ${{ matrix.arch }} --extra-envs="${{ matrix.extra_envs }}" --extra-opts="${{ matrix.extra_opts }}"
 
+      - name: Smoke test native executable
+        env:
+          ARTIFACT_PATH: ${{ steps.build_native.outputs.artifact_path }}
+        run: python -c "import os, subprocess; subprocess.run([os.environ['ARTIFACT_PATH'], '--version'], check=True)"
+
       - name: Upload native artifact
         uses: actions/upload-artifact@v7
         with:
